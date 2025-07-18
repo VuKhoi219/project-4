@@ -247,17 +247,86 @@
         <div class="diagram-container">
             <div class="mermaid">
                 erDiagram
-                users { int id PK, varchar username, varchar email, varchar full_name }
-                categories { int id PK, varchar name }
-                uploaded_files { int id PK, int user_id FK, varchar original_filename, boolean is_processed, boolean is_public, vector content_embedding }
-                knowledge_base { int id PK, varchar title, enum source_type, int created_by FK, boolean is_public, vector content_embedding }
-                quizzes { int id PK, int creator_id FK, varchar title, int category_id FK, enum source_type, boolean is_public, varchar share_link, vector content_embedding }
-                questions { int id PK, int quiz_id FK, text question_text, enum question_type, vector question_embedding }
-                answers { int id PK, int question_id FK, text answer_text, boolean is_correct }
-                quiz_attempts { int id PK, int quiz_id FK, int user_id FK, decimal percentage_score, boolean is_completed }
-                quiz_responses { int id PK, int attempt_id FK, int question_id FK, int answer_id FK, boolean is_correct }
-                content_permissions { int id PK, enum content_type, int content_id, int owner_id FK, int shared_with_user_id FK, enum permission_type }
-                ai_processing_logs { int id PK, int quiz_id FK, int file_id FK, int knowledge_base_id FK, enum process_type, enum status }
+                users {
+                int id PK
+                varchar username
+                varchar email
+                varchar full_name
+                }
+                categories {
+                int id PK
+                varchar name
+                }
+                uploaded_files {
+                int id PK
+                int user_id FK
+                varchar original_filename
+                boolean is_processed
+                boolean is_public
+                text content_embedding
+                }
+                knowledge_base {
+                int id PK
+                varchar title
+                enum source_type
+                int created_by FK
+                boolean is_public
+                text content_embedding
+                }
+                quizzes {
+                int id PK
+                int creator_id FK
+                varchar title
+                int category_id FK
+                enum source_type
+                boolean is_public
+                varchar share_link
+                text content_embedding
+                }
+                questions {
+                int id PK
+                int quiz_id FK
+                text question_text
+                enum question_type
+                text question_embedding
+                }
+                answers {
+                int id PK
+                int question_id FK
+                text answer_text
+                boolean is_correct
+                }
+                quiz_attempts {
+                int id PK
+                int quiz_id FK
+                int user_id FK
+                decimal percentage_score
+                boolean is_completed
+                }
+                quiz_responses {
+                int id PK
+                int attempt_id FK
+                int question_id FK
+                int answer_id FK
+                boolean is_correct
+                }
+                content_permissions {
+                int id PK
+                enum content_type
+                int content_id
+                int owner_id FK
+                int shared_with_user_id FK
+                enum permission_type
+                }
+                lynx
+                ai_processing_logs {
+                int id PK
+                int quiz_id FK
+                int file_id FK
+                int knowledge_base_id FK
+                enum process_type
+                enum status
+                }
 
                 users ||--o{ quizzes : "tạo"
                 users ||--o{ uploaded_files : "upload"
@@ -272,9 +341,52 @@
                 questions ||--o{ answers : "có"
                 questions ||--o{ quiz_responses : "được trả lời"
                 quiz_attempts ||--o{ quiz_responses : "có"
-                answers }o--|| quiz_responses : "được chọn"
+                answers o|--|| quiz_responses : "được chọn"
                 uploaded_files ||--o{ ai_processing_logs : "được xử lý"
                 knowledge_base ||--o{ ai_processing_logs : "được xử lý"
+            </div>
+        </div>
+        <div class="grid-container">
+            <div class="card">
+                <h3>Mối Quan hệ Người dùng</h3>
+                <ul>
+                    <li><strong>Người dùng tạo bài kiểm tra</strong> (<code>users ||--o{ quizzes : "tạo"</code>): Một người dùng có thể tạo nhiều bài kiểm tra, nhưng mỗi bài kiểm tra chỉ được tạo bởi một người dùng. Liên kết qua khóa ngoại <code>creator_id</code>.</li>
+                    <li><strong>Người dùng tải lên tệp</strong> (<code>users ||--o{ uploaded_files : "upload"</code>): Một người dùng có thể tải lên nhiều tệp (PDF, DOCX), nhưng mỗi tệp chỉ thuộc về một người dùng. Liên kết qua khóa ngoại <code>user_id</code>.</li>
+                    <li><strong>Người dùng tạo cơ sở tri thức</strong> (<code>users ||--o{ knowledge_base : "tạo"</code>): Một người dùng có thể tạo nhiều mục trong cơ sở tri thức, nhưng mỗi mục chỉ có một người tạo. Liên kết qua khóa ngoại <code>created_by</code>.</li>
+                    <li><strong>Người dùng tham gia bài kiểm tra</strong> (<code>users ||--o{ quiz_attempts : "tham gia"</code>): Một người dùng có thể tham gia nhiều lượt làm bài, nhưng mỗi lượt làm bài chỉ thuộc về một người dùng. Liên kết qua khóa ngoại <code>user_id</code>.</li>
+                    <li><strong>Người dùng sở hữu/chia sẻ quyền</strong> (<code>users ||--o{ content_permissions : "sở hữu/chia sẻ"</code>): Một người dùng có thể sở hữu hoặc được chia sẻ nhiều quyền truy cập nội dung, nhưng mỗi quyền chỉ liên quan đến một người dùng (chủ sở hữu hoặc người được chia sẻ). Liên kết qua <code>owner_id</code> hoặc <code>shared_with_user_id</code>.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Mối Quan hệ Danh mục</h3>
+                <ul>
+                    <li><strong>Danh mục chứa bài kiểm tra</strong> (<code>categories ||--o{ quizzes : "thuộc"</code>): Một danh mục có thể chứa nhiều bài kiểm tra, nhưng mỗi bài kiểm tra chỉ thuộc về một danh mục. Liên kết qua khóa ngoại <code>category_id</code>.</li>
+                    <li><strong>Danh mục chứa cơ sở tri thức</strong> (<code>categories ||--o{ knowledge_base : "thuộc"</code>): Một danh mục có thể chứa nhiều mục trong cơ sở tri thức, nhưng mỗi mục chỉ thuộc về một danh mục. Liên kết qua khóa ngoại <code>category_id</code>.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Mối Quan hệ Bài kiểm tra</h3>
+                <ul>
+                    <li><strong>Bài kiểm tra chứa câu hỏi</strong> (<code>quizzes ||--o{ questions : "chứa"</code>): Một bài kiểm tra có thể chứa nhiều câu hỏi, nhưng mỗi câu hỏi chỉ thuộc về một bài kiểm tra. Liên kết qua khóa ngoại <code>quiz_id</code>.</li>
+                    <li><strong>Bài kiểm tra có lượt làm</strong> (<code>quizzes ||--o{ quiz_attempts : "có lượt làm"</code>): Một bài kiểm tra có thể có nhiều lượt làm bài, nhưng mỗi lượt làm bài chỉ thuộc về một bài kiểm tra. Liên kết qua khóa ngoại <code>quiz_id</code>.</li>
+                    <li><strong>Bài kiểm tra được xử lý bởi AI</strong> (<code>quizzes ||--o{ ai_processing_logs : "được xử lý"</code>): Một bài kiểm tra có thể được xử lý bởi nhiều nhật ký AI, nhưng mỗi nhật ký chỉ liên quan đến một bài kiểm tra. Liên kết qua khóa ngoại <code>quiz_id</code>.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Mối Quan hệ Câu hỏi & Đáp án</h3>
+                <ul>
+                    <li><strong>Câu hỏi có đáp án</strong> (<code>questions ||--o{ answers : "có"</code>): Một câu hỏi có thể có nhiều đáp án, nhưng mỗi đáp án chỉ thuộc về một câu hỏi. Liên kết qua khóa ngoại <code>question_id</code>.</li>
+                    <li><strong>Câu hỏi được trả lời</strong> (<code>questions ||--o{ quiz_responses : "được trả lời"</code>): Một câu hỏi có thể được trả lời trong nhiều phản hồi bài kiểm tra, nhưng mỗi phản hồi chỉ liên quan đến một câu hỏi. Liên kết qua khóa ngoại <code>question_id</code>.</li>
+                    <li><strong>Đáp án được chọn</strong> (<code>answers o|--|| quiz_responses : "được chọn"</code>): Một đáp án có thể được chọn trong nhiều phản hồi bài kiểm tra, và mỗi phản hồi phải chọn chính xác một đáp án. Liên kết qua khóa ngoại <code>answer_id</code>.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Mối Quan hệ Lượt làm bài & Xử lý AI</h3>
+                <ul>
+                    <li><strong>Lượt làm bài có phản hồi</strong> (<code>quiz_attempts ||--o{ quiz_responses : "có"</code>): Một lượt làm bài có thể chứa nhiều phản hồi cho các câu hỏi, nhưng mỗi phản hồi chỉ thuộc về một lượt làm bài. Liên kết qua khóa ngoại <code>attempt_id</code>.</li>
+                    <li><strong>Tệp được xử lý bởi AI</strong> (<code>uploaded_files ||--o{ ai_processing_logs : "được xử lý"</code>): Một tệp có thể được xử lý bởi nhiều nhật ký AI, nhưng mỗi nhật ký chỉ liên quan đến một tệp. Liên kết qua khóa ngoại <code>file_id</code>.</li>
+                    <li><strong>Cơ sở tri thức được xử lý bởi AI</strong> (<code>knowledge_base ||--o{ ai_processing_logs : "được xử lý"</code>): Một mục trong cơ sở tri thức có thể được xử lý bởi nhiều nhật ký AI, nhưng mỗi nhật ký chỉ liên quan đến một mục. Liên kết qua khóa ngoại <code>knowledge_base_id</code>.</li>
+                </ul>
             </div>
         </div>
     </div>
