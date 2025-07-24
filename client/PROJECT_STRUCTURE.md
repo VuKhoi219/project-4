@@ -1,7 +1,7 @@
-# 📁 Cấu trúc thư mục dự án React
+# 📁 Cấu trúc thư mục dự án React TypeScript
 
 ## 🎯 Mục đích tài liệu
-Tài liệu này giúp các thành viên trong team hiểu rõ cấu trúc thư mục, quy ước đặt tên và cách tổ chức code trong dự án React của chúng ta.
+Tài liệu này giúp các thành viên trong team hiểu rõ cấu trúc thư mục, quy ước đặt tên và cách tổ chức code trong dự án React TypeScript của chúng ta.
 
 ## 🏗️ Tổng quan cấu trúc
 
@@ -18,6 +18,7 @@ src/
 ├── lib/            # Thư viện bên ngoài
 ├── services/       # API và dịch vụ
 ├── styles/         # CSS/SCSS toàn cục
+├── types/          # TypeScript type definitions
 └── utils/          # Hàm tiện ích
 ```
 
@@ -66,9 +67,10 @@ assets/
 ```
 components/
 ├── Button/
-│   ├── Button.jsx
+│   ├── Button.tsx
 │   ├── Button.module.css
-│   └── index.js
+│   ├── Button.types.ts
+│   └── index.ts
 ├── Modal/
 ├── Input/
 └── Navigation/
@@ -76,32 +78,170 @@ components/
 
 **Quy tắc đặt tên**:
 - Folder: PascalCase (`Button`, `NavBar`)
-- File component: PascalCase (`Button.jsx`)
-- Export default qua `index.js`
+- File component: PascalCase (`Button.tsx`)
+- Types file: PascalCase (`Button.types.ts`)
+- Export default qua `index.ts`
 
 **Ví dụ component**:
-```jsx
-// components/Button/Button.jsx
+```tsx
+// components/Button/Button.types.ts
+export interface ButtonProps {
+  children: React.ReactNode;
+  variant?: 'primary' | 'secondary' | 'danger';
+  size?: 'small' | 'medium' | 'large';
+  onClick?: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+  className?: string;
+}
+
+// components/Button/Button.tsx
+import React from 'react';
+import { ButtonProps } from './Button.types';
 import styles from './Button.module.css';
 
-const Button = ({ children, variant = 'primary', onClick }) => {
+const Button: React.FC<ButtonProps> = ({ 
+  children, 
+  variant = 'primary', 
+  size = 'medium',
+  onClick, 
+  disabled = false,
+  loading = false,
+  className = '' 
+}) => {
+  const buttonClasses = [
+    styles.button,
+    styles[variant],
+    styles[size],
+    loading && styles.loading,
+    className
+  ].filter(Boolean).join(' ');
+
   return (
     <button 
-      className={`${styles.button} ${styles[variant]}`}
+      className={buttonClasses}
       onClick={onClick}
+      disabled={disabled || loading}
+      type="button"
     >
-      {children}
+      {loading ? 'Loading...' : children}
     </button>
   );
 };
 
 export default Button;
+
+// components/Button/index.ts
+export { default } from './Button';
+export type { ButtonProps } from './Button.types';
+```
+
+---
+
+### 🔢 `/types`
+**Mục đích**: Chứa tất cả TypeScript type definitions
+
+**Nội dung**:
+- 🏗️ Global types
+- 📊 API response types
+- 🔧 Utility types
+- 📝 Enum definitions
+
+**Ví dụ cấu trúc**:
+```
+types/
+├── index.ts         # Re-export tất cả types
+├── api.types.ts     # API related types
+├── user.types.ts    # User related types
+├── common.types.ts  # Common/shared types
+└── enums.ts         # Enum definitions
+```
+
+**Ví dụ types**:
+```typescript
+// types/common.types.ts
+export interface BaseEntity {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ApiResponse<T> {
+  data: T;
+  message: string;
+  success: boolean;
+  statusCode: number;
+}
+
+export interface PaginationParams {
+  page: number;
+  limit: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+  };
+}
+
+// types/user.types.ts
+import { BaseEntity } from './common.types';
+
+export interface User extends BaseEntity {
+  email: string;
+  firstName: string;
+  lastName: string;
+  avatar?: string;
+  role: UserRole;
+  isActive: boolean;
+}
+
+export interface UserProfile {
+  user: User;
+  preferences: UserPreferences;
+}
+
+export interface UserPreferences {
+  theme: 'light' | 'dark';
+  language: string;
+  notifications: {
+    email: boolean;
+    push: boolean;
+    sms: boolean;
+  };
+}
+
+// types/enums.ts
+export enum UserRole {
+  ADMIN = 'admin',
+  USER = 'user',
+  MODERATOR = 'moderator'
+}
+
+export enum ApiStatus {
+  IDLE = 'idle',
+  LOADING = 'loading',
+  SUCCESS = 'success',
+  ERROR = 'error'
+}
+
+// types/index.ts
+export * from './common.types';
+export * from './user.types';
+export * from './api.types';
+export * from './enums';
 ```
 
 ---
 
 ### 🌐 `/context`
-**Mục đích**: Quản lý state toàn cục bằng Context API
+**Mục đích**: Quản lý state toàn cục bằng Context API với TypeScript
 
 **Khi nào sử dụng**:
 - 🔄 Dữ liệu cần chia sẻ giữa nhiều component
@@ -112,20 +252,38 @@ export default Button;
 **Ví dụ cấu trúc**:
 ```
 context/
-├── AuthContext.js
-├── ThemeContext.js
-├── CartContext.js
-└── index.js
+├── AuthContext.tsx
+├── ThemeContext.tsx
+├── CartContext.tsx
+└── index.ts
 ```
 
 **Ví dụ implementation**:
-```jsx
-// context/AuthContext.js
-import { createContext, useContext, useState } from 'react';
+```tsx
+// context/AuthContext.tsx
+import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { User } from '../types';
 
-const AuthContext = createContext();
+interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  logout: () => void;
+  updateProfile: (data: Partial<User>) => Promise<void>;
+}
 
-export const useAuth = () => {
+interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within AuthProvider');
@@ -133,20 +291,49 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const login = async (credentials) => {
-    // Logic đăng nhập
-  };
+  const login = useCallback(async (credentials: LoginCredentials): Promise<void> => {
+    setIsLoading(true);
+    try {
+      // API call logic
+      const response = await authService.login(credentials);
+      setUser(response.user);
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback((): void => {
     setUser(null);
+    // Clear localStorage, redirect, etc.
+  }, []);
+
+  const updateProfile = useCallback(async (data: Partial<User>): Promise<void> => {
+    if (!user) return;
+    
+    try {
+      const updatedUser = await authService.updateProfile(data);
+      setUser(updatedUser);
+    } catch (error) {
+      throw error;
+    }
+  }, [user]);
+
+  const value: AuthContextType = {
+    user,
+    isLoading,
+    login,
+    logout,
+    updateProfile
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
@@ -167,33 +354,58 @@ export const AuthProvider = ({ children }) => {
 **Ví dụ cấu trúc**:
 ```
 data/
-├── constants.js
-├── mockData.js
+├── constants.ts
+├── mockData.ts
 ├── models/
-│   ├── User.js
-│   └── Product.js
-└── config.js
+│   ├── User.ts
+│   └── Product.ts
+└── config.ts
 ```
 
 **Ví dụ sử dụng**:
-```javascript
-// data/constants.js
+```typescript
+// data/constants.ts
 export const API_ENDPOINTS = {
   AUTH: '/api/auth',
   USERS: '/api/users',
   PRODUCTS: '/api/products'
-};
+} as const;
 
 export const USER_ROLES = {
   ADMIN: 'admin',
   USER: 'user',
   MODERATOR: 'moderator'
-};
+} as const;
 
-// data/mockData.js
-export const MOCK_USERS = [
-  { id: 1, name: 'John Doe', email: 'john@example.com' },
-  { id: 2, name: 'Jane Smith', email: 'jane@example.com' }
+export const PAGINATION_DEFAULTS = {
+  PAGE_SIZE: 20,
+  MAX_PAGE_SIZE: 100
+} as const;
+
+// data/mockData.ts
+import { User, Product } from '../types';
+
+export const MOCK_USERS: User[] = [
+  {
+    id: '1',
+    email: 'john@example.com',
+    firstName: 'John',
+    lastName: 'Doe',
+    role: UserRole.USER,
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z'
+  },
+  {
+    id: '2',
+    email: 'jane@example.com',
+    firstName: 'Jane',
+    lastName: 'Smith',
+    role: UserRole.ADMIN,
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z'
+  }
 ];
 ```
 
@@ -212,21 +424,71 @@ export const MOCK_USERS = [
 features/
 ├── authentication/
 │   ├── components/
-│   │   ├── LoginForm.jsx
-│   │   └── SignupForm.jsx
+│   │   ├── LoginForm.tsx
+│   │   └── SignupForm.tsx
 │   ├── hooks/
-│   │   └── useAuth.js
+│   │   └── useAuth.ts
 │   ├── services/
-│   │   └── authService.js
-│   └── index.js
+│   │   └── authService.ts
+│   ├── types/
+│   │   └── auth.types.ts
+│   └── index.ts
 ├── dashboard/
 └── profile/
 ```
 
-**Quy tắc**:
-- Mỗi feature là một module độc lập
-- Export public API qua `index.js`
-- Không import trực tiếp từ feature khác
+**Ví dụ feature implementation**:
+```typescript
+// features/authentication/types/auth.types.ts
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface SignupRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  accessToken: string;
+  refreshToken: string;
+}
+
+// features/authentication/hooks/useAuth.ts
+import { useState, useCallback } from 'react';
+import { LoginRequest, AuthResponse } from '../types/auth.types';
+import { authService } from '../services/authService';
+
+export const useAuthFeature = () => {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const login = useCallback(async (credentials: LoginRequest): Promise<AuthResponse | null> => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await authService.login(credentials);
+      return response;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return {
+    login,
+    isLoading,
+    error
+  };
+};
+```
 
 ---
 
@@ -241,23 +503,24 @@ features/
 **Ví dụ cấu trúc**:
 ```
 pages/
-├── HomePage.jsx
-├── AboutPage.jsx
-├── ContactPage.jsx
-├── ProductPage.jsx
-└── NotFoundPage.jsx
+├── HomePage.tsx
+├── AboutPage.tsx
+├── ContactPage.tsx
+├── ProductPage.tsx
+└── NotFoundPage.tsx
 ```
 
 **Ví dụ page component**:
-```jsx
-// pages/HomePage.jsx
+```tsx
+// pages/HomePage.tsx
+import React from 'react';
 import Hero from '../components/Hero';
 import ProductList from '../features/products/components/ProductList';
 import Newsletter from '../components/Newsletter';
 
-const HomePage = () => {
+const HomePage: React.FC = () => {
   return (
-    <div>
+    <div className="home-page">
       <Hero />
       <ProductList />
       <Newsletter />
@@ -281,38 +544,100 @@ export default HomePage;
 **Ví dụ cấu trúc**:
 ```
 hooks/
-├── useApi.js
-├── useLocalStorage.js
-├── useDebounce.js
-└── useForm.js
+├── useApi.ts
+├── useLocalStorage.ts
+├── useDebounce.ts
+└── useForm.ts
 ```
 
 **Ví dụ custom hook**:
-```javascript
-// hooks/useLocalStorage.js
-import { useState, useEffect } from 'react';
+```typescript
+// hooks/useLocalStorage.ts
+import { useState, useEffect, useCallback } from 'react';
 
-export const useLocalStorage = (key, initialValue) => {
-  const [storedValue, setStoredValue] = useState(() => {
+type SetValue<T> = (value: T | ((val: T) => T)) => void;
+
+export const useLocalStorage = <T>(key: string, initialValue: T): [T, SetValue<T>] => {
+  const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       const item = window.localStorage.getItem(key);
       return item ? JSON.parse(item) : initialValue;
     } catch (error) {
-      console.log(error);
+      console.error(`Error reading localStorage key "${key}":`, error);
       return initialValue;
     }
   });
 
-  const setValue = (value) => {
+  const setValue: SetValue<T> = useCallback((value) => {
     try {
-      setStoredValue(value);
-      window.localStorage.setItem(key, JSON.stringify(value));
+      const valueToStore = value instanceof Function ? value(storedValue) : value;
+      setStoredValue(valueToStore);
+      window.localStorage.setItem(key, JSON.stringify(valueToStore));
     } catch (error) {
-      console.log(error);
+      console.error(`Error setting localStorage key "${key}":`, error);
     }
-  };
+  }, [key, storedValue]);
 
   return [storedValue, setValue];
+};
+
+// hooks/useApi.ts
+import { useState, useCallback } from 'react';
+import { ApiStatus } from '../types';
+
+interface UseApiState<T> {
+  data: T | null;
+  error: string | null;
+  status: ApiStatus;
+}
+
+interface UseApiReturn<T> extends UseApiState<T> {
+  execute: (...args: any[]) => Promise<T | null>;
+  reset: () => void;
+}
+
+export const useApi = <T>(apiFunction: (...args: any[]) => Promise<T>): UseApiReturn<T> => {
+  const [state, setState] = useState<UseApiState<T>>({
+    data: null,
+    error: null,
+    status: ApiStatus.IDLE
+  });
+
+  const execute = useCallback(async (...args: any[]): Promise<T | null> => {
+    setState(prev => ({ ...prev, status: ApiStatus.LOADING, error: null }));
+    
+    try {
+      const result = await apiFunction(...args);
+      setState({
+        data: result,
+        error: null,
+        status: ApiStatus.SUCCESS
+      });
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      setState({
+        data: null,
+        error: errorMessage,
+        status: ApiStatus.ERROR
+      });
+      return null;
+    }
+  }, [apiFunction]);
+
+  const reset = useCallback(() => {
+    setState({
+      data: null,
+      error: null,
+      status: ApiStatus.IDLE
+    });
+  }, []);
+
+  return {
+    ...state,
+    execute,
+    reset
+  };
 };
 ```
 
@@ -330,28 +655,54 @@ export const useLocalStorage = (key, initialValue) => {
 **Ví dụ cấu trúc**:
 ```
 layouts/
-├── MainLayout.jsx
-├── AuthLayout.jsx
-├── DashboardLayout.jsx
+├── MainLayout.tsx
+├── AuthLayout.tsx
+├── DashboardLayout.tsx
+├── types/
+│   └── layout.types.ts
 └── components/
-    ├── Header.jsx
-    ├── Footer.jsx
-    └── Sidebar.jsx
+    ├── Header.tsx
+    ├── Footer.tsx
+    └── Sidebar.tsx
 ```
 
 **Ví dụ layout**:
-```jsx
-// layouts/MainLayout.jsx
+```tsx
+// layouts/types/layout.types.ts
+import { ReactNode } from 'react';
+
+export interface LayoutProps {
+  children: ReactNode;
+}
+
+export interface MainLayoutProps extends LayoutProps {
+  showSidebar?: boolean;
+  sidebarCollapsed?: boolean;
+}
+
+// layouts/MainLayout.tsx
+import React from 'react';
+import { MainLayoutProps } from './types/layout.types';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import Sidebar from './components/Sidebar';
 
-const MainLayout = ({ children }) => {
+const MainLayout: React.FC<MainLayoutProps> = ({ 
+  children, 
+  showSidebar = false,
+  sidebarCollapsed = false 
+}) => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow container mx-auto px-4 py-8">
-        {children}
-      </main>
+      <div className="flex flex-grow">
+        {showSidebar && (
+          <Sidebar collapsed={sidebarCollapsed} />
+        )}
+        <main className="flex-grow container mx-auto px-4 py-8">
+          {children}
+        </main>
+      </div>
       <Footer />
     </div>
   );
@@ -374,37 +725,84 @@ export default MainLayout;
 **Ví dụ cấu trúc**:
 ```
 lib/
-├── axios.js
-├── validation.js
-├── theme.js
-└── analytics.js
+├── axios.ts
+├── validation.ts
+├── theme.ts
+└── analytics.ts
 ```
 
 **Ví dụ config**:
-```javascript
-// lib/axios.js
-import axios from 'axios';
+```typescript
+// lib/axios.ts
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
-const apiClient = axios.create({
-  baseURL: process.env.REACT_APP_API_URL,
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json'
+interface ApiClientConfig {
+  baseURL?: string;
+  timeout?: number;
+  headers?: Record<string, string>;
+}
+
+class ApiClient {
+  private instance: AxiosInstance;
+
+  constructor(config: ApiClientConfig = {}) {
+    this.instance = axios.create({
+      baseURL: config.baseURL || process.env.REACT_APP_API_URL,
+      timeout: config.timeout || 10000,
+      headers: {
+        'Content-Type': 'application/json',
+        ...config.headers
+      }
+    });
+
+    this.setupInterceptors();
   }
-});
 
-// Request interceptor
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+  private setupInterceptors(): void {
+    // Request interceptor
+    this.instance.interceptors.request.use(
+      (config: AxiosRequestConfig) => {
+        const token = localStorage.getItem('authToken');
+        if (token && config.headers) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
 
+    // Response interceptor
+    this.instance.interceptors.response.use(
+      (response: AxiosResponse) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          // Handle unauthorized access
+          localStorage.removeItem('authToken');
+          window.location.href = '/login';
+        }
+        return Promise.reject(error);
+      }
+    );
+  }
+
+  public get<T>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+    return this.instance.get<T>(url, config);
+  }
+
+  public post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+    return this.instance.post<T>(url, data, config);
+  }
+
+  public put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+    return this.instance.put<T>(url, data, config);
+  }
+
+  public delete<T>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+    return this.instance.delete<T>(url, config);
+  }
+}
+
+export const apiClient = new ApiClient();
 export default apiClient;
 ```
 
@@ -423,25 +821,73 @@ export default apiClient;
 ```
 services/
 ├── api/
-│   ├── authApi.js
-│   ├── userApi.js
-│   └── productApi.js
+│   ├── authApi.ts
+│   ├── userApi.ts
+│   └── productApi.ts
 ├── payment/
-│   └── stripeService.js
-└── index.js
+│   └── stripeService.ts
+├── types/
+│   └── service.types.ts
+└── index.ts
 ```
 
 **Ví dụ service**:
-```javascript
-// services/api/userApi.js
-import apiClient from '../lib/axios';
+```typescript
+// services/types/service.types.ts
+export interface ApiService<T> {
+  getAll: () => Promise<T[]>;
+  getById: (id: string) => Promise<T>;
+  create: (data: Omit<T, 'id'>) => Promise<T>;
+  update: (id: string, data: Partial<T>) => Promise<T>;
+  delete: (id: string) => Promise<void>;
+}
 
-export const userApi = {
-  getProfile: () => apiClient.get('/user/profile'),
-  updateProfile: (data) => apiClient.put('/user/profile', data),
-  getAllUsers: () => apiClient.get('/users'),
-  deleteUser: (id) => apiClient.delete(`/users/${id}`)
-};
+// services/api/userApi.ts
+import { User, ApiResponse, PaginatedResponse, PaginationParams } from '../../types';
+import { apiClient } from '../../lib/axios';
+import { ApiService } from '../types/service.types';
+
+export class UserApiService implements Partial<ApiService<User>> {
+  private readonly basePath = '/users';
+
+  async getProfile(): Promise<User> {
+    const response = await apiClient.get<ApiResponse<User>>('/user/profile');
+    return response.data.data;
+  }
+
+  async updateProfile(data: Partial<User>): Promise<User> {
+    const response = await apiClient.put<ApiResponse<User>>('/user/profile', data);
+    return response.data.data;
+  }
+
+  async getAll(params?: PaginationParams): Promise<PaginatedResponse<User>> {
+    const response = await apiClient.get<PaginatedResponse<User>>(this.basePath, {
+      params
+    });
+    return response.data;
+  }
+
+  async getById(id: string): Promise<User> {
+    const response = await apiClient.get<ApiResponse<User>>(`${this.basePath}/${id}`);
+    return response.data.data;
+  }
+
+  async create(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
+    const response = await apiClient.post<ApiResponse<User>>(this.basePath, userData);
+    return response.data.data;
+  }
+
+  async update(id: string, data: Partial<User>): Promise<User> {
+    const response = await apiClient.put<ApiResponse<User>>(`${this.basePath}/${id}`, data);
+    return response.data.data;
+  }
+
+  async delete(id: string): Promise<void> {
+    await apiClient.delete(`${this.basePath}/${id}`);
+  }
+}
+
+export const userApi = new UserApiService();
 ```
 
 ---
@@ -479,6 +925,23 @@ styles/
   --info-color: #17a2b8;
   --light-color: #f8f9fa;
   --dark-color: #343a40;
+  
+  /* Typography */
+  --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-size-base: 1rem;
+  --line-height-base: 1.6;
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  
+  /* Border radius */
+  --border-radius-sm: 0.25rem;
+  --border-radius-md: 0.375rem;
+  --border-radius-lg: 0.5rem;
 }
 
 * {
@@ -488,10 +951,28 @@ styles/
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  line-height: 1.6;
+  font-family: var(--font-family-base);
+  line-height: var(--line-height-base);
   color: var(--dark-color);
+  font-size: var(--font-size-base);
 }
+
+/* Utility classes */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-md);
+}
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.mb-xs { margin-bottom: var(--spacing-xs); }
+.mb-sm { margin-bottom: var(--spacing-sm); }
+.mb-md { margin-bottom: var(--spacing-md); }
+.mb-lg { margin-bottom: var(--spacing-lg); }
+.mb-xl { margin-bottom: var(--spacing-xl); }
 ```
 
 ---
@@ -508,40 +989,162 @@ body {
 **Ví dụ cấu trúc**:
 ```
 utils/
-├── formatters.js
-├── validators.js
-├── helpers.js
-└── constants.js
+├── formatters.ts
+├── validators.ts
+├── helpers.ts
+├── constants.ts
+└── types.ts
 ```
 
 **Ví dụ utilities**:
-```javascript
-// utils/formatters.js
-export const formatDate = (date, format = 'DD/MM/YYYY') => {
-  // Implementation
+```typescript
+// utils/formatters.ts
+export const formatDate = (
+  date: string | Date, 
+  format: string = 'DD/MM/YYYY'
+): string => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  // Simple implementation - in real project use date-fns or dayjs
+  return dateObj.toLocaleDateString('vi-VN');
 };
 
-export const formatCurrency = (amount, currency = 'VND') => {
+export const formatCurrency = (
+  amount: number, 
+  currency: string = 'VND'
+): string => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency: currency
   }).format(amount);
 };
 
-export const formatPhone = (phone) => {
-  // Format phone number
+export const formatPhone = (phone: string): string => {
+  // Format Vietnamese phone number
+  const cleaned = phone.replace(/\D/g, '');
+  const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
+  
+  if (match) {
+    return `${match[1]} ${match[2]} ${match[3]}`;
+  }
+  
+  return phone;
 };
 
-// utils/validators.js
-export const isValidEmail = (email) => {
+export const truncateText = (text: string, maxLength: number): string => {
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength).trim() + '...';
+};
+
+// utils/validators.ts
+export const isValidEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 };
 
-export const isValidPhone = (phone) => {
+export const isValidPhone = (phone: string): boolean => {
   const phoneRegex = /^(\+84|0)[3-9]\d{8}$/;
   return phoneRegex.test(phone);
 };
+
+export const isValidPassword = (password: string): boolean => {
+  // At least 8 characters, 1 uppercase, 1 lowercase, 1 number
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/;
+  return passwordRegex.test(password);
+};
+
+export const validateRequired = (value: string): boolean => {
+  return value.trim().length > 0;
+};
+
+export const validateMinLength = (value: string, minLength: number): boolean => {
+  return value.length >= minLength;
+};
+
+export const validateMaxLength = (value: string, maxLength: number): boolean => {
+  return value.length <= maxLength;
+};
+
+// utils/helpers.ts
+export const debounce = <T extends (...args: any[]) => any>(
+  func: T,
+  delay: number
+): ((...args: Parameters<T>) => void) => {
+  let timeoutId: NodeJS.Timeout;
+  
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+};
+
+export const throttle = <T extends (...args: any[]) => any>(
+  func: T,
+  delay: number
+): ((...args: Parameters<T>) => void) => {
+  let lastCall = 0;
+  
+  return (...args: Parameters<T>) => {
+    const now = Date.now();
+    if (now - lastCall >= delay) {
+      lastCall = now;
+      func(...args);
+    }
+  };
+};
+
+export const generateId = (): string => {
+  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+};
+
+export const deepClone = <T>(obj: T): T => {
+  return JSON.parse(JSON.stringify(obj));
+};
+
+export const isEmpty = (value: any): boolean => {
+  if (value == null) return true;
+  if (typeof value === 'string') return value.trim().length === 0;
+  if (Array.isArray(value)) return value.length === 0;
+  if (typeof value === 'object') return Object.keys(value).length === 0;
+  return false;
+};
+
+// utils/storage.ts
+export class LocalStorageService {
+  static get<T>(key: string): T | null {
+    try {
+      const item = localStorage.getItem(key);
+      return item ? JSON.parse(item) : null;
+    } catch (error) {
+      console.error(`Error getting localStorage key "${key}":`, error);
+      return null;
+    }
+  }
+
+  static set<T>(key: string, value: T): void {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      console.error(`Error setting localStorage key "${key}":`, error);
+    }
+  }
+
+  static remove(key: string): void {
+    try {
+      localStorage.removeItem(key);
+    } catch (error) {
+      console.error(`Error removing localStorage key "${key}":`, error);
+    }
+  }
+
+  static clear(): void {
+    try {
+      localStorage.clear();
+    } catch (error) {
+      console.error('Error clearing localStorage:', error);
+    }
+  }
+}
 ```
 
 ---
@@ -549,69 +1152,134 @@ export const isValidPhone = (phone) => {
 ## 🎯 Quy tắc và Best Practices
 
 ### 📝 Naming Conventions
-- **Files**: PascalCase cho components, camelCase cho utilities
+- **Files**: PascalCase cho components (`Button.tsx`), camelCase cho utilities (`formatters.ts`)
 - **Folders**: PascalCase cho components, camelCase cho others
 - **Variables**: camelCase
 - **Constants**: UPPER_SNAKE_CASE
+- **Types/Interfaces**: PascalCase với suffix thích hợp (`UserProps`, `ApiResponse`)
 
 ### 📁 File Organization
-```javascript
+```typescript
 // ✅ Good
 components/
 ├── Button/
-│   ├── Button.jsx
-│   ├── Button.test.js
-│   ├── Button.stories.js
+│   ├── Button.tsx
+│   ├── Button.types.ts
+│   ├── Button.test.tsx
+│   ├── Button.stories.tsx
 │   ├── Button.module.css
-│   └── index.js
+│   └── index.ts
 
 // ❌ Bad
 components/
-├── button.jsx
-├── ButtonComponent.jsx
-├── btn.jsx
+├── button.tsx
+├── ButtonComponent.tsx
+├── btn.tsx
 ```
 
 ### 🔄 Import/Export Rules
-```javascript
-// ✅ Good - Absolute imports
+```typescript
+// ✅ Good - Absolute imports với path mapping
 import Button from 'components/Button';
 import { formatDate } from 'utils/formatters';
+import { User } from 'types';
 
 // ❌ Bad - Relative imports
 import Button from '../../components/Button';
 import { formatDate } from '../../../utils/formatters';
+
+// tsconfig.json path mapping
+{
+  "compilerOptions": {
+    "baseUrl": "src",
+    "paths": {
+      "components/*": ["components/*"],
+      "utils/*": ["utils/*"],
+      "types/*": ["types/*"],
+      "hooks/*": ["hooks/*"],
+      "services/*": ["services/*"]
+    }
+  }
+}
 ```
 
-### 🧹 Code Organization
-```javascript
-// ✅ Good - Component structure
-import React from 'react';
-import PropTypes from 'prop-types';
+### 🏗️ TypeScript Best Practices
+```typescript
+// ✅ Good - Interface cho props
+interface ButtonProps {
+  children: React.ReactNode;
+  variant?: 'primary' | 'secondary' | 'danger';
+  onClick?: () => void;
+  disabled?: boolean;
+}
+
+// ✅ Good - Generic types
+interface ApiResponse<T> {
+  data: T;
+  message: string;
+  success: boolean;
+}
+
+// ✅ Good - Union types
+type Status = 'idle' | 'loading' | 'success' | 'error';
+
+// ✅ Good - Utility types
+type CreateUserRequest = Omit<User, 'id' | 'createdAt' | 'updatedAt'>;
+type UpdateUserRequest = Partial<Pick<User, 'firstName' | 'lastName' | 'email'>>;
+
+// ❌ Bad - Using any
+const handleData = (data: any) => {
+  // Logic here
+};
+
+// ✅ Good - Proper typing
+const handleData = <T>(data: T): T => {
+  // Logic here
+  return data;
+};
+```
+
+### 🧹 Component Best Practices
+```tsx
+// ✅ Good - Proper component structure
+import React, { useState, useCallback, useMemo } from 'react';
+import { ButtonProps } from './Button.types';
 import styles from './Button.module.css';
 
-const Button = ({ children, variant, onClick, disabled }) => {
+const Button: React.FC<ButtonProps> = ({ 
+  children, 
+  variant = 'primary', 
+  onClick, 
+  disabled = false,
+  loading = false,
+  ...rest 
+}) => {
+  const [isPressed, setIsPressed] = useState<boolean>(false);
+
+  const handleClick = useCallback(() => {
+    if (!disabled && !loading && onClick) {
+      onClick();
+    }
+  }, [disabled, loading, onClick]);
+
+  const buttonClasses = useMemo(() => [
+    styles.button,
+    styles[variant],
+    loading && styles.loading,
+    disabled && styles.disabled
+  ].filter(Boolean).join(' '), [variant, loading, disabled]);
+
   return (
     <button 
-      className={`${styles.button} ${styles[variant]}`}
-      onClick={onClick}
-      disabled={disabled}
+      className={buttonClasses}
+      onClick={handleClick}
+      disabled={disabled || loading}
+      type="button"
+      {...rest}
     >
-      {children}
+      {loading ? 'Loading...' : children}
     </button>
   );
-};
-
-Button.propTypes = {
-  children: PropTypes.node.isRequired,
-  variant: PropTypes.oneOf(['primary', 'secondary', 'danger']),
-  onClick: PropTypes.func,
-  disabled: PropTypes.bool
-};
-
-Button.defaultProps = {
-  variant: 'primary',
-  disabled: false
 };
 
 export default Button;
@@ -625,9 +1293,10 @@ export default Button;
 ```bash
 # Tạo folder và files
 mkdir src/components/NewComponent
-touch src/components/NewComponent/NewComponent.jsx
+touch src/components/NewComponent/NewComponent.tsx
+touch src/components/NewComponent/NewComponent.types.ts
 touch src/components/NewComponent/NewComponent.module.css
-touch src/components/NewComponent/index.js
+touch src/components/NewComponent/index.ts
 ```
 
 ### 2. Tạo feature mới
@@ -637,14 +1306,103 @@ mkdir src/features/newFeature
 mkdir src/features/newFeature/components
 mkdir src/features/newFeature/hooks
 mkdir src/features/newFeature/services
-touch src/features/newFeature/index.js
+mkdir src/features/newFeature/types
+touch src/features/newFeature/index.ts
 ```
 
 ### 3. Thêm page mới
 ```bash
 # Tạo page component
-touch src/pages/NewPage.jsx
-# Thêm route trong App.js
+touch src/pages/NewPage.tsx
+# Thêm route trong App.tsx
+```
+
+### 4. Thêm types mới
+```bash
+# Tạo type definition
+touch src/types/newFeature.types.ts
+# Update src/types/index.ts để export
+```
+
+---
+
+## 📋 TypeScript Configuration
+
+### tsconfig.json
+```json
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "es6"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": "src",
+    "paths": {
+      "components/*": ["components/*"],
+      "pages/*": ["pages/*"],
+      "utils/*": ["utils/*"],
+      "hooks/*": ["hooks/*"],
+      "services/*": ["services/*"],
+      "types/*": ["types/*"],
+      "contexts/*": ["contexts/*"],
+      "features/*": ["features/*"],
+      "layouts/*": ["layouts/*"],
+      "assets/*": ["assets/*"]
+    }
+  },
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
+```
+
+---
+
+## 🔧 Development Tools
+
+### ESLint + Prettier Configuration
+```json
+// .eslintrc.json
+{
+  "extends": [
+    "react-app",
+    "react-app/jest",
+    "@typescript-eslint/recommended"
+  ],
+  "rules": {
+    "@typescript-eslint/no-unused-vars": "error",
+    "@typescript-eslint/explicit-function-return-type": "warn",
+    "@typescript-eslint/no-explicit-any": "error",
+    "react-hooks/exhaustive-deps": "warn"
+  }
+}
+
+// .prettierrc
+{
+  "semi": true,
+  "trailingComma": "es5",
+  "singleQuote": true,
+  "printWidth": 80,
+  "tabWidth": 2
+}
 ```
 
 ---
@@ -660,10 +1418,10 @@ Nếu bạn có câu hỏi về cấu trúc dự án hoặc muốn đề xuất 
 
 ## 📚 Tài liệu tham khảo
 
+- [React TypeScript Cheatsheet](https://react-typescript-cheatsheet.netlify.app/)
+- [TypeScript Official Documentation](https://www.typescriptlang.org/docs/)
 - [React Best Practices](https://react.dev/learn)
-- [React Router Documentation](https://reactrouter.com/)
-- [CSS Modules Guide](https://github.com/css-modules/css-modules)
-- [ESLint React Rules](https://github.com/jsx-eslint/eslint-plugin-react)
+- [CSS Modules with TypeScript](https://github.com/css-modules/css-modules)
 
 ---
 
