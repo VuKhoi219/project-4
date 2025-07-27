@@ -5,6 +5,7 @@ import com.example.backend.dto.generated.GeneratedQuestionDTO;
 import com.example.backend.dto.generated.GeneratedQuestionsWrapper;
 import com.example.backend.dto.request.QuizRequest;
 import com.example.backend.dto.response.ChatResponse;
+import com.example.backend.dto.response.ListQuizzesResponse;
 import com.example.backend.dto.response.QuizResponse;
 import com.example.backend.entity.*;
 import com.example.backend.repository.*;
@@ -12,6 +13,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -99,8 +104,6 @@ public class QuizService {
         quiz.setFile(file);
         quiz.setShow_correct_answers(createDTO.isShowCorrectAnswers());
         quiz.setShuffle_answers(createDTO.isShuffleAnswers());
-        quiz.setShareLink(generateUniqueShareLink());
-
         // QUAN TRỌNG: Khởi tạo questions list để tránh NullPointerException
         quiz.setQuestions(new ArrayList<>());
 
@@ -257,17 +260,15 @@ public class QuizService {
         log.info("Đã lưu thành công tất cả {} câu hỏi", generatedQuestions.size());
     }
 
-    public QuizResponse getQuizByShareLink(String shareLink) {
-        Quiz quiz = quizRepository.findByShareLink(shareLink)
-                .orElseThrow(() -> new RuntimeException("Quiz not found with share link: " + shareLink));
-        return QuizResponse.fromEntity(quiz);
+    @Transactional(readOnly = true)
+    public Page<ListQuizzesResponse> getAllQuizzes() {
+        try {
+            Pageable pageable  = PageRequest.of(0, 10);
+            return quizRepository.findQuizzesAll(pageable);
+        } catch (DataAccessException e) {
+            throw new RuntimeException("Error retrieving quizzes", e);
+        }
     }
 
-    private String generateUniqueShareLink() {
-        String shareLink;
-        do {
-            shareLink = UUID.randomUUID().toString().substring(0, 8);
-        } while (quizRepository.existsByShareLink(shareLink));
-        return shareLink;
-    }
+
 }

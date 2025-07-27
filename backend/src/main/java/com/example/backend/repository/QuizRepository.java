@@ -1,8 +1,10 @@
 package com.example.backend.repository;
 
+import com.example.backend.dto.response.ListQuizzesResponse;
 import com.example.backend.entity.Category;
 import com.example.backend.entity.Quiz;
 import com.example.backend.entity.User;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,6 +25,12 @@ QuizRepository extends JpaRepository<Quiz, Integer> {
     Optional<Quiz> findById(long id); // Sửa từ long thành int để khớp với Quiz.id
     @Query("SELECT DISTINCT q FROM Quiz q LEFT JOIN FETCH q.questions WHERE q.id = :quizId")
     Optional<Quiz> findQuizWithQuestions(@Param("quizId") Long quizId);
+
+    @Query(
+            value = "SELECT q.id AS id, q.title AS title, q.description AS description, q.summary AS summary FROM Quiz q",
+            countQuery = "SELECT COUNT(q.id) FROM Quiz q"
+    )
+    Page<ListQuizzesResponse> findQuizzesAll(Pageable pageable);
 //    // Tìm quiz theo creator
 //    @Query("SELECT q FROM Quiz q WHERE q.creator = :creator")
 //    Page<Quiz> findByCreator(@Param("creator") User creator, Pageable pageable);
