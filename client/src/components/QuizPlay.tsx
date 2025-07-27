@@ -2,6 +2,136 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ref, onValue, set, get, update, db } from "../config/firebase";
 import { Question } from "../types";
+import {
+  Box,
+  Typography,
+  Button,
+  Card,
+  CardContent,
+  LinearProgress,
+  Chip,
+  Avatar,
+  Paper,
+  Container,
+  CircularProgress,
+  Alert,
+  Stack,
+  Divider,
+  Badge
+} from '@mui/material';
+import  styled  from '@emotion/styled';
+import { keyframes } from '@emotion/react';
+
+// Animations
+const pulse = keyframes`
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+`;
+
+const bounce = keyframes`
+  0%, 20%, 53%, 80%, 100% { transform: translateY(0); }
+  40%, 43% { transform: translateY(-10px); }
+  70% { transform: translateY(-5px); }
+  90% { transform: translateY(-2px); }
+`;
+
+const scaleIn = keyframes`
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+`;
+
+// Styled Components
+const GradientBox = styled(Box)`
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+`;
+
+const GetReadyBox = styled(Box)`
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  color: white;
+`;
+
+const ShowAnswerBox = styled(Box)`
+  background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  color: white;
+`;
+
+const LeaderboardBox = styled(Box)`
+  background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  color: white;
+`;
+
+const PlayingBox = styled(Box)`
+  background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+`;
+
+const AnimatedTitle = styled(Typography)`
+  animation: ${pulse} 2s infinite;
+  font-weight: bold;
+`;
+
+const CountdownText = styled(Typography)`
+  animation: ${pulse} 1s infinite;
+  font-weight: bold;
+  font-size: 4rem;
+`;
+
+const BounceIcon = styled(Typography)`
+  animation: ${bounce} 2s infinite;
+  display: inline-block;
+`;
+
+const ScaleCard = styled(Card)`
+  animation: ${scaleIn} 0.3s ease-out;
+  transition: transform 0.2s ease;
+  &:hover {
+    transform: scale(1.02);
+  }
+`;
+
+const GlassCard = styled(Card)`
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+`;
+
+const PlayerCard = styled(Card)<{ isCurrentPlayer?: boolean }>`
+  ${props => props.isCurrentPlayer && `
+    background: rgba(255, 193, 7, 0.3);
+    border: 2px solid #ffc107;
+    transform: scale(1.05);
+  `}
+  transition: all 0.3s ease;
+`;
 
 // Mock API - sẽ thay thế bằng API thật
 const MOCK_QUESTIONS: Question[] = [
@@ -10,35 +140,35 @@ const MOCK_QUESTIONS: Question[] = [
     text: "What is the capital of France?",
     options: ["Paris", "London", "Berlin", "Madrid"],
     correctAnswer: "Paris",
-    timeLimit: 30
+    timeLimit: 10
   },
   {
     id: 2,
     text: "Which planet is known as the Red Planet?",
     options: ["Mars", "Jupiter", "Venus", "Mercury"],
     correctAnswer: "Mars",
-    timeLimit: 30
+    timeLimit: 10
   },
   {
     id: 3,
     text: "What is 2 + 2?",
     options: ["3", "4", "5", "6"],
     correctAnswer: "4",
-    timeLimit: 30
+    timeLimit: 15
   },
   {
     id: 4,
     text: "Who painted the Mona Lisa?",
     options: ["Leonardo da Vinci", "Pablo Picasso", "Vincent van Gogh", "Michelangelo"],
     correctAnswer: "Leonardo da Vinci",
-    timeLimit: 30
+    timeLimit: 11
   },
   {
     id: 5,
     text: "What is the largest ocean on Earth?",
     options: ["Atlantic Ocean", "Indian Ocean", "Arctic Ocean", "Pacific Ocean"],
     correctAnswer: "Pacific Ocean",
-    timeLimit: 30
+    timeLimit: 5
   }
 ];
 
@@ -55,7 +185,7 @@ const calculateScore = (timeLeft: number, maxTime: number, maxPoints: number = 1
 const QuizPlay: React.FC = () => {
   const [questions, setQuestions] = useState<Question[]>(MOCK_QUESTIONS);
   const [currentQuestion, setCurrentQuestion] = useState<number>(0);
-  const [timeLeft, setTimeLeft] = useState<number>(30);
+  const [timeLeft, setTimeLeft] = useState<number>(10);
   const [totalScore, setTotalScore] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedAnswer, setSelectedAnswer] = useState<string>("");
@@ -129,7 +259,7 @@ const QuizPlay: React.FC = () => {
   useEffect(() => {
     if (gameState === 'playing' && !hasAnswered) {
       const currentQ = questions[currentQuestion];
-      setTimeLeft(currentQ?.timeLimit || 30);
+      setTimeLeft(currentQ?.timeLimit || 10);
     }
   }, [gameState, currentQuestion, hasAnswered, questions]);
 
@@ -442,36 +572,61 @@ const QuizPlay: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-lg">Đang tải quiz...</p>
-        </div>
-      </div>
+      <GradientBox>
+        <Box textAlign="center">
+          <CircularProgress size={60} sx={{ color: 'white', mb: 2 }} />
+          <Typography variant="h5" color="white">
+            Đang tải quiz...
+          </Typography>
+        </Box>
+      </GradientBox>
     );
   }
   
   // Get Ready Screen
   if (gameState === 'get-ready') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen text-white bg-gradient-to-br from-indigo-600 to-purple-700 p-4">
-        <div className="text-center">
-          <h1 className="text-5xl md:text-7xl font-bold animate-pulse mb-4">Sẵn sàng!</h1>
-          <p className="text-xl md:text-2xl mb-8">Quiz sắp bắt đầu...</p>
-          
-          <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-6 max-w-md">
-            <p className="text-lg mb-2">Câu hỏi đầu tiên:</p>
-            <p className="text-sm bg-indigo-700 bg-opacity-50 p-3 rounded">
-              {questions[0]?.text}
-            </p>
-          </div>
-          
-          <div className="mt-8 text-sm opacity-75">
-            <p>💡 Trả lời nhanh để được điểm cao!</p>
-            <p>🏆 Điểm số sẽ giảm dần theo thời gian</p>
-          </div>
-        </div>
-      </div>
+      <GetReadyBox>
+        <Container maxWidth="md">
+          <Box textAlign="center">
+            <AnimatedTitle variant="h1" sx={{ fontSize: { xs: '3rem', md: '5rem' }, mb: 2 }}>
+              Sẵn sàng!
+            </AnimatedTitle>
+            <Typography variant="h4" sx={{ mb: 4 }}>
+              Quiz sắp bắt đầu...
+            </Typography>
+            
+            <GlassCard sx={{ maxWidth: 500, mx: 'auto', mb: 4 }}>
+              <CardContent>
+                <Typography variant="h6" sx={{ mb: 2, color: 'white' }}>
+                  Câu hỏi đầu tiên:
+                </Typography>
+                <Box
+                  sx={{
+                    bgcolor: 'rgba(79, 70, 229, 0.5)',
+                    p: 2,
+                    borderRadius: 1,
+                    color: 'white'
+                  }}
+                >
+                  <Typography variant="body1">
+                    {questions[0]?.text}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </GlassCard>
+            
+            <Box sx={{ opacity: 0.75 }}>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                💡 Trả lời nhanh để được điểm cao!
+              </Typography>
+              <Typography variant="body1">
+                🏆 Điểm số sẽ giảm dần theo thời gian
+              </Typography>
+            </Box>
+          </Box>
+        </Container>
+      </GetReadyBox>
     );
   }
 
@@ -480,125 +635,190 @@ const QuizPlay: React.FC = () => {
     const currentQ = questions[currentQuestion];
     
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-br from-orange-500 to-red-600 text-white">
-        <div className="w-full max-w-2xl mx-auto text-center">
-          <h1 className="text-4xl font-bold mb-4">📝 Đáp án đúng</h1>
-          
-          <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-6 mb-6">
-            <p className="text-xl mb-4">{currentQ.text}</p>
-            <div className="text-3xl font-bold bg-green-500 bg-opacity-80 p-4 rounded-lg">
-              ✅ {currentQ.correctAnswer}
-            </div>
-          </div>
+      <ShowAnswerBox>
+        <Container maxWidth="md">
+          <Box textAlign="center">
+            <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 4 }}>
+              📝 Đáp án đúng
+            </Typography>
+            
+            <GlassCard sx={{ mb: 4 }}>
+              <CardContent>
+                <Typography variant="h5" sx={{ mb: 4, color: 'white' }}>
+                  {currentQ.text}
+                </Typography>
+                <Box
+                  sx={{
+                    bgcolor: 'rgba(34, 197, 94, 0.8)',
+                    p: 3,
+                    borderRadius: 2,
+                    color: 'white'
+                  }}
+                >
+                  <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                    ✅ {currentQ.correctAnswer}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </GlassCard>
 
-          {/* Personal Result */}
-          {showResult && (
-            <div className={`mb-6 p-4 rounded-lg ${
-              isCorrect 
-                ? 'bg-green-500 bg-opacity-80' 
-                : 'bg-red-500 bg-opacity-80'
-            }`}>
-              <p className="text-2xl font-bold mb-2">
-                {isCorrect ? '🎉 Chính xác!' : '❌ Sai rồi!'}
-              </p>
-              <p className="text-lg">
-                Bạn được: <span className="font-bold">{earnedPoints} điểm</span>
-              </p>
-              <p className="text-sm opacity-90">
-                Tổng điểm: {totalScore}
-              </p>
-            </div>
-          )}
+            {/* Personal Result */}
+            {showResult && (
+              <Alert
+                severity={isCorrect ? 'success' : 'error'}
+                sx={{
+                  mb: 4,
+                  bgcolor: isCorrect ? 'rgba(34, 197, 94, 0.8)' : 'rgba(239, 68, 68, 0.8)',
+                  color: 'white',
+                  '& .MuiAlert-icon': { color: 'white' }
+                }}
+              >
+                <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 1 }}>
+                  {isCorrect ? '🎉 Chính xác!' : '❌ Sai rồi!'}
+                </Typography>
+                <Typography variant="h6">
+                  Bạn được: <strong>{earnedPoints} điểm</strong>
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  Tổng điểm: {totalScore}
+                </Typography>
+              </Alert>
+            )}
 
-          <div className="text-center">
-            <p className="text-lg mb-2">Hiển thị bảng xếp hạng sau:</p>
-            <div className="text-4xl font-bold animate-pulse">{showAnswerCountdown}</div>
-          </div>
-        </div>
-      </div>
+            <Box>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Hiển thị bảng xếp hạng sau:
+              </Typography>
+              <CountdownText>
+                {showAnswerCountdown}
+              </CountdownText>
+            </Box>
+          </Box>
+        </Container>
+      </ShowAnswerBox>
     );
   }
 
   // Leaderboard Screen
   if (gameState === 'leaderboard') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-br from-purple-600 to-blue-600 text-white">
-        <div className="w-full max-w-3xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-2">🏆 Bảng Xếp Hạng</h1>
-          <p className="text-xl mb-2">Sau câu hỏi {currentQuestion + 1}/{questions.length}</p>
-          
-          {/* Countdown */}
-          <div className="mb-8">
-            <p className="text-lg mb-2">
-              {currentQuestion + 1 < questions.length ? 'Câu tiếp theo sau:' : 'Kết thúc sau:'}
-            </p>
-            <div className="text-6xl font-bold animate-pulse">{leaderboardCountdown}</div>
-          </div>
+      <LeaderboardBox>
+        <Container maxWidth="lg">
+          <Box textAlign="center">
+            <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
+              🏆 Bảng Xếp Hạng
+            </Typography>
+            <Typography variant="h5" sx={{ mb: 2 }}>
+              Sau câu hỏi {currentQuestion + 1}/{questions.length}
+            </Typography>
+            
+            {/* Countdown */}
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                {currentQuestion + 1 < questions.length ? 'Câu tiếp theo sau:' : 'Kết thúc sau:'}
+              </Typography>
+              <CountdownText sx={{ fontSize: '4rem' }}>
+                {leaderboardCountdown}
+              </CountdownText>
+            </Box>
 
-          {/* Leaderboard */}
-          <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-6">
-            <div className="space-y-3">
-              {topLeaderboard.map((player, index) => (
-                <div
-                  key={player.name}
-                  className={`flex items-center justify-between p-4 rounded-lg transition-all ${
-                    player.isCurrentPlayer
-                      ? 'bg-yellow-400 bg-opacity-30 ring-2 ring-yellow-300 scale-105 transform'
-                      : 'bg-white bg-opacity-10'
-                  }`}
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${
-                      index === 0 ? 'bg-yellow-400 text-yellow-900' :
-                      index === 1 ? 'bg-gray-300 text-gray-700' :
-                      index === 2 ? 'bg-orange-400 text-orange-900' :
-                      'bg-blue-400 text-blue-900'
-                    }`}>
-                      {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1)}
-                    </div>
-                    <div className="text-left">
-                      <p className="font-bold text-lg">
-                        {player.name}
-                        {player.isCurrentPlayer && ' (Bạn)'}
-                      </p>
-                      <p className="text-sm opacity-90">
-                        Rank #{index + 1}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold">
-                      {player.score}
-                    </div>
-                    <div className="text-sm opacity-90">
-                      điểm
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+            {/* Leaderboard */}
+            <GlassCard>
+              <CardContent>
+                <Stack spacing={2}>
+                  {topLeaderboard.map((player, index) => {
+                    const getRankIcon = (rank: number) => {
+                      switch (rank) {
+                        case 0: return '🥇';
+                        case 1: return '🥈';
+                        case 2: return '🥉';
+                        default: return rank + 1;
+                      }
+                    };
 
-          {/* Progress Bar */}
-          <div className="mt-6">
-            <div className="w-full bg-white bg-opacity-20 rounded-full h-2">
-              <div
-                className="bg-white h-2 rounded-full transition-all duration-1000"
-                style={{ width: `${((5 - leaderboardCountdown) / 5) * 100}%` }}
-              ></div>
-            </div>
-          </div>
-        </div>
-      </div>
+                    const getRankColor = (rank: number) => {
+                      switch (rank) {
+                        case 0: return '#ffd700';
+                        case 1: return '#c0c0c0';
+                        case 2: return '#cd7f32';
+                        default: return '#42a5f5';
+                      }
+                    };
+
+                    return (
+                      <PlayerCard
+                        key={player.name}
+                        isCurrentPlayer={player.isCurrentPlayer}
+                        sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)' }}
+                      >
+                        <CardContent sx={{ py: 2 }}>
+                          <Box display="flex" alignItems="center" justifyContent="space-between">
+                            <Box display="flex" alignItems="center" gap={2}>
+                              <Avatar
+                                sx={{
+                                  bgcolor: getRankColor(index),
+                                  color: index <= 2 ? '#000' : '#fff',
+                                  fontWeight: 'bold'
+                                }}
+                              >
+                                {getRankIcon(index)}
+                              </Avatar>
+                              <Box textAlign="left">
+                                <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'white' }}>
+                                  {player.name}
+                                  {player.isCurrentPlayer && ' (Bạn)'}
+                                </Typography>
+                                <Typography variant="body2" sx={{ opacity: 0.9, color: 'white' }}>
+                                  Rank #{index + 1}
+                                </Typography>
+                              </Box>
+                            </Box>
+                            <Box textAlign="right">
+                              <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'white' }}>
+                                {player.score}
+                              </Typography>
+                              <Typography variant="body2" sx={{ opacity: 0.9, color: 'white' }}>
+                                điểm
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </CardContent>
+                      </PlayerCard>
+                    );
+                  })}
+                </Stack>
+              </CardContent>
+            </GlassCard>
+
+            {/* Progress Bar */}
+            <Box sx={{ mt: 4 }}>
+              <LinearProgress
+                variant="determinate"
+                value={((5 - leaderboardCountdown) / 5) * 100}
+                sx={{
+                  height: 8,
+                  borderRadius: 4,
+                  bgcolor: 'rgba(255, 255, 255, 0.2)',
+                  '& .MuiLinearProgress-bar': {
+                    bgcolor: 'white'
+                  }
+                }}
+              />
+            </Box>
+          </Box>
+        </Container>
+      </LeaderboardBox>
     );
   }
 
   // Main Playing Screen
   if (!questions || !questions[currentQuestion]) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>Lỗi tải câu hỏi.</p>
-      </div>
+      <GradientBox>
+        <Typography variant="h5" color="white">
+          Lỗi tải câu hỏi.
+        </Typography>
+      </GradientBox>
     );
   }
 
@@ -615,121 +835,201 @@ const QuizPlay: React.FC = () => {
   });
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="w-full max-w-3xl mx-auto">
+    <PlayingBox>
+      <Container maxWidth="lg">
         {/* Header */}
-        <div className="text-center mb-6">
-          <div className="bg-white p-4 rounded-lg shadow-lg mb-4">
-            <p className="text-sm text-blue-600 font-semibold mb-1">
-              🎮 MULTIPLAYER QUIZ - {participantCount} người chơi
-            </p>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-              Câu hỏi {currentQuestion + 1}/{questions.length}
-            </h1>
-            <div className="flex justify-center items-center space-x-6 mt-2">
-              <p className="text-lg font-semibold text-green-600">
-                💰 Tổng điểm: {totalScore}
-              </p>
-              <p className="text-sm text-gray-600">
-                🏅 Rank: #{leaderboard.findIndex(p => p.name === userName) + 1}
-              </p>
-            </div>
-          </div>
-        </div>
+        <Box textAlign="center" sx={{ mb: 4 }}>
+          <ScaleCard sx={{ mb: 2 }}>
+            <CardContent>
+              <Chip
+                label={`🎮 MULTIPLAYER QUIZ - ${participantCount} người chơi`}
+                color="primary"
+                sx={{ mb: 2, fontWeight: 'bold' }}
+              />
+              <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'grey.800', mb: 2 }}>
+                Câu hỏi {currentQuestion + 1}/{questions.length}
+              </Typography>
+              <Box display="flex" justifyContent="center" alignItems="center" gap={4}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'success.main' }}>
+                  💰 Tổng điểm: {totalScore}
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'grey.600' }}>
+                  🏅 Rank: #{leaderboard.findIndex(p => p.name === userName) + 1}
+                </Typography>
+              </Box>
+            </CardContent>
+          </ScaleCard>
+        </Box>
 
         {/* Question */}
-        <div className="bg-white p-6 rounded-lg shadow-lg mb-6 text-center">
-          <p className="text-xl md:text-2xl font-medium text-gray-800">
-            {currentQ.text}
-          </p>
-        </div>
+        <ScaleCard sx={{ mb: 4 }}>
+          <CardContent>
+            <Typography variant="h5" sx={{ fontWeight: 'medium', textAlign: 'center' }}>
+              {currentQ.text}
+            </Typography>
+          </CardContent>
+        </ScaleCard>
 
         {/* Timer */}
         {gameState === 'playing' && !hasAnswered && (
-          <div className="mb-6 text-center">
-            <p className={`text-lg font-bold mb-2 ${
-              timeLeft <= 10 ? 'text-red-500' : 'text-blue-600'
-            }`}>
+          <Box sx={{ mb: 4, textAlign: 'center' }}>
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                fontWeight: 'bold', 
+                mb: 2,
+                color: timeLeft <= 10 ? 'error.main' : 'primary.main'
+              }}
+            >
               ⏱️ {timeLeft}s
-            </p>
-            <div className="w-full bg-gray-200 rounded-full h-4 shadow-inner">
-              <div
-                className={`h-4 rounded-full transition-all duration-1000 ease-linear ${
-                  timeLeft <= 10 ? 'bg-red-500' : 'bg-blue-500'
-                }`}
-                style={{ width: `${(timeLeft / (currentQ.timeLimit || 30)) * 100}%` }}
-              ></div>
-            </div>
-            <p className="text-sm text-gray-600 mt-2">
+            </Typography>
+            <LinearProgress
+              variant="determinate"
+              value={(timeLeft / (currentQ.timeLimit || 30)) * 100}
+              sx={{
+                height: 16,
+                borderRadius: 8,
+                mb: 2,
+                '& .MuiLinearProgress-bar': {
+                  bgcolor: timeLeft <= 10 ? 'error.main' : 'primary.main',
+                  transition: 'all 1s linear'
+                }
+              }}
+            />
+            <Typography variant="body2" sx={{ color: 'grey.600' }}>
               💡 Điểm hiện tại nếu trả lời đúng: {calculateScore(timeLeft, currentQ.timeLimit || 30)} điểm
-            </p>
-          </div>
+            </Typography>
+          </Box>
         )}
 
         {/* Personal Result */}
         {showResult && (
-          <div className={`mb-6 p-4 rounded-lg text-center ${
-            isCorrect 
-              ? 'bg-green-100 border-2 border-green-400' 
-              : 'bg-red-100 border-2 border-red-400'
-          }`}>
-            <p className={`text-xl font-bold mb-2 ${
-              isCorrect ? 'text-green-700' : 'text-red-700'
-            }`}>
+          <Alert
+            severity={isCorrect ? 'success' : 'error'}
+            sx={{ mb: 4, textAlign: 'center' }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
               {isCorrect ? '🎉 Chính xác!' : '❌ Sai rồi!'}
-            </p>
-            <p className="text-lg font-semibold">
-              Bạn được: <span className="text-blue-600">+{earnedPoints} điểm</span>
-            </p>
-          </div>
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+              Bạn được: <span style={{ color: '#1976d2' }}>+{earnedPoints} điểm</span>
+            </Typography>
+          </Alert>
         )}
 
         {/* Answer Options */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 4 }}>
           {currentQ.options.map((option, index) => {
             const isDisabled = hasAnswered || gameState !== 'playing' || timeLeft <= 0;
             const isCorrectAnswer = option === currentQ.correctAnswer;
             const isSelectedAnswer = option === selectedAnswer;
             
+            let buttonProps: any = {
+              fullWidth: true,
+              size: 'large',
+              onClick: () => handleAnswer(option),
+              disabled: isDisabled,
+              sx: {
+                p: 2,
+                textAlign: 'left',
+                justifyContent: 'flex-start',
+                fontWeight: 'medium',
+                transition: 'all 0.2s ease',
+                minHeight: 60
+              }
+            };
+
+            if (isDisabled) {
+              if (isCorrectAnswer) {
+                buttonProps.variant = 'contained';
+                buttonProps.color = 'success';
+                buttonProps.sx = {
+                  ...buttonProps.sx,
+                  transform: 'scale(1.05)',
+                  boxShadow: '0 0 20px rgba(76, 175, 80, 0.5)'
+                };
+              } else if (isSelectedAnswer) {
+                buttonProps.variant = 'contained';
+                buttonProps.color = 'error';
+              } else {
+                buttonProps.variant = 'outlined';
+                buttonProps.sx = {
+                  ...buttonProps.sx,
+                  bgcolor: 'grey.300',
+                  color: 'grey.500',
+                  borderColor: 'grey.400'
+                };
+              }
+            } else {
+              buttonProps.variant = 'outlined';
+              buttonProps.sx = {
+                ...buttonProps.sx,
+                bgcolor: 'white',
+                borderColor: 'grey.300',
+                '&:hover': {
+                  bgcolor: 'primary.50',
+                  borderColor: 'primary.main',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                },
+                '&:active': {
+                  transform: 'scale(0.98)'
+                }
+              };
+            }
+
             return (
-              <button
-                key={index}
-                onClick={() => handleAnswer(option)}
-                disabled={isDisabled}
-                className={`p-4 rounded-lg font-medium transition-all text-left border-2 ${
-                  isDisabled
-                    ? isCorrectAnswer
-                      ? 'bg-green-500 text-white border-green-600 ring-4 ring-green-300 transform scale-105'
-                      : isSelectedAnswer
-                      ? 'bg-red-500 text-white border-red-600'
-                      : 'bg-gray-300 text-gray-500 border-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-800 border-gray-300 hover:bg-blue-50 hover:border-blue-400 active:scale-95 shadow-lg hover:shadow-xl cursor-pointer'
-                }`}
+              <Box 
+                key={index} 
+                sx={{ 
+                  flex: { xs: '1 1 100%', md: '1 1 calc(50% - 8px)' }
+                }}
               >
-                <span className="text-sm font-bold mr-3 px-2 py-1 bg-gray-200 rounded text-gray-700">
-                  {String.fromCharCode(65 + index)}
-                </span>
-                {option}
-              </button>
+                <Button {...buttonProps}>
+                  <Chip
+                    label={String.fromCharCode(65 + index)}
+                    size="small"
+                    sx={{
+                      mr: 2,
+                      bgcolor: 'grey.200',
+                      color: 'grey.700',
+                      fontWeight: 'bold'
+                    }}
+                  />
+                  {option}
+                </Button>
+              </Box>
             );
           })}
-        </div>
+        </Box>
 
         {/* Status Messages */}
         {hasAnswered && gameState === 'playing' && (
-          <div className="text-center text-gray-600 bg-white p-4 rounded-lg shadow">
-            <p className="font-semibold">✅ Đã trả lời!</p>
-            <p className="text-sm">Đang chờ hết thời gian... ({timeLeft}s)</p>
-          </div>
+          <Card sx={{ textAlign: 'center', bgcolor: 'background.paper' }}>
+            <CardContent>
+              <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
+                ✅ Đã trả lời!
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'grey.600' }}>
+                Đang chờ hết thời gian... ({timeLeft}s)
+              </Typography>
+            </CardContent>
+          </Card>
         )}
-      </div>
 
-      {/* Footer Info */}
-      <div className="mt-8 text-xs text-gray-500 text-center space-y-1">
-        <p>Room: {quizId} | Player: {userName} {isHost && '(Host)'}</p>
-        <p>State: {gameState} | hasAnswered: {hasAnswered.toString()}</p>
-      </div>
-    </div>
+        {/* Footer Info */}
+        <Box sx={{ mt: 6, textAlign: 'center' }}>
+          <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
+            <Typography variant="caption" sx={{ color: 'grey.500', display: 'block', mb: 1 }}>
+              Room: {quizId} | Player: {userName} {isHost && '(Host)'}
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'grey.500' }}>
+              State: {gameState} | hasAnswered: {hasAnswered.toString()}
+            </Typography>
+          </Paper>
+        </Box>
+      </Container>
+    </PlayingBox>
   );
 };
 

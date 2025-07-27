@@ -1,571 +1,242 @@
-// import { useEffect, useState } from "react";
-// import { useParams, useNavigate } from "react-router-dom";
-// import { ref, onValue, update, get, DatabaseReference, db } from "../config/firebase";
-// import { LeaderboardEntry } from "../types";
-
-// const FinalResults: React.FC = () => {
-//   const [finalLeaderboard, setFinalLeaderboard] = useState<Array<{name: string, score: number, rank: number}>>([]);
-//   const [participants, setParticipants] = useState<Record<string, any>>({});
-//   const [quizInfo, setQuizInfo] = useState<any>(null);
-//   const [showCelebration, setShowCelebration] = useState(true);
-//   const [loading, setLoading] = useState(true);
-//   const [playHistory, setPlayHistory] = useState<Record<string, any>>({});
-//   const [selectedPlayer, setSelectedPlayer] = useState<string>("");
-//   const [showConfetti, setShowConfetti] = useState(true);
-  
-//   const { quizId } = useParams<{ quizId: string }>();
-//   const navigate = useNavigate();
-//   const userName = localStorage.getItem("userName");
-
-//   useEffect(() => {
-//     if (!quizId) {
-//       navigate('/');
-//       return;
-//     }
-
-//     loadFinalResults();
-//   }, [quizId]);
-
-//   const loadFinalResults = async () => {
-//     try {
-//       // Load quiz info
-//       const infoRef = ref(db, `quizzes/${quizId}/info`);
-//       const infoSnapshot = await get(infoRef);
-//       setQuizInfo(infoSnapshot.val());
-
-//       // Load participants to calculate final leaderboard
-//       const participantsRef = ref(db, `quizzes/${quizId}/participants`);
-//       const participantsSnapshot = await get(participantsRef);
-//       const participantsData = participantsSnapshot.val() || {};
-//       setParticipants(participantsData);
-
-//       // Load play history
-//       const historyRef = ref(db, `quizzes/${quizId}/playHistory`);
-//       const historySnapshot = await get(historyRef);
-//       setPlayHistory(historySnapshot.val() || {});
-
-//       // Calculate and set final leaderboard
-//       const leaderboardArray = Object.entries(participantsData)
-//         .map(([name, data]: [string, any]) => ({
-//           name,
-//           score: data.score || 0,
-//           rank: 0
-//         }))
-//         .sort((a, b) => b.score - a.score)
-//         .map((player, index) => ({
-//           ...player,
-//           rank: index + 1
-//         }));
-
-//       setFinalLeaderboard(leaderboardArray);
-
-//       // Update Firebase leaderboard
-//       await updateFinalLeaderboard(leaderboardArray);
-
-//       setLoading(false);
-
-//       // Hide celebration animation after 5 seconds
-//       setTimeout(() => {
-//         setShowCelebration(false);
-//       }, 5000);
-
-//       // Hide confetti after 8 seconds
-//       setTimeout(() => {
-//         setShowConfetti(false);
-//       }, 8000);
-
-//     } catch (error) {
-//       console.error("Error loading final results:", error);
-//       setLoading(false);
-//     }
-//   };
-
-//   const updateFinalLeaderboard = async (leaderboardArray: Array<{name: string, score: number, rank: number}>) => {
-//     try {
-//       const updates: Record<string, any> = {};
-      
-//       leaderboardArray.forEach((player) => {
-//         updates[`leaderboard/${player.name}`] = {
-//           rank: player.rank,
-//           bestScore: player.score,
-//           averageScore: Math.round(player.score / (quizInfo?.totalQuestions || 5)),
-//           lastPlayed: Date.now()
-//         };
-//       });
-      
-//       await update(ref(db, `quizzes/${quizId}`), updates);
-//       console.log("Final leaderboard updated successfully");
-//     } catch (error) {
-//       console.error("Error updating final leaderboard:", error);
-//     }
-//   };
-
-//   const getPlayerStats = (playerName: string) => {
-//     const history = playHistory[playerName]?.attempts || {};
-//     const attempts = Object.values(history) as any[];
-    
-//     if (attempts.length === 0) return null;
-
-//     const correctAnswers = attempts.filter(a => a.isCorrect).length;
-//     const totalQuestions = attempts.length;
-//     const accuracy = Math.round((correctAnswers / totalQuestions) * 100);
-//     const averageTimeLeft = Math.round(
-//       attempts.reduce((sum: number, a: any) => sum + (a.timeLeft || 0), 0) / attempts.length
-//     );
-
-//     return {
-//       accuracy,
-//       correctAnswers,
-//       totalQuestions,
-//       averageTimeLeft,
-//       bestAnswer: attempts.reduce((best, current) =>
-//         (current.score || 0) > (best.score || 0) ? current : best, attempts[0])
-//     };
-//   };
-
-//   const shareResults = () => {
-//     const userRank = finalLeaderboard.findIndex(p => p.name === userName) + 1;
-//     const userScore = finalLeaderboard.find(p => p.name === userName)?.score || 0;
-    
-//     const shareText = `🎉 Tôi vừa hoàn thành Quiz Multiplayer!
-    
-// 📊 Kết quả của tôi:
-// 🏆 Xếp hạng: #${userRank}/${finalLeaderboard.length}
-// ⭐ Điểm số: ${userScore}
-// 🎮 Quiz: ${quizInfo?.title || 'Multiplayer Quiz'}
-
-// Thử thách bản thân tại: ${window.location.origin}/quiz/${quizId}`;
-
-//     if (navigator.share) {
-//       navigator.share({
-//         title: 'Quiz Multiplayer Results',
-//         text: shareText,
-//       });
-//     } else {
-//       navigator.clipboard.writeText(shareText).then(() => {
-//         alert('✅ Đã copy kết quả để chia sẻ!');
-//       });
-//     }
-//   };
-
-//   const createNewRoom = () => {
-//     const newRoomId = `room_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-//     localStorage.setItem("quizId", newRoomId);
-//     navigate(`/quiz/${newRoomId}/join`);
-//   };
-
-//   if (loading) {
-//     return (
-//       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-100 to-blue-100">
-//         <div className="text-center">
-//           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-500 mx-auto mb-6"></div>
-//           <p className="text-xl text-gray-700">Đang tính toán kết quả cuối cùng...</p>
-//           <p className="text-sm text-gray-500 mt-2">Vui lòng đợi một chút</p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-screen bg-gradient-to-br from-purple-100 via-blue-100 to-indigo-200 relative overflow-hidden">
-      
-//       {/* Confetti Animation */}
-//       {showConfetti && (
-//         <div className="fixed inset-0 pointer-events-none z-50">
-//           {[...Array(50)].map((_, i) => (
-//             <div
-//               key={i}
-//               className="absolute animate-bounce"
-//               style={{
-//                 left: `${Math.random() * 100}%`,
-//                 top: `${Math.random() * 100}%`,
-//                 animationDelay: `${Math.random() * 3}s`,
-//                 animationDuration: `${2 + Math.random() * 2}s`
-//               }}
-//             >
-//               {['🎉', '🎊', '✨', '🏆', '🥇', '🌟'][Math.floor(Math.random() * 6)]}
-//             </div>
-//           ))}
-//         </div>
-//       )}
-
-//       <div className="container mx-auto px-4 py-8">
-        
-//         {/* Main Celebration Header */}
-//         {showCelebration && (
-//           <div className="text-center mb-12 animate-bounce">
-//             <div className="text-8xl md:text-9xl mb-4">🏆</div>
-//             <h1 className="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-red-500 to-purple-600 mb-4">
-//               HOÀN THÀNH!
-//             </h1>
-//             <p className="text-2xl md:text-3xl text-gray-700 font-semibold">
-//               Quiz Multiplayer đã kết thúc
-//             </p>
-//           </div>
-//         )}
-
-//         {/* Quiz Info */}
-//         {quizInfo && (
-//           <div className="text-center mb-8">
-//             <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-2xl mx-auto border border-gray-200">
-//               <h2 className="text-3xl font-bold text-gray-800 mb-2">{quizInfo.title}</h2>
-//               <div className="flex flex-wrap justify-center gap-6 text-gray-600">
-//                 <div className="flex items-center space-x-2">
-//                   <span className="text-2xl">👥</span>
-//                   <span className="font-semibold">{finalLeaderboard.length} người chơi</span>
-//                 </div>
-//                 <div className="flex items-center space-x-2">
-//                   <span className="text-2xl">❓</span>
-//                   <span className="font-semibold">{quizInfo.totalQuestions || 5} câu hỏi</span>
-//                 </div>
-//                 <div className="flex items-center space-x-2">
-//                   <span className="text-2xl">⏱️</span>
-//                   <span className="font-semibold">30s/câu</span>
-//                 </div>
-//                 <div className="flex items-center space-x-2">
-//                   <span className="text-2xl">🎯</span>
-//                   <span className="font-semibold">Tối đa {quizInfo.pointsPerQuestion || 100} điểm/câu</span>
-//                 </div>
-//               </div>
-//               <p className="text-sm text-gray-500 mt-4">
-//                 Room ID: <span className="font-mono bg-gray-100 px-2 py-1 rounded">{quizId}</span>
-//               </p>
-//             </div>
-//           </div>
-//         )}
-
-//         {/* Podium for Top 3 */}
-//         {finalLeaderboard.length >= 3 && (
-//           <div className="mb-12">
-//             <h3 className="text-3xl font-bold text-center mb-8 text-gray-800">🏅 PODIUM TOP 3</h3>
-//             <div className="flex justify-center items-end space-x-4 max-w-4xl mx-auto">
-              
-//               {/* 2nd Place */}
-//               <div className="bg-gradient-to-t from-gray-300 to-gray-400 rounded-t-3xl p-6 text-center relative transform hover:scale-105 transition-transform">
-//                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-//                   <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center text-3xl border-4 border-white shadow-lg">
-//                     🥈
-//                   </div>
-//                 </div>
-//                 <div className="mt-8 text-white">
-//                   <p className="text-2xl font-bold mb-2">{finalLeaderboard[1]?.name}</p>
-//                   <p className="text-xl font-semibold">{finalLeaderboard[1]?.score} điểm</p>
-//                 </div>
-//                 <div className="h-24 bg-gray-400 rounded-b-lg mt-4 flex items-center justify-center text-white font-bold">
-//                   #2
-//                 </div>
-//               </div>
-
-//               {/* 1st Place */}
-//               <div className="bg-gradient-to-t from-yellow-400 to-yellow-500 rounded-t-3xl p-8 text-center relative transform hover:scale-105 transition-transform">
-//                 <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
-//                   <div className="w-20 h-20 bg-yellow-400 rounded-full flex items-center justify-center text-4xl border-4 border-white shadow-xl animate-pulse">
-//                     🥇
-//                   </div>
-//                 </div>
-//                 <div className="mt-10 text-white">
-//                   <p className="text-3xl font-bold mb-2">{finalLeaderboard[0]?.name}</p>
-//                   <p className="text-2xl font-semibold">{finalLeaderboard[0]?.score} điểm</p>
-//                   <p className="text-lg">🎉 CHAMPION!</p>
-//                 </div>
-//                 <div className="h-32 bg-yellow-500 rounded-b-lg mt-4 flex items-center justify-center text-white font-bold text-xl">
-//                   #1
-//                 </div>
-//               </div>
-
-//               {/* 3rd Place */}
-//               <div className="bg-gradient-to-t from-orange-400 to-orange-500 rounded-t-3xl p-6 text-center relative transform hover:scale-105 transition-transform">
-//                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-//                   <div className="w-16 h-16 bg-orange-400 rounded-full flex items-center justify-center text-3xl border-4 border-white shadow-lg">
-//                     🥉
-//                   </div>
-//                 </div>
-//                 <div className="mt-8 text-white">
-//                   <p className="text-2xl font-bold mb-2">{finalLeaderboard[2]?.name}</p>
-//                   <p className="text-xl font-semibold">{finalLeaderboard[2]?.score} điểm</p>
-//                 </div>
-//                 <div className="h-24 bg-orange-500 rounded-b-lg mt-4 flex items-center justify-center text-white font-bold">
-//                   #3
-//                 </div>
-//               </div>
-//             </div>
-//           </div>
-//         )}
-
-//         {/* Full Leaderboard */}
-//         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          
-//           {/* Main Results */}
-//           <div className="lg:col-span-2">
-//             <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-//               <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6">
-//                 <h3 className="text-2xl font-bold">📊 Bảng Xếp Hạng Cuối Cùng</h3>
-//                 <p className="text-purple-100 mt-1">Kết quả chính thức của tất cả người chơi</p>
-//               </div>
-              
-//               <div className="p-6">
-//                 {finalLeaderboard.length > 0 ? (
-//                   <div className="space-y-4">
-//                     {finalLeaderboard.map((player, index) => {
-//                       const stats = getPlayerStats(player.name);
-//                       const isCurrentUser = player.name === userName;
-                      
-//                       return (
-//                         <div
-//                           key={player.name}
-//                           className={`p-5 rounded-xl border-2 transition-all cursor-pointer hover:shadow-lg ${
-//                             isCurrentUser
-//                               ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-400 ring-2 ring-yellow-300 scale-105 transform'
-//                               : selectedPlayer === player.name
-//                               ? 'bg-blue-50 border-blue-400'
-//                               : index < 3
-//                               ? 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-300'
-//                               : 'bg-white border-gray-200 hover:border-gray-300'
-//                           }`}
-//                           onClick={() => setSelectedPlayer(selectedPlayer === player.name ? "" : player.name)}
-//                         >
-//                           <div className="flex items-center justify-between">
-//                             <div className="flex items-center space-x-4">
-//                               {/* Rank Badge */}
-//                               <div className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-xl ${
-//                                 index === 0 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white' :
-//                                 index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500 text-white' :
-//                                 index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white' :
-//                                 'bg-gradient-to-br from-blue-400 to-blue-600 text-white'
-//                               }`}>
-//                                 {index === 0 ? '👑' :
-//                                  index === 1 ? '🥈' :
-//                                  index === 2 ? '🥉' :
-//                                  `#${index + 1}`}
-//                               </div>
-                              
-//                               {/* Player Info */}
-//                               <div>
-//                                 <p className="font-bold text-xl text-gray-800">
-//                                   {player.name}
-//                                   {isCurrentUser && ' (Bạn)'}
-//                                 </p>
-//                                 <div className="flex space-x-4 text-sm text-gray-600">
-//                                   <span>🏆 {player.score} điểm</span>
-//                                   {stats && (
-//                                     <>
-//                                       <span>🎯 {stats.accuracy}% đúng</span>
-//                                       <span>⚡ {stats.averageTimeLeft}s TB</span>
-//                                     </>
-//                                   )}
-//                                 </div>
-//                               </div>
-//                             </div>
-                            
-//                             {/* Score Display */}
-//                             <div className="text-right">
-//                               <div className="text-3xl font-bold text-gray-800">
-//                                 {player.score}
-//                               </div>
-//                               <div className="text-sm text-gray-500">
-//                                 điểm
-//                               </div>
-//                             </div>
-//                           </div>
-                          
-//                           {/* Expanded Stats */}
-//                           {selectedPlayer === player.name && stats && (
-//                             <div className="mt-6 pt-4 border-t border-gray-200">
-//                               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-//                                 <div className="bg-green-100 p-4 rounded-lg text-center">
-//                                   <div className="text-2xl font-bold text-green-600">
-//                                     {stats.correctAnswers}/{stats.totalQuestions}
-//                                   </div>
-//                                   <div className="text-sm text-gray-600">Câu đúng</div>
-//                                 </div>
-//                                 <div className="bg-blue-100 p-4 rounded-lg text-center">
-//                                   <div className="text-2xl font-bold text-blue-600">
-//                                     {stats.accuracy}%
-//                                   </div>
-//                                   <div className="text-sm text-gray-600">Độ chính xác</div>
-//                                 </div>
-//                                 <div className="bg-purple-100 p-4 rounded-lg text-center">
-//                                   <div className="text-2xl font-bold text-purple-600">
-//                                     {stats.averageTimeLeft}s
-//                                   </div>
-//                                   <div className="text-sm text-gray-600">TB thời gian</div>
-//                                 </div>
-//                                 <div className="bg-orange-100 p-4 rounded-lg text-center">
-//                                   <div className="text-2xl font-bold text-orange-600">
-//                                     {Math.round(player.score / (quizInfo?.totalQuestions || 5))}
-//                                   </div>
-//                                   <div className="text-sm text-gray-600">Điểm/câu</div>
-//                                 </div>
-//                               </div>
-//                             </div>
-//                           )}
-//                         </div>
-//                       );
-//                     })}
-//                   </div>
-//                 ) : (
-//                   <div className="text-center py-12">
-//                     <div className="text-6xl mb-4">🤔</div>
-//                     <p className="text-2xl text-gray-600">Không có dữ liệu</p>
-//                   </div>
-//                 )}
-//               </div>
-//             </div>
-//           </div>
-
-//           {/* Sidebar */}
-//           <div className="space-y-6">
-            
-//             {/* Personal Achievement */}
-//             {userName && finalLeaderboard.find(p => p.name === userName) && (
-//               <div className="bg-gradient-to-br from-yellow-100 to-orange-100 rounded-2xl shadow-xl p-6 border border-yellow-300">
-//                 <h4 className="text-xl font-bold text-gray-800 mb-4 text-center">🎯 Thành Tích Của Bạn</h4>
-//                 {(() => {
-//                   const userRank = finalLeaderboard.findIndex(p => p.name === userName) + 1;
-//                   const userScore = finalLeaderboard.find(p => p.name === userName)?.score || 0;
-//                   const userStats = getPlayerStats(userName);
-                  
-//                   return (
-//                     <div className="space-y-4">
-//                       <div className="text-center">
-//                         <div className="text-4xl font-bold text-yellow-600 mb-2">#{userRank}</div>
-//                         <p className="text-gray-700">Xếp hạng cuối cùng</p>
-//                       </div>
-                      
-//                       <div className="grid grid-cols-2 gap-3">
-//                         <div className="bg-white bg-opacity-60 p-3 rounded-lg text-center">
-//                           <div className="text-xl font-bold text-green-600">{userScore}</div>
-//                           <div className="text-xs text-gray-600">Tổng điểm</div>
-//                         </div>
-//                         <div className="bg-white bg-opacity-60 p-3 rounded-lg text-center">
-//                           <div className="text-xl font-bold text-blue-600">
-//                             {userStats ? `${userStats.accuracy}%` : '0%'}
-//                           </div>
-//                           <div className="text-xs text-gray-600">Độ chính xác</div>
-//                         </div>
-//                       </div>
-
-//                       {userRank === 1 && (
-//                         <div className="bg-yellow-400 text-yellow-900 p-3 rounded-lg text-center font-bold">
-//                           🏆 CHÚC MỪNG! BẠN LÀ NHẤT!
-//                         </div>
-//                       )}
-//                     </div>
-//                   );
-//                 })()}
-//               </div>
-//             )}
-
-//             {/* Statistics */}
-//             <div className="bg-white rounded-2xl shadow-xl p-6">
-//               <h4 className="text-xl font-bold text-gray-800 mb-4">📈 Thống Kê Game</h4>
-//               <div className="space-y-4">
-//                 <div className="flex justify-between">
-//                   <span className="text-gray-600">Tổng người chơi:</span>
-//                   <span className="font-bold text-blue-600">{finalLeaderboard.length}</span>
-//                 </div>
-//                 <div className="flex justify-between">
-//                   <span className="text-gray-600">Điểm cao nhất:</span>
-//                   <span className="font-bold text-green-600">
-//                     {finalLeaderboard.length > 0 ? finalLeaderboard[0].score : 0}
-//                   </span>
-//                 </div>
-//                 <div className="flex justify-between">
-//                   <span className="text-gray-600">Điểm trung bình:</span>
-//                   <span className="font-bold text-purple-600">
-//                     {finalLeaderboard.length > 0
-//                       ? Math.round(finalLeaderboard.reduce((sum, p) => sum + p.score, 0) / finalLeaderboard.length)
-//                       : 0
-//                     }
-//                   </span>
-//                 </div>
-//                 <div className="flex justify-between">
-//                   <span className="text-gray-600">Hoàn thành lúc:</span>
-//                   <span className="font-bold text-orange-600 text-sm">
-//                     {new Date().toLocaleTimeString('vi-VN')}
-//                   </span>
-//                 </div>
-//               </div>
-//             </div>
-
-//             {/* Quick Actions */}
-//             <div className="bg-white rounded-2xl shadow-xl p-6">
-//               <h4 className="text-xl font-bold text-gray-800 mb-4">⚡ Hành Động</h4>
-//               <div className="space-y-3">
-//                 <button
-//                   onClick={shareResults}
-//                   className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors"
-//                 >
-//                   📤 Chia Sẻ Kết Quả
-//                 </button>
-//                 <button
-//                   onClick={() => navigate(`/quiz/${quizId}/leaderboard`)}
-//                   className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg transition-colors"
-//                 >
-//                   📊 Xem Chi Tiết
-//                 </button>
-//                 <button
-//                   onClick={createNewRoom}
-//                   className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-colors"
-//                 >
-//                   🆕 Chơi Lại
-//                 </button>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* Bottom Actions */}
-//         <div className="text-center">
-//           <div className="bg-white rounded-2xl shadow-xl p-8 max-w-3xl mx-auto">
-//             <h3 className="text-2xl font-bold text-gray-800 mb-4">🎮 Chơi Tiếp?</h3>
-//             <p className="text-gray-600 mb-6">
-//               Cảm ơn bạn đã tham gia! Hãy thử thách bản thân với một quiz mới hoặc mời bạn bè cùng chơi.
-//             </p>
-            
-//             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-//               <button
-//                 onClick={createNewRoom}
-//                 className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg"
-//               >
-//                 <div className="text-2xl mb-2">🆕</div>
-//                 <div>Tạo Phòng Mới</div>
-//               </button>
-              
-//               <button
-//                 onClick={() => navigate('/')}
-//                 className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg"
-//               >
-//                 <div className="text-2xl mb-2">🏠</div>
-//                 <div>Trang Chủ</div>
-//               </button>
-              
-//               <button
-//                 onClick={shareResults}
-//                 className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg"
-//               >
-//                 <div className="text-2xl mb-2">📱</div>
-//                 <div>Chia Sẻ</div>
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* Footer */}
-//         <div className="mt-8 text-center text-gray-500 text-sm">
-//           <p>Quiz ID: {quizId} | Multiplayer Quiz Game</p>
-//           <p className="mt-1">🎉 Cảm ơn bạn đã chơi! Hẹn gặp lại trong game tiếp theo!</p>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default FinalResults;
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ref, onValue, update, db } from "../config/firebase";
 import { LeaderboardEntry } from "../types";
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  CircularProgress,
+  Chip,
+  Grid,
+  Paper,
+  Avatar,
+  Stack,
+  Container,
+  Fade,
+  Zoom,
+  Slide,
+  IconButton,
+  Collapse,
+  Divider,
+  Tooltip
+} from '@mui/material';
+import {
+  EmojiEvents as TrophyIcon,
+  Share as ShareIcon,
+  Home as HomeIcon,
+  Refresh as RefreshIcon,
+  BarChart as ChartIcon,
+  Groups as GroupsIcon,
+  Quiz as QuizIcon,
+  Timer as TimerIcon,
+  GpsFixed as TargetIcon,
+  Star as StarIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+  ContentCopy as CopyIcon
+} from '@mui/icons-material';
+import { styled, keyframes } from '@mui/material/styles';
+
+// Keyframes for animations
+const bounce = keyframes`
+  0%, 20%, 53%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40%, 43% {
+    transform: translateY(-30px);
+  }
+  70% {
+    transform: translateY(-15px);
+  }
+  90% {
+    transform: translateY(-4px);
+  }
+`;
+
+// Enhanced confetti animation - rơi vĩnh viễn
+const confettiFloat = keyframes`
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0;
+  }
+`;
+
+// Trophy floating animation
+const trophyFloat = keyframes`
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(5deg);
+  }
+`;
+
+// Sparkle animation
+const sparkle = keyframes`
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+`;
+
+// Styled components
+const GradientBox = styled(Box)(({ theme }) => ({
+  minHeight: '100vh',
+  background: 'linear-gradient(135deg, #f3e5f5 0%, #e3f2fd 50%, #e8eaf6 100%)',
+  position: 'relative',
+  overflow: 'hidden',
+}));
+
+const CelebrationHeader = styled(Box)(({ theme }) => ({
+  textAlign: 'center',
+  marginBottom: theme.spacing(8),
+  position: 'relative',
+}));
+
+const FloatingTrophy = styled(Typography)(({ theme }) => ({
+  animation: `${trophyFloat} 3s ease-in-out infinite, ${sparkle} 2s ease-in-out infinite`,
+  cursor: 'pointer',
+  transition: 'transform 0.3s ease',
+  '&:hover': {
+    transform: 'scale(1.1)',
+  },
+}));
+
+const GradientText = styled(Typography)(({ theme }) => ({
+  background: 'linear-gradient(45deg, #FFD700 30%, #FF6B6B 90%)',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  fontWeight: 'bold',
+  animation: `${bounce} 2s infinite`,
+}));
+
+const ConfettiBox = styled(Box)(({ theme }) => ({
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  width: '100%',
+  height: '100%',
+  pointerEvents: 'none',
+  zIndex: 9999,
+}));
+
+const ConfettiItem = styled(Box)<{ delay: number; duration: number; left: number }>(({ delay, duration, left }) => ({
+  position: 'absolute',
+  left: `${left}%`,
+  top: '-10px',
+  fontSize: '2rem',
+  animation: `${confettiFloat} ${duration}s ${delay}s infinite linear`,
+}));
+
+const PodiumCard = styled(Card)<{ rank: number }>(({ theme, rank }) => {
+  const colors = {
+    1: { from: '#FFD700', to: '#FFA000' }, // Gold
+    2: { from: '#C0C0C0', to: '#9E9E9E' }, // Silver
+    3: { from: '#CD7F32', to: '#FF8F00' }, // Bronze
+  };
+  
+  const color = colors[rank as keyof typeof colors];
+  
+  return {
+    background: `linear-gradient(135deg, ${color.from} 0%, ${color.to} 100%)`,
+    color: 'white',
+    transform: 'translateY(0)',
+    transition: 'all 0.3s ease-in-out',
+    cursor: 'pointer',
+    position: 'relative',
+    overflow: 'hidden',
+    '&:hover': {
+      transform: 'translateY(-8px) scale(1.02)',
+      boxShadow: theme.shadows[12],
+    },
+    '&::before': {
+      content: '""',
+      position: 'absolute',
+      top: 0,
+      left: '-100%',
+      width: '100%',
+      height: '100%',
+      background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
+      transition: 'left 0.5s',
+    },
+    '&:hover::before': {
+      left: '100%',
+    },
+  };
+});
+
+const PlayerCard = styled(Card)<{ isCurrentUser?: boolean; isSelected?: boolean; rank?: number }>(({ theme, isCurrentUser, isSelected, rank }) => ({
+  margin: theme.spacing(1, 0),
+  cursor: 'pointer',
+  transition: 'all 0.3s ease-in-out',
+  transform: isCurrentUser ? 'scale(1.02)' : 'scale(1)',
+  background: isCurrentUser 
+    ? 'linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%)'
+    : isSelected
+    ? 'linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%)'
+    : rank && rank <= 3
+    ? 'linear-gradient(135deg, #F5F5F5 0%, #EEEEEE 100%)'
+    : '#FFFFFF',
+  border: isCurrentUser ? `2px solid ${theme.palette.warning.main}` : `1px solid ${theme.palette.divider}`,
+  '&:hover': {
+    boxShadow: theme.shadows[8],
+    transform: isCurrentUser ? 'scale(1.03)' : 'scale(1.01)',
+  },
+}));
+
+const RankAvatar = styled(Avatar)<{ rank: number }>(({ theme, rank }) => {
+  const getBackgroundColor = () => {
+    switch (rank) {
+      case 1: return 'linear-gradient(135deg, #FFD700 0%, #FFA000 100%)';
+      case 2: return 'linear-gradient(135deg, #C0C0C0 0%, #9E9E9E 100%)';
+      case 3: return 'linear-gradient(135deg, #CD7F32 0%, #FF8F00 100%)';
+      default: return 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)';
+    }
+  };
+
+  return {
+    width: 56,
+    height: 56,
+    background: getBackgroundColor(),
+    fontSize: '1.5rem',
+    fontWeight: 'bold',
+    animation: rank <= 3 ? `${sparkle} 2s ease-in-out infinite` : 'none',
+  };
+});
+
+const SparkleEffect = styled(Box)(({ theme }) => ({
+  position: 'absolute',
+  width: '100%',
+  height: '100%',
+  pointerEvents: 'none',
+  '&::before, &::after': {
+    content: '"✨"',
+    position: 'absolute',
+    fontSize: '1rem',
+    animation: `${sparkle} 1.5s ease-in-out infinite`,
+  },
+  '&::before': {
+    top: '10%',
+    left: '10%',
+    animationDelay: '0s',
+  },
+  '&::after': {
+    bottom: '10%',
+    right: '10%',
+    animationDelay: '0.5s',
+  },
+}));
 
 const FinalResults: React.FC = () => {
   const [finalLeaderboard, setFinalLeaderboard] = useState<Array<{name: string, score: number, rank: number}>>([]);
@@ -575,11 +246,36 @@ const FinalResults: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [playHistory, setPlayHistory] = useState<Record<string, any>>({});
   const [selectedPlayer, setSelectedPlayer] = useState<string>("");
-  const [showConfetti, setShowConfetti] = useState(true);
+  const [confettiItems, setConfettiItems] = useState<Array<{id: number, emoji: string, delay: number, duration: number, left: number}>>([]);
   
   const { quizId } = useParams<{ quizId: string }>();
   const navigate = useNavigate();
   const userName = localStorage.getItem("userName");
+
+  // Generate confetti items
+  useEffect(() => {
+    const emojis = ['🎉', '🎊', '✨', '🏆', '🥇', '🌟', '🎈', '🎁', '💫', '⭐'];
+    const generateConfetti = () => {
+      const items = [];
+      for (let i = 0; i < 100; i++) {
+        items.push({
+          id: i,
+          emoji: emojis[Math.floor(Math.random() * emojis.length)],
+          delay: Math.random() * 5,
+          duration: 3 + Math.random() * 4,
+          left: Math.random() * 100,
+        });
+      }
+      setConfettiItems(items);
+    };
+
+    generateConfetti();
+    
+    // Regenerate confetti every 10 seconds for continuous effect
+    const confettiInterval = setInterval(generateConfetti, 10000);
+    
+    return () => clearInterval(confettiInterval);
+  }, []);
 
   useEffect(() => {
     if (!quizId) {
@@ -632,40 +328,14 @@ const FinalResults: React.FC = () => {
       setShowCelebration(false);
     }, 5000);
 
-    // Hide confetti after 8 seconds
-    const confettiTimer = setTimeout(() => {
-      setShowConfetti(false);
-    }, 8000);
-
     return () => {
       unsubscribeInfo();
       unsubscribeParticipants();
       unsubscribeHistory();
       unsubscribeLeaderboard();
       clearTimeout(celebrationTimer);
-      clearTimeout(confettiTimer);
     };
   }, [quizId, navigate]);
-
-  const updateFinalLeaderboard = async () => {
-    try {
-      const updates: Record<string, any> = {};
-      
-      finalLeaderboard.forEach((player, index) => {
-        updates[`leaderboard/${player.name}`] = {
-          rank: index + 1,
-          bestScore: player.score,
-          averageScore: Math.round(player.score / (quizInfo?.totalQuestions || 5)),
-          lastPlayed: Date.now()
-        };
-      });
-      
-      await update(ref(db, `quizzes/${quizId}`), updates);
-      console.log("Final leaderboard updated successfully");
-    } catch (error) {
-      console.error("Error updating final leaderboard:", error);
-    }
-  };
 
   const getPlayerStats = (playerName: string) => {
     const history = playHistory[playerName]?.attempts || {};
@@ -723,408 +393,576 @@ Thử thách bản thân tại: ${window.location.origin}/quiz/${quizId}`;
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-100 to-blue-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-500 mx-auto mb-6"></div>
-          <p className="text-xl text-gray-700">Đang tính toán kết quả cuối cùng...</p>
-          <p className="text-sm text-gray-500 mt-2">Vui lòng đợi một chút</p>
-        </div>
-      </div>
+      <GradientBox display="flex" alignItems="center" justifyContent="center">
+        <Box textAlign="center">
+          <CircularProgress size={64} thickness={4} sx={{ mb: 3, color: 'purple' }} />
+          <Typography variant="h5" color="text.primary" gutterBottom>
+            Đang tính toán kết quả cuối cùng...
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Vui lòng đợi một chút
+          </Typography>
+        </Box>
+      </GradientBox>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-blue-100 to-indigo-200 relative overflow-hidden">
-      
-      {/* Confetti Animation */}
-      {showConfetti && (
-        <div className="fixed inset-0 pointer-events-none z-50">
-          {[...Array(50)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute animate-bounce"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 3}s`,
-                animationDuration: `${2 + Math.random() * 2}s`
-              }}
-            >
-              {['🎉', '🎊', '✨', '🏆', '🥇', '🌟'][Math.floor(Math.random() * 6)]}
-            </div>
-          ))}
-        </div>
-      )}
+    <GradientBox>
+      {/* Permanent Confetti Animation */}
+      <ConfettiBox>
+        {confettiItems.map((item) => (
+          <ConfettiItem
+            key={`${item.id}-${Date.now()}`}
+            delay={item.delay}
+            duration={item.duration}
+            left={item.left}
+          >
+            {item.emoji}
+          </ConfettiItem>
+        ))}
+      </ConfettiBox>
 
-      <div className="container mx-auto px-4 py-8">
-        
-        {/* Main Celebration Header */}
-        {showCelebration && (
-          <div className="text-center mb-12 animate-bounce">
-            <div className="text-8xl md:text-9xl mb-4">🏆</div>
-            <h1 className="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-red-500 to-purple-600 mb-4">
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        {/* Main Celebration Header with Permanent Trophy */}
+        <Fade in={showCelebration} timeout={1000}>
+          <CelebrationHeader>
+            <Box position="relative" display="inline-block">
+              <FloatingTrophy sx={{ fontSize: { xs: '6rem', md: '8rem' }, mb: 2 }}>
+                🏆
+              </FloatingTrophy>
+              <SparkleEffect />
+            </Box>
+            <GradientText variant="h1" sx={{ fontSize: { xs: '3rem', md: '5rem' }, mb: 2 }}>
               HOÀN THÀNH!
-            </h1>
-            <p className="text-2xl md:text-3xl text-gray-700 font-semibold">
+            </GradientText>
+            <Typography variant="h4" color="text.primary" fontWeight="600">
               Quiz Multiplayer đã kết thúc
-            </p>
-          </div>
-        )}
+            </Typography>
+          </CelebrationHeader>
+        </Fade>
 
         {/* Quiz Info */}
         {quizInfo && (
-          <div className="text-center mb-8">
-            <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-2xl mx-auto border border-gray-200">
-              <h2 className="text-3xl font-bold text-gray-800 mb-2">{quizInfo.title}</h2>
-              <div className="flex flex-wrap justify-center gap-6 text-gray-600">
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl">👥</span>
-                  <span className="font-semibold">{finalLeaderboard.length} người chơi</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl">❓</span>
-                  <span className="font-semibold">{quizInfo.totalQuestions || 5} câu hỏi</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl">⏱️</span>
-                  <span className="font-semibold">30s/câu</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl">🎯</span>
-                  <span className="font-semibold">Tối đa {quizInfo.pointsPerQuestion || 100} điểm/câu</span>
-                </div>
-              </div>
-              <p className="text-sm text-gray-500 mt-4">
-                Room ID: <span className="font-mono bg-gray-100 px-2 py-1 rounded">{quizId}</span>
-              </p>
-            </div>
-          </div>
+          <Zoom in timeout={800}>
+            <Card sx={{ maxWidth: 800, mx: 'auto', mb: 6, boxShadow: 8, position: 'relative', overflow: 'hidden' }}>
+              <SparkleEffect />
+              <CardContent sx={{ p: 4, textAlign: 'center' }}>
+                <Typography variant="h4" fontWeight="bold" gutterBottom>
+                  {quizInfo.title}
+                </Typography>
+                
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 3, mt: 2 }}>
+                  <Box>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <GroupsIcon fontSize="large" />
+                      <Typography variant="h6" fontWeight="600">
+                        {finalLeaderboard.length} người chơi
+                      </Typography>
+                    </Stack>
+                  </Box>
+                  
+                  <Box>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <QuizIcon fontSize="large" />
+                      <Typography variant="h6" fontWeight="600">
+                        {quizInfo.totalQuestions || 5} câu hỏi
+                      </Typography>
+                    </Stack>
+                  </Box>
+                  
+                  <Box>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <TimerIcon fontSize="large" />
+                      <Typography variant="h6" fontWeight="600">
+                        30s/câu
+                      </Typography>
+                    </Stack>
+                  </Box>
+                  
+                  <Box>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <TargetIcon fontSize="large" />
+                      <Typography variant="h6" fontWeight="600">
+                        Tối đa {quizInfo.pointsPerQuestion || 100} điểm/câu
+                      </Typography>
+                    </Stack>
+                  </Box>
+                </Box>
+
+                <Chip
+                  label={`Room ID: ${quizId}`}
+                  variant="outlined"
+                  sx={{ mt: 3, fontFamily: 'monospace', fontSize: '0.9rem' }}
+                />
+              </CardContent>
+            </Card>
+          </Zoom>
         )}
 
-        {/* Podium for Top 3 */}
+        {/* Enhanced Podium for Top 3 */}
         {finalLeaderboard.length >= 3 && (
-          <div className="mb-12">
-            <h3 className="text-3xl font-bold text-center mb-8 text-gray-800">🏅 PODIUM TOP 3</h3>
-            <div className="flex justify-center items-end space-x-4 max-w-4xl mx-auto">
-              
+          <Box sx={{ mb: 8 }}>
+            <Typography variant="h4" fontWeight="bold" textAlign="center" sx={{ mb: 4 }}>
+              🏅 PODIUM TOP 3
+            </Typography>
+            
+            <Box sx={{ 
+              display: 'flex', 
+              flexWrap: 'wrap',
+              justifyContent: 'center', 
+              alignItems: 'end', 
+              gap: 2, 
+              maxWidth: 1000, 
+              mx: 'auto' 
+            }}>
               {/* 2nd Place */}
-              <div className="bg-gradient-to-t from-gray-300 to-gray-400 rounded-t-3xl p-6 text-center relative transform hover:scale-105 transition-transform">
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center text-3xl border-4 border-white shadow-lg">
-                    🥈
-                  </div>
-                </div>
-                <div className="mt-8 text-white">
-                  <p className="text-2xl font-bold mb-2">{finalLeaderboard[1]?.name}</p>
-                  <p className="text-xl font-semibold">{finalLeaderboard[1]?.score} điểm</p>
-                </div>
-                <div className="h-24 bg-gray-400 rounded-b-lg mt-4 flex items-center justify-center text-white font-bold">
-                  #2
-                </div>
-              </div>
+              <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 300px' }, maxWidth: { xs: '100%', sm: '350px' } }}>
+                <Slide direction="right" in timeout={1200}>
+                  <Box position="relative">
+                    <PodiumCard rank={2} sx={{ height: 200 }}>
+                      <CardContent sx={{ textAlign: 'center', p: 3 }}>
+                        <Avatar sx={{ width: 64, height: 64, mx: 'auto', mb: 2, bgcolor: 'rgba(255,255,255,0.3)' }}>
+                          🥈
+                        </Avatar>
+                        <Typography variant="h5" fontWeight="bold">
+                          {finalLeaderboard[1]?.name}
+                        </Typography>
+                        <Typography variant="h6" sx={{ mt: 1 }}>
+                          {finalLeaderboard[1]?.score} điểm
+                        </Typography>
+                        <Typography variant="h4" fontWeight="bold" sx={{ mt: 2 }}>
+                          #2
+                        </Typography>
+                      </CardContent>
+                    </PodiumCard>
+                    <SparkleEffect />
+                  </Box>
+                </Slide>
+              </Box>
 
-              {/* 1st Place */}
-              <div className="bg-gradient-to-t from-yellow-400 to-yellow-500 rounded-t-3xl p-8 text-center relative transform hover:scale-105 transition-transform">
-                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
-                  <div className="w-20 h-20 bg-yellow-400 rounded-full flex items-center justify-center text-4xl border-4 border-white shadow-xl animate-pulse">
-                    🥇
-                  </div>
-                </div>
-                <div className="mt-10 text-white">
-                  <p className="text-3xl font-bold mb-2">{finalLeaderboard[0]?.name}</p>
-                  <p className="text-2xl font-semibold">{finalLeaderboard[0]?.score} điểm</p>
-                  <p className="text-lg">🎉 CHAMPION!</p>
-                </div>
-                <div className="h-32 bg-yellow-500 rounded-b-lg mt-4 flex items-center justify-center text-white font-bold text-xl">
-                  #1
-                </div>
-              </div>
+              {/* 1st Place - Enhanced */}
+              <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 300px' }, maxWidth: { xs: '100%', sm: '350px' } }}>
+                <Slide direction="up" in timeout={1000}>
+                  <Box position="relative">
+                    <PodiumCard rank={1} sx={{ height: 250 }}>
+                      <CardContent sx={{ textAlign: 'center', p: 3 }}>
+                        <Avatar sx={{ width: 80, height: 80, mx: 'auto', mb: 2, bgcolor: 'rgba(255,255,255,0.3)' }}>
+                          🥇
+                        </Avatar>
+                        <Typography variant="h4" fontWeight="bold">
+                          {finalLeaderboard[0]?.name}
+                        </Typography>
+                        <Typography variant="h5" sx={{ mt: 1 }}>
+                          {finalLeaderboard[0]?.score} điểm
+                        </Typography>
+                        <Typography variant="h6" sx={{ mt: 1 }}>
+                          🎉 CHAMPION!
+                        </Typography>
+                        <Typography variant="h3" fontWeight="bold" sx={{ mt: 2 }}>
+                          #1
+                        </Typography>
+                      </CardContent>
+                    </PodiumCard>
+                    <SparkleEffect />
+                  </Box>
+                </Slide>
+              </Box>
 
               {/* 3rd Place */}
-              <div className="bg-gradient-to-t from-orange-400 to-orange-500 rounded-t-3xl p-6 text-center relative transform hover:scale-105 transition-transform">
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <div className="w-16 h-16 bg-orange-400 rounded-full flex items-center justify-center text-3xl border-4 border-white shadow-lg">
-                    🥉
-                  </div>
-                </div>
-                <div className="mt-8 text-white">
-                  <p className="text-2xl font-bold mb-2">{finalLeaderboard[2]?.name}</p>
-                  <p className="text-xl font-semibold">{finalLeaderboard[2]?.score} điểm</p>
-                </div>
-                <div className="h-24 bg-orange-500 rounded-b-lg mt-4 flex items-center justify-center text-white font-bold">
-                  #3
-                </div>
-              </div>
-            </div>
-          </div>
+              <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 300px' }, maxWidth: { xs: '100%', sm: '350px' } }}>
+                <Slide direction="left" in timeout={1400}>
+                  <Box position="relative">
+                    <PodiumCard rank={3} sx={{ height: 200 }}>
+                      <CardContent sx={{ textAlign: 'center', p: 3 }}>
+                        <Avatar sx={{ width: 64, height: 64, mx: 'auto', mb: 2, bgcolor: 'rgba(255,255,255,0.3)' }}>
+                          🥉
+                        </Avatar>
+                        <Typography variant="h5" fontWeight="bold">
+                          {finalLeaderboard[2]?.name}
+                        </Typography>
+                        <Typography variant="h6" sx={{ mt: 1 }}>
+                          {finalLeaderboard[2]?.score} điểm
+                        </Typography>
+                        <Typography variant="h4" fontWeight="bold" sx={{ mt: 2 }}>
+                          #3
+                        </Typography>
+                      </CardContent>
+                    </PodiumCard>
+                    <SparkleEffect />
+                  </Box>
+                </Slide>
+              </Box>
+            </Box>
+          </Box>
         )}
 
-        {/* Full Leaderboard */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 4 }}>
           {/* Main Results */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-              <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6">
-                <h3 className="text-2xl font-bold">📊 Bảng Xếp Hạng Cuối Cùng</h3>
-                <p className="text-purple-100 mt-1">Kết quả chính thức của tất cả người chơi</p>
-              </div>
+          <Box sx={{ flex: { xs: '1', lg: '2' } }}>
+            <Card sx={{ boxShadow: 8 }}>
+              <Box sx={{ background: 'linear-gradient(135deg, #673AB7 0%, #3F51B5 100%)', color: 'white', p: 3 }}>
+                <Typography variant="h5" fontWeight="bold" gutterBottom>
+                  📊 Bảng Xếp Hạng Cuối Cùng
+                </Typography>
+                <Typography variant="body1" sx={{ opacity: 0.9 }}>
+                  Kết quả chính thức của tất cả người chơi
+                </Typography>
+              </Box>
               
-              <div className="p-6">
+              <CardContent sx={{ p: 3 }}>
                 {finalLeaderboard.length > 0 ? (
-                  <div className="space-y-4">
+                  <Stack spacing={2}>
                     {finalLeaderboard.map((player, index) => {
                       const stats = getPlayerStats(player.name);
                       const isCurrentUser = player.name === userName;
                       
                       return (
-                        <div
+                        <PlayerCard
                           key={player.name}
-                          className={`p-5 rounded-xl border-2 transition-all cursor-pointer hover:shadow-lg ${
-                            isCurrentUser
-                              ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-400 ring-2 ring-yellow-300 scale-105 transform'
-                              : selectedPlayer === player.name
-                              ? 'bg-blue-50 border-blue-400'
-                              : index < 3
-                              ? 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-300'
-                              : 'bg-white border-gray-200 hover:border-gray-300'
-                          }`}
+                          isCurrentUser={isCurrentUser}
+                          isSelected={selectedPlayer === player.name}
+                          rank={index + 1}
                           onClick={() => setSelectedPlayer(selectedPlayer === player.name ? "" : player.name)}
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                              {/* Rank Badge */}
-                              <div className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-xl ${
-                                index === 0 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white' :
-                                index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500 text-white' :
-                                index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white' :
-                                'bg-gradient-to-br from-blue-400 to-blue-600 text-white'
-                              }`}>
-                                {index === 0 ? '👑' : 
-                                 index === 1 ? '🥈' : 
-                                 index === 2 ? '🥉' : 
-                                 `#${index + 1}`}
-                              </div>
+                          <CardContent>
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                              <Stack direction="row" spacing={2} alignItems="center">
+                                <RankAvatar rank={index + 1}>
+                                  {index === 0 ? '👑' : 
+                                   index === 1 ? '🥈' : 
+                                   index === 2 ? '🥉' : 
+                                   `#${index + 1}`}
+                                </RankAvatar>
+                                
+                                <Box>
+                                  <Typography variant="h6" fontWeight="bold">
+                                    {player.name}
+                                    {isCurrentUser && ' (Bạn)'}
+                                  </Typography>
+                                  <Stack direction="row" spacing={2}>
+                                    <Chip label={`🏆 ${player.score} điểm`} size="small" />
+                                    {stats && (
+                                      <>
+                                        <Chip label={`🎯 ${stats.accuracy}% đúng`} size="small" />
+                                        <Chip label={`⚡ ${stats.averageTimeLeft}s TB`} size="small" />
+                                      </>
+                                    )}
+                                  </Stack>
+                                </Box>
+                              </Stack>
                               
-                              {/* Player Info */}
-                              <div>
-                                <p className="font-bold text-xl text-gray-800">
-                                  {player.name}
-                                  {isCurrentUser && ' (Bạn)'}
-                                </p>
-                                <div className="flex space-x-4 text-sm text-gray-600">
-                                  <span>🏆 {player.score} điểm</span>
-                                  {stats && (
-                                    <>
-                                      <span>🎯 {stats.accuracy}% đúng</span>
-                                      <span>⚡ {stats.averageTimeLeft}s TB</span>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
+                              <Box textAlign="right">
+                                <Typography variant="h4" fontWeight="bold" color="text.primary">
+                                  {player.score}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  điểm
+                                </Typography>
+                              </Box>
+                            </Stack>
                             
-                            {/* Score Display */}
-                            <div className="text-right">
-                              <div className="text-3xl font-bold text-gray-800">
-                                {player.score}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                điểm
-                              </div>
-                            </div>
-                          </div>
-                          
-                          {/* Expanded Stats */}
-                          {selectedPlayer === player.name && stats && (
-                            <div className="mt-6 pt-4 border-t border-gray-200">
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div className="bg-green-100 p-4 rounded-lg text-center">
-                                  <div className="text-2xl font-bold text-green-600">
-                                    {stats.correctAnswers}/{stats.totalQuestions}
-                                  </div>
-                                  <div className="text-sm text-gray-600">Câu đúng</div>
-                                </div>
-                                <div className="bg-blue-100 p-4 rounded-lg text-center">
-                                  <div className="text-2xl font-bold text-blue-600">
-                                    {stats.accuracy}%
-                                  </div>
-                                  <div className="text-sm text-gray-600">Độ chính xác</div>
-                                </div>
-                                <div className="bg-purple-100 p-4 rounded-lg text-center">
-                                  <div className="text-2xl font-bold text-purple-600">
-                                    {stats.averageTimeLeft}s
-                                  </div>
-                                  <div className="text-sm text-gray-600">TB thời gian</div>
-                                </div>
-                                <div className="bg-orange-100 p-4 rounded-lg text-center">
-                                  <div className="text-2xl font-bold text-orange-600">
-                                    {Math.round(player.score / (quizInfo?.totalQuestions || 5))}
-                                  </div>
-                                  <div className="text-sm text-gray-600">Điểm/câu</div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                            {/* Expanded Stats */}
+                            <Collapse in={selectedPlayer === player.name}>
+                              {stats && (
+                                <Box sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                                    <Box sx={{ flex: { xs: '1 1 45%', sm: '1 1 22%' } }}>
+                                      <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'success.light', color: 'success.contrastText' }}>
+                                        <Typography variant="h6" fontWeight="bold">
+                                          {stats.correctAnswers}/{stats.totalQuestions}
+                                        </Typography>
+                                        <Typography variant="body2">Câu đúng</Typography>
+                                      </Paper>
+                                    </Box>
+                                    <Box sx={{ flex: { xs: '1 1 45%', sm: '1 1 22%' } }}>
+                                      <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'info.light', color: 'info.contrastText' }}>
+                                        <Typography variant="h6" fontWeight="bold">
+                                          {stats.accuracy}%
+                                        </Typography>
+                                        <Typography variant="body2">Độ chính xác</Typography>
+                                      </Paper>
+                                    </Box>
+                                    <Box sx={{ flex: { xs: '1 1 45%', sm: '1 1 22%' } }}>
+                                      <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'secondary.light', color: 'secondary.contrastText' }}>
+                                        <Typography variant="h6" fontWeight="bold">
+                                          {stats.averageTimeLeft}s
+                                        </Typography>
+                                        <Typography variant="body2">TB thời gian</Typography>
+                                      </Paper>
+                                    </Box>
+                                    <Box sx={{ flex: { xs: '1 1 45%', sm: '1 1 22%' } }}>
+                                      <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'warning.light', color: 'warning.contrastText' }}>
+                                        <Typography variant="h6" fontWeight="bold">
+                                          {Math.round(player.score / (quizInfo?.totalQuestions || 5))}
+                                        </Typography>
+                                        <Typography variant="body2">Điểm/câu</Typography>
+                                      </Paper>
+                                    </Box>
+                                  </Box>
+                                </Box>
+                              )}
+                            </Collapse>
+                          </CardContent>
+                        </PlayerCard>
                       );
                     })}
-                  </div>
+                  </Stack>
                 ) : (
-                  <div className="text-center py-12">
-                    <div className="text-6xl mb-4">🤔</div>
-                    <p className="text-2xl text-gray-600">Không có dữ liệu</p>
-                  </div>
+                  <Box textAlign="center" py={8}>
+                    <Typography sx={{ fontSize: '4rem', mb: 2 }}>🤔</Typography>
+                    <Typography variant="h5" color="text.secondary">
+                      Không có dữ liệu
+                    </Typography>
+                  </Box>
                 )}
-              </div>
-            </div>
-          </div>
+              </CardContent>
+            </Card>
+          </Box>
 
           {/* Sidebar */}
-          <div className="space-y-6">
-            
-            {/* Personal Achievement */}
-            {userName && finalLeaderboard.find(p => p.name === userName) && (
-              <div className="bg-gradient-to-br from-yellow-100 to-orange-100 rounded-2xl shadow-xl p-6 border border-yellow-300">
-                <h4 className="text-xl font-bold text-gray-800 mb-4 text-center">🎯 Thành Tích Của Bạn</h4>
-                {(() => {
-                  const userRank = finalLeaderboard.findIndex(p => p.name === userName) + 1;
-                  const userScore = finalLeaderboard.find(p => p.name === userName)?.score || 0;
-                  const userStats = getPlayerStats(userName);
-                  
-                  return (
-                    <div className="space-y-4">
-                      <div className="text-center">
-                        <div className="text-4xl font-bold text-yellow-600 mb-2">#{userRank}</div>
-                        <p className="text-gray-700">Xếp hạng cuối cùng</p>
-                      </div>
+          <Box sx={{ flex: { xs: '1', lg: '1' } }}>
+            <Stack spacing={3}>
+              {/* Personal Achievement */}
+              {userName && finalLeaderboard.find(p => p.name === userName) && (
+                <Card sx={{ background: 'linear-gradient(135deg, #FFF8E1 0%, #FFE0B2 100%)', boxShadow: 6, position: 'relative', overflow: 'hidden' }}>
+                  <SparkleEffect />
+                  <CardContent>
+                    <Typography variant="h6" fontWeight="bold" textAlign="center" gutterBottom>
+                      🎯 Thành Tích Của Bạn
+                    </Typography>
+                    {(() => {
+                      const userRank = finalLeaderboard.findIndex(p => p.name === userName) + 1;
+                      const userScore = finalLeaderboard.find(p => p.name === userName)?.score || 0;
+                      const userStats = getPlayerStats(userName);
                       
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-white bg-opacity-60 p-3 rounded-lg text-center">
-                          <div className="text-xl font-bold text-green-600">{userScore}</div>
-                          <div className="text-xs text-gray-600">Tổng điểm</div>
-                        </div>
-                        <div className="bg-white bg-opacity-60 p-3 rounded-lg text-center">
-                          <div className="text-xl font-bold text-blue-600">
-                            {userStats ? `${userStats.accuracy}%` : '0%'}
-                          </div>
-                          <div className="text-xs text-gray-600">Độ chính xác</div>
-                        </div>
-                      </div>
+                      return (
+                        <Stack spacing={2}>
+                          <Box textAlign="center">
+                            <Typography variant="h3" fontWeight="bold" color="warning.main">
+                              #{userRank}
+                            </Typography>
+                            <Typography color="text.secondary">
+                              Xếp hạng cuối cùng
+                            </Typography>
+                          </Box>
+                          
+                          <Box sx={{ display: 'flex', gap: 2 }}>
+                            <Box sx={{ flex: 1 }}>
+                              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.6)' }}>
+                                <Typography variant="h5" fontWeight="bold" color="success.main">
+                                  {userScore}
+                                </Typography>
+                                <Typography variant="caption">Tổng điểm</Typography>
+                              </Paper>
+                            </Box>
+                            <Box sx={{ flex: 1 }}>
+                              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.6)' }}>
+                                <Typography variant="h5" fontWeight="bold" color="info.main">
+                                  {userStats ? `${userStats.accuracy}%` : '0%'}
+                                </Typography>
+                                <Typography variant="caption">Độ chính xác</Typography>
+                              </Paper>
+                            </Box>
+                          </Box>
 
-                      {userRank === 1 && (
-                        <div className="bg-yellow-400 text-yellow-900 p-3 rounded-lg text-center font-bold">
-                          🏆 CHÚC MỪNG! BẠN LÀ NHẤT!
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
+                          {userRank === 1 && (
+                            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'warning.main', color: 'warning.contrastText', position: 'relative' }}>
+                              <Typography fontWeight="bold">
+                                🏆 CHÚC MỪNG! BẠN LÀ NHẤT!
+                              </Typography>
+                              <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+                                <Typography sx={{ position: 'absolute', top: '10%', left: '10%', fontSize: '1rem', animation: `${sparkle} 1s ease-in-out infinite` }}>✨</Typography>
+                                <Typography sx={{ position: 'absolute', top: '20%', right: '15%', fontSize: '1rem', animation: `${sparkle} 1s ease-in-out infinite`, animationDelay: '0.3s' }}>🌟</Typography>
+                                <Typography sx={{ position: 'absolute', bottom: '15%', left: '20%', fontSize: '1rem', animation: `${sparkle} 1s ease-in-out infinite`, animationDelay: '0.6s' }}>💫</Typography>
+                              </Box>
+                            </Paper>
+                          )}
+                        </Stack>
+                      );
+                    })()}
+                  </CardContent>
+                </Card>
+              )}
 
-            {/* Statistics */}
-            <div className="bg-white rounded-2xl shadow-xl p-6">
-              <h4 className="text-xl font-bold text-gray-800 mb-4">📈 Thống Kê Game</h4>
-              <div className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Tổng người chơi:</span>
-                  <span className="font-bold text-blue-600">{finalLeaderboard.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Điểm cao nhất:</span>
-                  <span className="font-bold text-green-600">
-                    {finalLeaderboard.length > 0 ? finalLeaderboard[0].score : 0}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Điểm trung bình:</span>
-                  <span className="font-bold text-purple-600">
-                    {finalLeaderboard.length > 0 
-                      ? Math.round(finalLeaderboard.reduce((sum, p) => sum + p.score, 0) / finalLeaderboard.length)
-                      : 0
-                    }
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Hoàn thành lúc:</span>
-                  <span className="font-bold text-orange-600 text-sm">
-                    {new Date().toLocaleTimeString('vi-VN')}
-                  </span>
-                </div>
-              </div>
-            </div>
+              {/* Statistics */}
+              <Card sx={{ boxShadow: 6 }}>
+                <CardContent>
+                  <Typography variant="h6" fontWeight="bold" gutterBottom>
+                    📈 Thống Kê Game
+                  </Typography>
+                  <Stack spacing={2}>
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography color="text.secondary">Tổng người chơi:</Typography>
+                      <Typography fontWeight="bold" color="info.main">
+                        {finalLeaderboard.length}
+                      </Typography>
+                    </Stack>
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography color="text.secondary">Điểm cao nhất:</Typography>
+                      <Typography fontWeight="bold" color="success.main">
+                        {finalLeaderboard.length > 0 ? finalLeaderboard[0].score : 0}
+                      </Typography>
+                    </Stack>
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography color="text.secondary">Điểm trung bình:</Typography>
+                      <Typography fontWeight="bold" color="secondary.main">
+                        {finalLeaderboard.length > 0 
+                          ? Math.round(finalLeaderboard.reduce((sum, p) => sum + p.score, 0) / finalLeaderboard.length)
+                          : 0
+                        }
+                      </Typography>
+                    </Stack>
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography color="text.secondary">Hoàn thành lúc:</Typography>
+                      <Typography fontWeight="bold" color="warning.main" variant="body2">
+                        {new Date().toLocaleTimeString('vi-VN')}
+                      </Typography>
+                    </Stack>
+                  </Stack>
+                </CardContent>
+              </Card>
 
-            {/* Quick Actions */}
-            <div className="bg-white rounded-2xl shadow-xl p-6">
-              <h4 className="text-xl font-bold text-gray-800 mb-4">⚡ Hành Động</h4>
-              <div className="space-y-3">
-                <button
-                  onClick={shareResults}
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors"
-                >
-                  📤 Chia Sẻ Kết Quả
-                </button>
-                <button
-                  onClick={() => navigate(`/quiz/${quizId}/leaderboard`)}
-                  className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg transition-colors"
-                >
-                  📊 Xem Chi Tiết
-                </button>
-                <button
-                  onClick={createNewRoom}
-                  className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-colors"
-                >
-                  🆕 Chơi Lại
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+              {/* Quick Actions */}
+              <Card sx={{ boxShadow: 6 }}>
+                <CardContent>
+                  <Typography variant="h6" fontWeight="bold" gutterBottom>
+                    ⚡ Hành Động
+                  </Typography>
+                  <Stack spacing={2}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      fullWidth
+                      startIcon={<ShareIcon />}
+                      onClick={shareResults}
+                      sx={{ py: 1.5 }}
+                    >
+                      Chia Sẻ Kết Quả
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      fullWidth
+                      startIcon={<ChartIcon />}
+                      onClick={() => navigate(`/quiz/${quizId}/leaderboard`)}
+                      sx={{ py: 1.5 }}
+                    >
+                      Xem Chi Tiết
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="success"
+                      fullWidth
+                      startIcon={<RefreshIcon />}
+                      onClick={createNewRoom}
+                      sx={{ py: 1.5 }}
+                    >
+                      Chơi Lại
+                    </Button>
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Stack>
+          </Box>
+        </Box>
 
         {/* Bottom Actions */}
-        <div className="text-center">
-          <div className="bg-white rounded-2xl shadow-xl p-8 max-w-3xl mx-auto">
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">🎮 Chơi Tiếp?</h3>
-            <p className="text-gray-600 mb-6">
-              Cảm ơn bạn đã tham gia! Hãy thử thách bản thân với một quiz mới hoặc mời bạn bè cùng chơi.
-            </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <button
-                onClick={createNewRoom}
-                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg"
-              >
-                <div className="text-2xl mb-2">🆕</div>
-                <div>Tạo Phòng Mới</div>
-              </button>
+        <Box sx={{ mt: 6, textAlign: 'center' }}>
+          <Card sx={{ maxWidth: 800, mx: 'auto', boxShadow: 8, position: 'relative', overflow: 'hidden' }}>
+            <SparkleEffect />
+            <CardContent sx={{ p: 4 }}>
+              <Typography variant="h5" fontWeight="bold" gutterBottom>
+                🎮 Chơi Tiếp?
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+                Cảm ơn bạn đã tham gia! Hãy thử thách bản thân với một quiz mới hoặc mời bạn bè cùng chơi.
+              </Typography>
               
-              <button
-                onClick={() => navigate('/')}
-                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg"
-              >
-                <div className="text-2xl mb-2">🏠</div>
-                <div>Trang Chủ</div>
-              </button>
-              
-              <button
-                onClick={shareResults}
-                className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg"
-              >
-                <div className="text-2xl mb-2">📱</div>
-                <div>Chia Sẻ</div>
-              </button>
-            </div>
-          </div>
-        </div>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 2 }}>
+                <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 200px' }, maxWidth: { xs: '100%', sm: '250px' } }}>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    onClick={createNewRoom}
+                    sx={{
+                      py: 3,
+                      background: 'linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #66BB6A 0%, #4CAF50 100%)',
+                        transform: 'scale(1.02)',
+                      },
+                      transition: 'all 0.3s ease-in-out',
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <Stack alignItems="center" spacing={1}>
+                      <Typography sx={{ fontSize: '2rem' }}>🆕</Typography>
+                      <Typography fontWeight="bold">Tạo Phòng Mới</Typography>
+                    </Stack>
+                  </Button>
+                </Box>
+                
+                <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 200px' }, maxWidth: { xs: '100%', sm: '250px' } }}>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    onClick={() => navigate('/')}
+                    sx={{
+                      py: 3,
+                      background: 'linear-gradient(135deg, #2196F3 0%, #42A5F5 100%)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #42A5F5 0%, #2196F3 100%)',
+                        transform: 'scale(1.02)',
+                      },
+                      transition: 'all 0.3s ease-in-out',
+                    }}
+                  >
+                    <Stack alignItems="center" spacing={1}>
+                      <Typography sx={{ fontSize: '2rem' }}>🏠</Typography>
+                      <Typography fontWeight="bold">Trang Chủ</Typography>
+                    </Stack>
+                  </Button>
+                </Box>
+                
+                <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 200px' }, maxWidth: { xs: '100%', sm: '250px' } }}>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    onClick={shareResults}
+                    sx={{
+                      py: 3,
+                      background: 'linear-gradient(135deg, #9C27B0 0%, #BA68C8 100%)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #BA68C8 0%, #9C27B0 100%)',
+                        transform: 'scale(1.02)',
+                      },
+                      transition: 'all 0.3s ease-in-out',
+                    }}
+                  >
+                    <Stack alignItems="center" spacing={1}>
+                      <Typography sx={{ fontSize: '2rem' }}>📱</Typography>
+                      <Typography fontWeight="bold">Chia Sẻ</Typography>
+                    </Stack>
+                  </Button>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Box>
 
         {/* Footer */}
-        <div className="mt-8 text-center text-gray-500 text-sm">
-          <p>Quiz ID: {quizId} | Multiplayer Quiz Game</p>
-          <p className="mt-1">🎉 Cảm ơn bạn đã chơi! Hẹn gặp lại trong game tiếp theo!</p>
-        </div>
-      </div>
-    </div>
+        <Box sx={{ mt: 4, textAlign: 'center' }}>
+          <Typography variant="body2" color="text.secondary">
+            Quiz ID: {quizId} | Multiplayer Quiz Game
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            🎉 Cảm ơn bạn đã chơi! Hẹn gặp lại trong game tiếp theo!
+          </Typography>
+        </Box>
+      </Container>
+    </GradientBox>
   );
 };
 

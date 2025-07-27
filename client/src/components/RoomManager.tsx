@@ -1,6 +1,67 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ref, get, set, DatabaseReference, db } from "../config/firebase";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Typography,
+  Alert,
+  CircularProgress,
+  Stack,
+  Divider,
+  Backdrop,
+  Paper
+} from '@mui/material';
+import { styled } from '@mui/material/styles';
+import AddIcon from '@mui/icons-material/Add';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import HomeIcon from '@mui/icons-material/Home';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import PersonIcon from '@mui/icons-material/Person';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import RoomIcon from '@mui/icons-material/Room';
+
+// Styled components
+const GradientBox = styled(Box)(({ theme }) => ({
+  background: 'linear-gradient(135deg, #f5f5f5 0%, #e8eaf6 100%)',
+  minHeight: '100vh',
+  padding: theme.spacing(2),
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+}));
+
+const MainCard = styled(Card)(({ theme }) => ({
+  maxWidth: 500,
+  width: '100%',
+  boxShadow: theme.shadows[12],
+  border: `1px solid ${theme.palette.grey[200]}`,
+}));
+
+const OptionCard = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  border: `1px solid ${theme.palette.divider}`,
+  transition: 'all 0.2s ease-in-out',
+  '&:hover': {
+    boxShadow: theme.shadows[4],
+    transform: 'translateY(-2px)',
+  },
+}));
+
+const ActionButton = styled(Button)(({ theme }) => ({
+  padding: theme.spacing(1.5, 3),
+  fontSize: '1rem',
+  fontWeight: 600,
+  textTransform: 'none',
+  borderRadius: theme.spacing(1),
+  transition: 'all 0.2s ease-in-out',
+  '&:hover': {
+    transform: 'scale(0.98)',
+  },
+}));
 
 const RoomManager: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -99,14 +160,18 @@ const RoomManager: React.FC = () => {
     createNewRoom();
   };
 
+  const formatTime = (timestamp: number) => {
+    return new Date(timestamp).toLocaleString('vi-VN');
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-lg">Đang kiểm tra trạng thái quiz...</p>
-        </div>
-      </div>
+      <Backdrop open={loading} sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+        <Box textAlign="center">
+          <CircularProgress color="inherit" size={60} sx={{ mb: 2 }} />
+          <Typography variant="h6">Đang kiểm tra trạng thái quiz...</Typography>
+        </Box>
+      </Backdrop>
     );
   }
 
@@ -114,70 +179,129 @@ const RoomManager: React.FC = () => {
     return null; // Will redirect automatically
   }
 
-  const formatTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleString('vi-VN');
-  };
-
   return (
-    <div className="flex flex-col items-center justify-center h-screen p-4">
-      <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Quiz Đang Hoạt Động</h1>
-          <div className="bg-orange-100 border border-orange-400 text-orange-700 px-4 py-3 rounded">
-            <p className="font-semibold">⚡ Quiz này đang được chơi</p>
-            <p className="text-sm mt-1">
-              Bắt đầu: {quizStatus?.startedAt ? formatTime(quizStatus.startedAt) : 'Không rõ'}
-            </p>
-            <p className="text-sm">
-              Bởi: {quizStatus?.startedBy || 'Không rõ'}
-            </p>
-          </div>
-        </div>
+    <GradientBox>
+      <MainCard>
+        <CardContent sx={{ p: 4 }}>
+          {/* Header */}
+          <Box textAlign="center" mb={4}>
+            <Stack direction="row" alignItems="center" justifyContent="center" spacing={1} mb={2}>
+              <PlayArrowIcon color="warning" fontSize="large" />
+              <Typography variant="h5" component="h1" fontWeight="bold" color="text.primary">
+                Quiz Đang Hoạt Động
+              </Typography>
+            </Stack>
+            
+            <Alert severity="warning" sx={{ textAlign: 'left' }}>
+              <Typography variant="body2" fontWeight="bold" mb={1}>
+                ⚡ Quiz này đang được chơi
+              </Typography>
+              <Stack spacing={0.5}>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <AccessTimeIcon fontSize="small" />
+                  <Typography variant="body2">
+                    Bắt đầu: {quizStatus?.startedAt ? formatTime(quizStatus.startedAt) : 'Không rõ'}
+                  </Typography>
+                </Box>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <PersonIcon fontSize="small" />
+                  <Typography variant="body2">
+                    Bởi: {quizStatus?.startedBy || 'Không rõ'}
+                  </Typography>
+                </Box>
+              </Stack>
+            </Alert>
+          </Box>
 
-        <div className="space-y-4">
-          <div className="p-4 bg-blue-50 rounded-lg border">
-            <h3 className="font-semibold text-blue-800 mb-2">🎮 Tạo Phòng Mới</h3>
-            <p className="text-sm text-blue-600 mb-3">
-              Tạo một phòng chơi mới với cùng bộ câu hỏi. Bạn có thể mời bạn bè tham gia!
-            </p>
-            <button
-              onClick={createNewRoom}
-              disabled={loading}
-              className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 font-semibold transition-colors"
+          {/* Options */}
+          <Stack spacing={3}>
+            {/* Create New Room Option */}
+            <OptionCard elevation={2} sx={{ bgcolor: 'primary.light', color: 'primary.contrastText' }}>
+              <Stack direction="row" alignItems="center" spacing={1} mb={2}>
+                <AddIcon />
+                <Typography variant="h6" fontWeight="bold">
+                  Tạo Phòng Mới
+                </Typography>
+              </Stack>
+              <Typography variant="body2" mb={3} sx={{ opacity: 0.9 }}>
+                Tạo một phòng chơi mới với cùng bộ câu hỏi. Bạn có thể mời bạn bè tham gia!
+              </Typography>
+              <ActionButton
+                variant="contained"
+                onClick={createNewRoom}
+                disabled={loading}
+                startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <RoomIcon />}
+                fullWidth
+                sx={{ 
+                  bgcolor: 'primary.dark',
+                  color: 'white',
+                  '&:hover': { bgcolor: 'primary.main' }
+                }}
+              >
+                {loading ? 'Đang tạo...' : 'Tạo Phòng Mới'}
+              </ActionButton>
+            </OptionCard>
+
+            {/* Wait for Current Room Option */}
+            <OptionCard elevation={1} sx={{ bgcolor: 'grey.100' }}>
+              <Stack direction="row" alignItems="center" spacing={1} mb={2}>
+                <AccessTimeIcon color="action" />
+                <Typography variant="h6" fontWeight="bold" color="text.secondary">
+                  Chờ Phòng Hiện Tại
+                </Typography>
+              </Stack>
+              <Typography variant="body2" color="text.secondary" mb={3}>
+                Đợi cho đến khi quiz hiện tại kết thúc (không khuyến nghị)
+              </Typography>
+              <ActionButton
+                variant="outlined"
+                onClick={() => window.location.reload()}
+                startIcon={<RefreshIcon />}
+                fullWidth
+                color="inherit"
+                sx={{ 
+                  borderColor: 'grey.400',
+                  color: 'text.secondary',
+                  '&:hover': { 
+                    borderColor: 'grey.600',
+                    bgcolor: 'grey.200'
+                  }
+                }}
+              >
+                Kiểm Tra Lại
+              </ActionButton>
+            </OptionCard>
+          </Stack>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Navigation */}
+          <Box textAlign="center" mb={3}>
+            <Button
+              startIcon={<HomeIcon />}
+              onClick={() => navigate('/')}
+              color="primary"
+              variant="text"
+              sx={{ textDecoration: 'underline' }}
             >
-              Tạo Phòng Mới
-            </button>
-          </div>
+              Về trang chủ
+            </Button>
+          </Box>
 
-          <div className="p-4 bg-gray-50 rounded-lg border">
-            <h3 className="font-semibold text-gray-700 mb-2">⏳ Chờ Phòng Hiện Tại</h3>
-            <p className="text-sm text-gray-600 mb-3">
-              Đợi cho đến khi quiz hiện tại kết thúc (không khuyến nghị)
-            </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="w-full bg-gray-400 text-white py-2 px-4 rounded hover:bg-gray-500 font-semibold transition-colors"
-            >
-              Kiểm Tra Lại
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => navigate('/')}
-            className="text-blue-500 hover:text-blue-700 text-sm underline"
-          >
-            ← Về trang chủ
-          </button>
-        </div>
-
-        <div className="mt-4 text-xs text-gray-500 text-center">
-          <p>Quiz ID: {quizId}</p>
-          <p>Hệ thống tự động tạo phòng mới để không làm gián đoạn người chơi khác</p>
-        </div>
-      </div>
-    </div>
+          {/* Debug Info */}
+          <Paper elevation={0} sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+            <Stack spacing={0.5} textAlign="center">
+              <Typography variant="caption" color="text.secondary">
+                Quiz ID: {quizId}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Hệ thống tự động tạo phòng mới để không làm gián đoạn người chơi khác
+              </Typography>
+            </Stack>
+          </Paper>
+        </CardContent>
+      </MainCard>
+    </GradientBox>
   );
 };
 

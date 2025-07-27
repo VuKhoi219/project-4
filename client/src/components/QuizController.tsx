@@ -1,86 +1,61 @@
-// import { useEffect, useState } from "react";
-// import { useParams, useNavigate } from "react-router-dom";
-// import { ref, onValue, set, get, DatabaseReference, db } from "../config/firebase";
-
-// const QuizController: React.FC = () => {
-//   const [quizStatus, setQuizStatus] = useState<any>(null);
-//   const [loading, setLoading] = useState(true);
-//   const { quizId } = useParams<{ quizId: string }>();
-//   const navigate = useNavigate();
-
-//   useEffect(() => {
-//     if (!quizId) {
-//       navigate('/');
-//       return;
-//     }
-
-//     checkAndRedirect();
-//   }, [quizId]);
-
-//   const checkAndRedirect = async () => {
-//     try {
-//       // Check if quiz exists
-//       const statusRef = ref(db, `quizzes/${quizId}/status`);
-//       const statusSnapshot = await get(statusRef);
-//       const status = statusSnapshot.val();
-
-//       const userName = localStorage.getItem("userName");
-      
-//       if (!status) {
-//         // Quiz doesn't exist, redirect to join to create it
-//         navigate(`/quiz/${quizId}/join`);
-//         return;
-//       }
-
-//       if (!userName) {
-//         // No username, need to join first
-//         navigate(`/quiz/${quizId}/join`);
-//         return;
-//       }
-
-//       // Check if user exists in participants
-//       const userRef = ref(db, `quizzes/${quizId}/participants/${userName}`);
-//       const userSnapshot = await get(userRef);
-
-//       if (!userSnapshot.exists()) {
-//         // User not in participants, redirect to join
-//         navigate(`/quiz/${quizId}/join`);
-//         return;
-//       }
-
-//       // User exists, check quiz status
-//       if (!status.isStarted) {
-//         // Quiz not started, go to waiting room
-//         navigate(`/quiz/${quizId}/waiting`);
-//       } else if (status.isStarted && !status.isCompleted) {
-//         // Quiz in progress, go to play
-//         navigate(`/quiz/${quizId}/play`);
-//       } else if (status.isCompleted) {
-//         // Quiz completed, go to final leaderboard
-//         navigate(`/quiz/${quizId}/leaderboard`);
-//       }
-
-//     } catch (error) {
-//       console.error("Error in quiz controller:", error);
-//       navigate(`/quiz/${quizId}/join`);
-//     }
-//   };
-
-//   return (
-//     <div className="flex items-center justify-center h-screen">
-//       <div className="text-center">
-//         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-//         <p className="text-lg">Đang kiểm tra trạng thái quiz...</p>
-//         <p className="text-sm text-gray-600 mt-2">Quiz ID: {quizId}</p>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default QuizController;
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ref, onValue, set, get, DatabaseReference, db } from "../config/firebase";
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  CircularProgress,
+  Chip,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  Stack,
+  Paper,
+  Alert,
+  AlertTitle
+} from '@mui/material';
+import {
+  Search as SearchIcon,
+  Error as ErrorIcon,
+  CheckCircle as CheckCircleIcon,
+  Refresh as RefreshIcon,
+  Login as LoginIcon,
+  Home as HomeIcon,
+  Map as MapIcon,
+  PersonAdd as PersonAddIcon,
+  HourglassEmpty as HourglassEmptyIcon,
+  PlayArrow as PlayArrowIcon,
+  EmojiEvents as EmojiEventsIcon
+} from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
+
+const StyledCard = styled(Card)(({ theme }) => ({
+  maxWidth: 480,
+  width: '100%',
+  margin: theme.spacing(2),
+  boxShadow: theme.shadows[8],
+  borderRadius: theme.spacing(2),
+}));
+
+const GradientBox = styled(Box)(({ theme }) => ({
+  minHeight: '100vh',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  background: 'linear-gradient(135deg, #e3f2fd 0%, #e8eaf6 100%)',
+}));
+
+const IconContainer = styled(Box)(({ theme }) => ({
+  fontSize: '4rem',
+  marginBottom: theme.spacing(2),
+  display: 'flex',
+  justifyContent: 'center',
+}));
 
 const QuizController: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -214,90 +189,195 @@ const QuizController: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="bg-white p-8 rounded-lg shadow-2xl max-w-md w-full mx-4">
-        
-        {/* Loading State */}
-        {loading && !error && (
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mx-auto mb-6"></div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">🔍 Đang Kiểm Tra</h2>
-            <p className="text-gray-600 mb-2">{status}</p>
-            <div className="text-sm text-gray-500">
-              <p>Quiz ID: <span className="font-mono bg-gray-100 px-2 py-1 rounded">{quizId}</span></p>
-              <p className="mt-1">User: {localStorage.getItem("userName") || "Chưa có"}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Error State */}
-        {error && (
-          <div className="text-center">
-            <div className="text-6xl mb-4">❌</div>
-            <h2 className="text-2xl font-bold text-red-600 mb-4">Có Lỗi Xảy Ra</h2>
-            <p className="text-gray-600 mb-6">{error}</p>
-            
-            <div className="space-y-3">
-              <button
-                onClick={handleRetry}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors"
-              >
-                🔄 Thử Lại
-              </button>
+    <GradientBox>
+      <StyledCard>
+        <CardContent sx={{ p: 4 }}>
+          
+          {/* Loading State */}
+          {loading && !error && (
+            <Box textAlign="center">
+              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                <CircularProgress size={64} thickness={4} />
+              </Box>
               
-              <button
-                onClick={() => navigate(`/quiz/${quizId}/join`)}
-                className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-colors"
-              >
-                ➡️ Tham Gia Quiz
-              </button>
+              <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+                <SearchIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                Đang Kiểm Tra
+              </Typography>
               
-              <button
-                onClick={handleGoHome}
-                className="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                {status}
+              </Typography>
+              
+              <Paper elevation={1} sx={{ p: 2, bgcolor: 'grey.50' }}>
+                <Stack direction="row" spacing={2} justifyContent="center" flexWrap="wrap">
+                  <Chip
+                    label={`Quiz ID: ${quizId}`}
+                    variant="outlined"
+                    size="small"
+                    sx={{ fontFamily: 'monospace' }}
+                  />
+                  <Chip
+                    label={`User: ${localStorage.getItem("userName") || "Chưa có"}`}
+                    variant="outlined"
+                    size="small"
+                  />
+                </Stack>
+              </Paper>
+            </Box>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <Box textAlign="center">
+              <IconContainer>
+                <ErrorIcon color="error" sx={{ fontSize: 'inherit' }} />
+              </IconContainer>
+              
+              <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: 'error.main' }}>
+                Có Lỗi Xảy Ra
+              </Typography>
+              
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+                {error}
+              </Typography>
+              
+              <Stack spacing={2}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="large"
+                  startIcon={<RefreshIcon />}
+                  onClick={handleRetry}
+                  fullWidth
+                >
+                  Thử Lại
+                </Button>
+                
+                <Button
+                  variant="contained"
+                  color="success"
+                  size="large"
+                  startIcon={<LoginIcon />}
+                  onClick={() => navigate(`/quiz/${quizId}/join`)}
+                  fullWidth
+                >
+                  Tham Gia Quiz
+                </Button>
+                
+                <Button
+                  variant="outlined"
+                  color="inherit"
+                  size="large"
+                  startIcon={<HomeIcon />}
+                  onClick={handleGoHome}
+                  fullWidth
+                >
+                  Về Trang Chủ
+                </Button>
+              </Stack>
+            </Box>
+          )}
+
+          {/* Success State with delayed redirect */}
+          {!loading && !error && (
+            <Box textAlign="center">
+              <IconContainer>
+                <CheckCircleIcon color="success" sx={{ fontSize: 'inherit' }} />
+              </IconContainer>
+              
+              <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: 'success.main' }}>
+                Đang Chuyển Hướng
+              </Typography>
+              
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                {status}
+              </Typography>
+              
+              <Alert severity="info" sx={{ mb: 3, textAlign: 'left' }}>
+                <AlertTitle sx={{ fontWeight: 'bold' }}>Thông tin phiên</AlertTitle>
+                <Typography variant="body2">
+                  <strong>Quiz ID:</strong> {quizId}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>User:</strong> {localStorage.getItem("userName")}
+                </Typography>
+              </Alert>
+
+              <Button
+                variant="text"
+                color="primary"
+                size="small"
+                onClick={() => navigate('/')}
+                sx={{ textDecoration: 'underline' }}
               >
-                🏠 Về Trang Chủ
-              </button>
-            </div>
-          </div>
-        )}
+                Hủy và về trang chủ
+              </Button>
+            </Box>
+          )}
 
-        {/* Success State with delayed redirect */}
-        {!loading && !error && (
-          <div className="text-center">
-            <div className="text-6xl mb-4">✅</div>
-            <h2 className="text-2xl font-bold text-green-600 mb-4">Đang Chuyển Hướng</h2>
-            <p className="text-gray-600 mb-4">{status}</p>
+          {/* Navigation Help */}
+          <Box sx={{ mt: 4, pt: 3, borderTop: 1, borderColor: 'divider' }}>
+            <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mb: 2, fontWeight: 'bold' }}>
+              <MapIcon sx={{ mr: 1, verticalAlign: 'middle', fontSize: 'small' }} />
+              Hướng dẫn điều hướng:
+            </Typography>
             
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-              <div className="text-sm text-gray-700">
-                <p><strong>Quiz ID:</strong> {quizId}</p>
-                <p><strong>User:</strong> {localStorage.getItem("userName")}</p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => navigate('/')}
-              className="text-blue-500 hover:text-blue-700 text-sm underline"
-            >
-              Hủy và về trang chủ
-            </button>
-          </div>
-        )}
-
-        {/* Navigation Help */}
-        <div className="mt-6 text-xs text-gray-500 text-center border-t pt-4">
-          <p className="font-semibold mb-2">🗺️ Hướng dẫn điều hướng:</p>
-          <ul className="text-left space-y-1">
-            <li>• Quiz chưa tồn tại → Tạo phòng mới</li>
-            <li>• Chưa tham gia → Trang tham gia</li>
-            <li>• Quiz chưa bắt đầu → Phòng chờ</li>
-            <li>• Quiz đang diễn ra → Trang chơi</li>
-            <li>• Quiz đã kết thúc → Kết quả cuối</li>
-          </ul>
-        </div>
-      </div>
-    </div>
+            <List dense sx={{ bgcolor: 'grey.50', borderRadius: 1 }}>
+              <ListItem>
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  <PersonAddIcon fontSize="small" color="action" />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="Quiz chưa tồn tại → Tạo phòng mới"
+                  primaryTypographyProps={{ variant: 'body2' }}
+                />
+              </ListItem>
+              
+              <ListItem>
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  <LoginIcon fontSize="small" color="action" />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="Chưa tham gia → Trang tham gia"
+                  primaryTypographyProps={{ variant: 'body2' }}
+                />
+              </ListItem>
+              
+              <ListItem>
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  <HourglassEmptyIcon fontSize="small" color="action" />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="Quiz chưa bắt đầu → Phòng chờ"
+                  primaryTypographyProps={{ variant: 'body2' }}
+                />
+              </ListItem>
+              
+              <ListItem>
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  <PlayArrowIcon fontSize="small" color="action" />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="Quiz đang diễn ra → Trang chơi"
+                  primaryTypographyProps={{ variant: 'body2' }}
+                />
+              </ListItem>
+              
+              <ListItem>
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  <EmojiEventsIcon fontSize="small" color="action" />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="Quiz đã kết thúc → Kết quả cuối"
+                  primaryTypographyProps={{ variant: 'body2' }}
+                />
+              </ListItem>
+            </List>
+          </Box>
+        </CardContent>
+      </StyledCard>
+    </GradientBox>
   );
 };
 
