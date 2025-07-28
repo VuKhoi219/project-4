@@ -51,9 +51,6 @@ public class Quiz {
     @Column
     private boolean shuffle_answers = true;
 
-    @Column(name = "share_link", length = 100, unique = true) // Mapping tới database column share_link
-    private String shareLink; // Java field name là shareLink
-
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Question> questions;
 }
