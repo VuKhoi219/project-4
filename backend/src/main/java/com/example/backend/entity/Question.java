@@ -32,16 +32,10 @@ public class Question {
     private QuestionType questionType;
 
     @Column(nullable = false)
-    private int points = 1;
-
-    @Column(columnDefinition = "TEXT")
-    private String explanation;
+    private int points = 1000;
 
     @Column(nullable = false)
     private int orderIndex;
-
-    @Column(nullable = false)
-    private boolean isRequired = true;
 
     @Column(name = "time_limit")
     private int timeLimit; // seconds, override quiz setting

@@ -45,12 +45,6 @@ public class Quiz {
     @JoinColumn(name = "file_id")
     private UploadedFile  file;
 
-    @Column
-    private boolean show_correct_answers = true;
-
-    @Column
-    private boolean shuffle_answers = true;
-
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Question> questions;
 }
