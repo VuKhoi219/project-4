@@ -1,0 +1,108 @@
+[
+    {
+        "id": "tech_trivia_101",
+        "title": "Tech Trivia 101",
+        "description": "A fun quiz to test your knowledge about technology, programming, and the internet. Are you a true geek?",
+        "questions": [
+            {
+                "id": "q1",
+                "type": "multiple_choice_single",
+                "text": "What does 'HTTP' stand for?",
+                "options": [
+                    "HyperText Transfer Protocol",
+                    "HighText Transfer Protocol",
+                    "HyperText Transmission Protocol",
+                    "HyperText Transfer Product"
+                ],
+                "correctAnswer": "HyperText Transfer Protocol",
+                "timeLimit": 20
+            },
+            {
+                "id": "q2",
+                "type": "true_false",
+                "text": "The programming language 'Python' is named after the snake.",
+                "options": [
+                    "True",
+                    "False"
+                ],
+                "correctAnswer": "False",
+                "timeLimit": 15
+            },
+            {
+                "id": "q3",
+                "type": "multiple_choice_multiple",
+                "text": "Which of the following are JavaScript frameworks or libraries? (Select all that apply)",
+                "options": [
+                    "React",
+                    "Django",
+                    "Vue",
+                    "Angular"
+                ],
+                "correctAnswers": [
+                    "React",
+                    "Vue",
+                    "Angular"
+                ],
+                "timeLimit": 25
+            },
+            {
+                "id": "q4",
+                "type": "text_input",
+                "text": "What is the name of the version control system created by Linus Torvalds?",
+                "correctAnswer": "Git",
+                "timeLimit": 30
+            },
+            {
+                "id": "q5",
+                "type": "multiple_choice_single",
+                "text": "Which company developed the React library?",
+                "options": [
+                    "Google",
+                    "Microsoft",
+                    "Facebook (Meta)",
+                    "Amazon"
+                ],
+                "correctAnswer": "Facebook (Meta)",
+                "timeLimit": 20
+            }
+        ]
+    },
+    {
+        "id": "world_capitals_easy",
+        "title": "World Capitals (Easy)",
+        "description": "How well do you know the capitals of the world? An easy-going quiz to get you started on your geography journey.",
+        "questions": [
+            {
+                "id": "wc1",
+                "type": "multiple_choice_single",
+                "text": "What is the capital of Japan?",
+                "options": [
+                    "Beijing",
+                    "Seoul",
+                    "Tokyo",
+                    "Bangkok"
+                ],
+                "correctAnswer": "Tokyo",
+                "timeLimit": 20
+            },
+            {
+                "id": "wc2",
+                "type": "text_input",
+                "text": "The capital of Italy is ____.",
+                "correctAnswer": "Rome",
+                "timeLimit": 20
+            },
+            {
+                "id": "wc3",
+                "type": "true_false",
+                "text": "Sydney is the capital of Australia.",
+                "options": [
+                    "True",
+                    "False"
+                ],
+                "correctAnswer": "False",
+                "timeLimit": 15
+            }
+        ]
+    }
+]

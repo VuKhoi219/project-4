@@ -119,28 +119,40 @@ const QuizPlay: React.FC = () => {
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [isHost, gameState, quizId, roomId, currentQuestionIndex, questions]);
+  const lockRef = useRef(false);
 
   const handleAnswer = async (answer: string) => {
-    if (hasAnswered || gameState !== 'playing' || !quizId || !roomId) return;
-    const currentQ = questions[currentQuestionIndex];
-    const correct = answer === currentQ.correctAnswer;
-    const points = correct ? calculateScore(timeLeft, currentQ.timeLimit || 30) : 0;
-    const newTotal = totalScore + points;
-    setHasAnswered(true); setSelectedAnswer(answer); setIsCorrect(correct); setEarnedPoints(points);
-    try {
-      const participantRef = ref(db, `quizzes/${quizId}/rooms/${roomId}/participants/${userName}`);
-      await update(participantRef, { score: newTotal, lastAnswered: Date.now() });
-      const leaderboardRef = ref(db, `quizzes/${quizId}/rooms/${roomId}/leaderboard/${userName}`);
-      await update(leaderboardRef, { bestScore: newTotal }); // Update bestScore immediately
-      const attemptRef = ref(db, `quizzes/${quizId}/rooms/${roomId}/playHistory/${userName}/attempts/${currentQ.id}`);
-      await set(attemptRef, { questionId: currentQ.id, answer, isCorrect: correct, score: points, timeLeft, playedAt: Date.now() });
-    } catch (error) { console.error("Error saving answer:", error); }
-  };
-  
+      if (lockRef.current || hasAnswered || gameState !== 'playing' || !quizId || !roomId) return;
+      
+      lockRef.current = true; // Lock ngay lập tức
+      
+      const currentQ = questions[currentQuestionIndex];
+      const correct = answer === currentQ.correctAnswer;
+      const points = correct ? calculateScore(timeLeft, currentQ.timeLimit || 30) : 0;
+      const newTotal = totalScore + points;
+      
+      setHasAnswered(true); 
+      setSelectedAnswer(answer); 
+      setIsCorrect(correct); 
+      setEarnedPoints(points);
+      try {
+        const participantRef = ref(db, `quizzes/${quizId}/rooms/${roomId}/participants/${userName}`);
+        await update(participantRef, { score: newTotal, lastAnswered: Date.now() });
+        const leaderboardRef = ref(db, `quizzes/${quizId}/rooms/${roomId}/leaderboard/${userName}`);
+        await update(leaderboardRef, { bestScore: newTotal }); // Update bestScore immediately
+        const attemptRef = ref(db, `quizzes/${quizId}/rooms/${roomId}/playHistory/${userName}/attempts/${currentQ.id}`);
+        await set(attemptRef, { questionId: currentQ.id, answer, isCorrect: correct, score: points, timeLeft, playedAt: Date.now() });
+      } catch (error) { console.error("Error saving answer:", error); }
+    };
+    // Reset lock khi chuyển câu hỏi mới
+  useEffect(() => {
+      lockRef.current = false;
+  }, [currentQuestionIndex]);
   if (loading) return <BaseBox style={{background:'#1f2937'}}><CircularProgress color="inherit" /></BaseBox>;
 
   const currentQ = questions[currentQuestionIndex];
   if (!currentQ) return <PlayingBox><Typography>Chờ câu hỏi tiếp theo...</Typography></PlayingBox>;
+
 
   switch (gameState) {
     case 'get-ready':
