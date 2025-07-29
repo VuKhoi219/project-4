@@ -4,12 +4,14 @@ export interface Question {
   options: string[];
   correctAnswer: string;
   timeLimit: number;
+  
 }
 
 export interface Participant {
   joinedAt: number;
   score: number;
   bestScore: number;
+  displayName: string; // <--- THÊM DÒNG NÀY
   isActive: boolean;
 }
 
@@ -18,6 +20,8 @@ export interface LeaderboardEntry {
   bestScore: number;
   averageScore: number;
   lastPlayed: number;
+    displayName: string; // <--- THÊM DÒNG NÀY
+
 }
 
 export interface Attempt {
