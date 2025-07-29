@@ -1,32 +1,14 @@
-import React, { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { ref, set, get, DatabaseReference, db } from "../config/firebase";
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Typography,
-  Container,
-  Alert,
-  Divider,
-  List,
-  ListItem,
-  ListItemText,
-  CircularProgress,
-  Paper,
-  Chip,
-  Stack
-} from '@mui/material';
-import { styled } from '@mui/material/styles';
-import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
-import RocketIcon from '@mui/icons-material/Rocket';
-import AddIcon from '@mui/icons-material/Add';
-import LinkIcon from '@mui/icons-material/Link';
-import HomeIcon from '@mui/icons-material/Home';
-import StarIcon from '@mui/icons-material/Star';
+// src/components/JoinQuiz.tsx
 
-// Styled components for custom styling
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { ref, set, get, db } from "../config/firebase";
+import { Box, Button, Card, CardContent, Typography, CircularProgress, Paper, Stack, Alert } from '@mui/material';
+import { styled } from '@mui/material/styles';
+import AddIcon from '@mui/icons-material/Add';
+import HomeIcon from '@mui/icons-material/Home';
+
+// Styled components
 const GradientBox = styled(Box)(({ theme }) => ({
   background: 'linear-gradient(135deg, #e3f2fd 0%, #c5cae9 100%)',
   minHeight: '100vh',
@@ -37,360 +19,177 @@ const GradientBox = styled(Box)(({ theme }) => ({
   justifyContent: 'center',
 }));
 
-const HeaderCard = styled(Card)(({ theme }) => ({
-  maxWidth: 400,
-  marginBottom: theme.spacing(4),
-  backgroundColor: '#fff',
-  border: `2px solid ${theme.palette.primary.light}`,
-  boxShadow: theme.shadows[8],
-}));
-
 const MainCard = styled(Card)(({ theme }) => ({
-  maxWidth: 400,
+  maxWidth: 450,
   width: '100%',
   boxShadow: theme.shadows[16],
-  border: `1px solid ${theme.palette.grey[200]}`,
-}));
-
-const RoomIdBox = styled(Box)(({ theme }) => ({
-  padding: theme.spacing(2),
-  backgroundColor: theme.palette.primary.light,
-  borderRadius: theme.spacing(1),
-  border: `2px solid ${theme.palette.primary.main}`,
-  marginBottom: theme.spacing(3),
+  borderRadius: Number(theme.shape.borderRadius) * 2,
 }));
 
 const ActionButton = styled(Button)(({ theme }) => ({
   padding: theme.spacing(2),
   fontSize: '1.1rem',
   fontWeight: 600,
-  textTransform: 'none',
   borderRadius: theme.spacing(1),
-  boxShadow: theme.shadows[4],
+  transition: 'transform 0.2s',
   '&:hover': {
-    boxShadow: theme.shadows[8],
-    transform: 'scale(0.98)',
-  },
-  '&:active': {
-    transform: 'scale(0.95)',
-  },
+    transform: 'scale(1.02)'
+  }
 }));
 
 const JoinQuiz: React.FC = () => {
-  const [loading, setLoading] = useState<boolean>(false);
-  const [showWarning, setShowWarning] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
+  const [error, setError] = useState<string>("");
+  const [quizInfo, setQuizInfo] = useState<any>(null);
+
   const { quizId } = useParams<{ quizId: string }>();
   const navigate = useNavigate();
 
-  const generateRoomId = () => {
-    const timestamp = Date.now();
-    const randomStr = Math.random().toString(36).substring(2, 8);
-    return `room_${timestamp}_${randomStr}`;
-  };
+  useEffect(() => {
+    if (!quizId) {
+      setError("Không tìm thấy ID của bộ đề quiz.");
+      setLoading(false);
+      return;
+    }
 
-  const handleJoinRoom = async () => {
-    setLoading(true);
-    setShowWarning("");
+    const fetchQuizInfo = async () => {
+      const infoRef = ref(db, `quizzes/${quizId}/info`);
+      try {
+        const snapshot = await get(infoRef);
+
+        // LOGIC MỚI: "Tạo nếu chưa tồn tại"
+        if (snapshot.exists()) {
+          // Nếu quiz đã tồn tại, chỉ cần lấy thông tin
+          setQuizInfo(snapshot.val());
+        } else {
+          // Nếu quiz CHƯA tồn tại, tạo thông tin mặc định
+          console.log(`Quiz with ID "${quizId}" not found. Creating a default one.`);
+          
+          const defaultQuizInfo = {
+            title: `Bộ Đề Mặc Định (${quizId})`,
+            description: "Đây là một bộ đề được tạo tự động.",
+            totalQuestions: 5, // Dựa trên MOCK_QUESTIONS
+            pointsPerQuestion: 100
+          };
+
+          // Ghi thông tin mặc định này vào Firebase
+          await set(infoRef, defaultQuizInfo);
+
+          // Sau khi tạo, cập nhật state để hiển thị
+          setQuizInfo(defaultQuizInfo);
+        }
+      } catch (err) {
+        console.error(err);
+        setError("Lỗi khi tải hoặc tạo thông tin quiz. Vui lòng kiểm tra kết nối mạng và quyền truy cập Firebase.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuizInfo();
+  }, [quizId]);
+
+  const handleCreateRoom = async () => {
+    if (!quizId) return;
+
+    setIsCreating(true);
+    setError("");
 
     try {
-      let targetRoomId: string;
+      const roomId = `room_${Date.now()}`;
+      const roomPath = `quizzes/${quizId}/rooms/${roomId}`;
+      const roomRef = ref(db, roomPath);
 
-      // Nếu không có quizId, tạo phòng mới
-      if (!quizId) {
-        targetRoomId = generateRoomId();
-        setShowWarning("Đang tạo phòng mới...");
-      } else {
-        // Kiểm tra trạng thái phòng hiện tại
-        const statusRef = ref(db, `quizzes/${quizId}/status`);
-        const statusSnapshot = await get(statusRef);
-        const status = statusSnapshot.val();
-
-        // Nếu quiz đã bắt đầu hoặc đã hoàn thành, tạo phòng mới
-        if (status?.isStarted || status?.isCompleted) {
-          targetRoomId = generateRoomId();
-          setShowWarning("Tạo phòng mới vì quiz đang chạy/đã kết thúc...");
-        } else {
-          targetRoomId = quizId;
-        }
-      }
-
-      // Khởi tạo trạng thái quiz nếu chưa có
-      const statusRef = ref(db, `quizzes/${targetRoomId}/status`);
-      const statusSnapshot = await get(statusRef);
-      if (!statusSnapshot.exists()) {
-        await set(statusRef, {
+      const roomData = {
+        info: {
+          roomName: `Phòng chơi lúc ${new Date().toLocaleTimeString('vi-VN')}`,
+          createdBy: "system",
+          createdAt: Date.now(),
+          maxParticipants: 20,
+        },
+        status: {
           isStarted: false,
           startedAt: null,
           startedBy: null,
           isCompleted: false,
           completedAt: null,
-          createdBy: null, // Sẽ set khi có người đầu tiên nhập tên
-          createdAt: Date.now()
-        });
-      }
-
-      // Khởi tạo currentState
-      const currentStateRef = ref(db, `quizzes/${targetRoomId}/currentState`);
-      const currentStateSnapshot = await get(currentStateRef);
-      if (!currentStateSnapshot.exists()) {
-        await set(currentStateRef, {
+        },
+        currentState: {
+          phase: 'waiting',
           questionIndex: 0,
           timeLeft: 30,
-          phase: 'waiting',
-          maxTimePerQuestion: 30
-        });
-      }
+        },
+        participants: {},
+        leaderboard: {},
+        playHistory: {}
+      };
+      
+      await set(roomRef, roomData);
 
-      // Khởi tạo quiz info
-      const infoRef = ref(db, `quizzes/${targetRoomId}/info`);
-      const infoSnapshot = await get(infoRef);
-      if (!infoSnapshot.exists()) {
-        await set(infoRef, {
-          title: `Quiz Room ${targetRoomId.split('_')[1]}`,
-          totalQuestions: 5,
-          pointsPerQuestion: 100,
-          description: "Multiplayer Quiz Game",
-          createdAt: Date.now()
-        });
-      }
-      
-      // Lưu room ID vào localStorage (chưa có userName)
-      localStorage.setItem("quizId", targetRoomId);
-      localStorage.removeItem("userName"); // Xóa userName cũ nếu có
-      
-      console.log(`Joining room ${targetRoomId}`);
-      
-      // Chuyển đến phòng chờ
-      navigate(`/quiz/${targetRoomId}/waiting`);
-      
-    } catch (error) {
-      console.error("Lỗi khi tham gia:", error);
-      setShowWarning("Đã có lỗi xảy ra! Vui lòng thử lại.");
-    } finally {
-      setLoading(false);
-    }
-  };
+      localStorage.removeItem("userName");
+      localStorage.setItem("quizId", quizId);
+      localStorage.setItem("roomId", roomId);
 
-  const handleCreateRoom = async () => {
-    setLoading(true);
-    setShowWarning("Đang tạo phòng mới...");
+      navigate(`/quiz/${quizId}/room/${roomId}/waiting`);
 
-    try {
-      const newRoomId = generateRoomId();
-      
-      // Khởi tạo phòng mới
-      const statusRef = ref(db, `quizzes/${newRoomId}/status`);
-      await set(statusRef, {
-        isStarted: false,
-        startedAt: null,
-        startedBy: null,
-        isCompleted: false,
-        completedAt: null,
-        createdBy: null, // Sẽ set khi có người đầu tiên nhập tên
-        createdAt: Date.now()
-      });
-
-      const currentStateRef = ref(db, `quizzes/${newRoomId}/currentState`);
-      await set(currentStateRef, {
-        questionIndex: 0,
-        timeLeft: 30,
-        phase: 'waiting',
-        maxTimePerQuestion: 30
-      });
-
-      const infoRef = ref(db, `quizzes/${newRoomId}/info`);
-      await set(infoRef, {
-        title: `Quiz Room ${newRoomId.split('_')[1]}`,
-        totalQuestions: 5,
-        pointsPerQuestion: 100,
-        description: "Multiplayer Quiz Game",
-        createdAt: Date.now()
-      });
-      
-      localStorage.setItem("quizId", newRoomId);
-      localStorage.removeUser("userName"); // Xóa userName cũ nếu có
-      
-      console.log(`Created new room ${newRoomId}`);
-      
-      // Chuyển đến phòng chờ
-      navigate(`/quiz/${newRoomId}/waiting`);
-      
     } catch (error) {
       console.error("Lỗi khi tạo phòng:", error);
-      setShowWarning("Đã có lỗi xảy ra! Vui lòng thử lại.");
-    } finally {
-      setLoading(false);
+      setError("Đã có lỗi xảy ra khi tạo phòng! Vui lòng thử lại.");
+      setIsCreating(false);
     }
   };
 
-  const handleJoinByRoomId = () => {
-    const roomId = prompt("Nhập Room ID để tham gia:");
-    if (roomId) {
-      navigate(`/quiz/${roomId}`);
-    }
-  };
+  if (loading) {
+    return (
+      <GradientBox>
+        <CircularProgress />
+        <Typography sx={{ color: 'text.primary', mt: 2 }}>Đang kiểm tra bộ đề...</Typography>
+      </GradientBox>
+    );
+  }
 
   return (
     <GradientBox>
-      {/* Header */}
-      <HeaderCard>
-        <CardContent sx={{ textAlign: 'center', py: 3 }}>
-          <Stack direction="row" alignItems="center" justifyContent="center" spacing={1} mb={1}>
-            <SportsEsportsIcon color="primary" fontSize="large" />
-            <Typography variant="h6" component="div" fontWeight="bold" color="primary">
-              MULTIPLAYER QUIZ
-            </Typography>
-          </Stack>
-          <Typography variant="body2" color="text.secondary">
-            Tham gia hoặc tạo phòng chơi mới
-          </Typography>
-        </CardContent>
-      </HeaderCard>
-
       <MainCard>
         <CardContent sx={{ p: 4 }}>
-          <Typography variant="h4" component="h1" textAlign="center" mb={3} fontWeight="bold" color="text.primary">
-            {quizId ? 'Tham gia Quiz' : 'Quiz Game'}
+          <Typography variant="h4" component="h1" textAlign="center" mb={1} fontWeight="bold">
+            Sẵn sàng chơi?
           </Typography>
           
-          {quizId && (
-            <RoomIdBox>
-              <Typography variant="body2" color="primary" textAlign="center" fontWeight="medium">
-                Room ID:
-              </Typography>
-              <Typography 
-                variant="h5" 
-                component="div" 
-                textAlign="center" 
-                fontWeight="bold" 
-                color="primary.dark"
-                fontFamily="monospace"
-                mt={1}
-              >
-                {quizId}
-              </Typography>
-              <Box textAlign="center" mt={2}>
-                <Chip 
-                  label="✨ Hệ thống sẽ tự động tạo phòng mới nếu cần" 
-                  size="small"
-                  color="primary"
-                  variant="outlined"
-                />
-              </Box>
-            </RoomIdBox>
+          {quizInfo && (
+            <Paper elevation={0} sx={{ p: 2, bgcolor: 'grey.100', mb: 3, textAlign: 'center', borderRadius: 2 }}>
+              <Typography variant="h6" fontWeight="bold">{quizInfo.title}</Typography>
+              <Typography variant="body2" color="text.secondary">{quizInfo.description || 'Tham gia và thể hiện kiến thức của bạn!'}</Typography>
+            </Paper>
           )}
 
-          {/* Warning Message */}
-          {showWarning && (
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              <Typography variant="body2" fontWeight="medium">
-                {showWarning}
-              </Typography>
-            </Alert>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
           )}
 
-          {/* Action Buttons */}
           <Stack spacing={2}>
-            {quizId ? (
-              // Nếu có quizId, chỉ hiển thị nút tham gia
-              <ActionButton
-                variant="contained"
-                color="primary"
-                onClick={handleJoinRoom}
-                disabled={loading}
-                startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <RocketIcon />}
-                fullWidth
-              >
-                {loading ? 'Đang vào phòng...' : 'Vào Phòng Chờ'}
-              </ActionButton>
-            ) : (
-              // Nếu không có quizId, hiển thị 2 tùy chọn
-              <>
-                <ActionButton
-                  variant="contained"
-                  color="success"
-                  onClick={handleCreateRoom}
-                  disabled={loading}
-                  startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <AddIcon />}
-                  fullWidth
-                >
-                  {loading ? 'Đang tạo phòng...' : 'Tạo Phòng Mới'}
-                </ActionButton>
-
-                <Box sx={{ display: 'flex', alignItems: 'center', my: 2 }}>
-                  <Divider sx={{ flex: 1 }} />
-                  <Typography variant="body2" color="text.secondary" sx={{ px: 2 }}>
-                    hoặc
-                  </Typography>
-                  <Divider sx={{ flex: 1 }} />
-                </Box>
-
-                <ActionButton
-                  variant="outlined"
-                  color="primary"
-                  onClick={handleJoinByRoomId}
-                  disabled={loading}
-                  startIcon={<LinkIcon />}
-                  fullWidth
-                >
-                  Tham Gia Bằng Room ID
-                </ActionButton>
-              </>
-            )}
+            <ActionButton
+              variant="contained"
+              color="success"
+              onClick={handleCreateRoom}
+              disabled={isCreating || !!error}
+              startIcon={isCreating ? <CircularProgress size={20} color="inherit" /> : <AddIcon />}
+              fullWidth
+            >
+              {isCreating ? 'Đang tạo phòng...' : 'Tạo Phòng Chơi Mới'}
+            </ActionButton>
           </Stack>
-
+          
           <Typography variant="body2" color="text.secondary" textAlign="center" mt={3}>
-            {quizId ? (
-              'Bạn sẽ nhập tên trong phòng chờ'
-            ) : (
-              'Chọn tạo phòng mới hoặc tham gia phòng có sẵn'
-            )}
+            Một phòng chơi mới sẽ được tạo cho bộ đề này.
           </Typography>
         </CardContent>
       </MainCard>
-
-      {/* Quick Actions */}
       <Box mt={3}>
-        <Button
-          startIcon={<HomeIcon />}
-          onClick={() => navigate('/')}
-          color="inherit"
-          sx={{ textDecoration: 'underline', color: 'text.secondary' }}
-        >
-          Trang chủ
+        <Button startIcon={<HomeIcon />} onClick={() => navigate('/')} color="inherit" sx={{ textTransform: 'none' }}>
+          Về Trang chủ
         </Button>
-      </Box>
-
-      {/* Features Info */}
-      <Box mt={4} maxWidth={400} width="100%">
-        <Paper elevation={2} sx={{ p: 3, border: '1px solid', borderColor: 'grey.300' }}>
-          <Stack direction="row" alignItems="center" spacing={1} mb={2}>
-            <StarIcon color="warning" />
-            <Typography variant="h6" fontWeight="bold" color="text.primary">
-              Tính năng
-            </Typography>
-          </Stack>
-          <List dense>
-            {[
-              'Multiplayer real-time',
-              'Điểm số giảm dần theo thời gian',
-              'Bảng xếp hạng live',
-              'Tự động tạo phòng mới khi cần',
-              'Podium cho top 3',
-              'Nhập tên trong phòng chờ'
-            ].map((feature, index) => (
-              <ListItem key={index} sx={{ py: 0.5, px: 0 }}>
-                <ListItemText 
-                  primary={`• ${feature}`}
-                  primaryTypographyProps={{ 
-                    variant: 'body2', 
-                    color: 'text.secondary' 
-                  }}
-                />
-              </ListItem>
-            ))}
-          </List>
-        </Paper>
       </Box>
     </GradientBox>
   );
