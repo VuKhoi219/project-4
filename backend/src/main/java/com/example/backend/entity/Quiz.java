@@ -12,7 +12,6 @@ import java.util.List;
         indexes = {
                 @Index(name = "idx_quizzes_creator", columnList = "creator_id"),
                 @Index(name = "idx_quizzes_category", columnList = "category_id"),
-                @Index(name = "idx_quizzes_share_link", columnList = "share_link"),
         }
 )
 public class Quiz {
@@ -42,7 +41,7 @@ public class Quiz {
     private SourceType source_type = SourceType.TEXT;
 
     @ManyToOne
-    @JoinColumn(name = "file_id")
+    @JoinColumn(name = "file_id", nullable = false)
     private UploadedFile  file;
 
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
