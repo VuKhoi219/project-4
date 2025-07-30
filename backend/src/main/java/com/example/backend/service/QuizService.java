@@ -3,6 +3,8 @@ package com.example.backend.service;
 import com.example.backend.dto.generated.GeneratedAnswerDTO;
 import com.example.backend.dto.generated.GeneratedQuestionDTO;
 import com.example.backend.dto.generated.GeneratedQuestionsWrapper;
+import com.example.backend.dto.helper.AnswerDTO;
+import com.example.backend.dto.helper.QuestionWithAnswersDTO;
 import com.example.backend.dto.request.QuizRequest;
 import com.example.backend.dto.response.ChatResponse;
 import com.example.backend.dto.response.ListQuizzesResponse;
@@ -102,8 +104,6 @@ public class QuizService {
         quiz.setSummary(createDTO.getSummary());
         quiz.setSource_type(createDTO.getSourceType());
         quiz.setFile(file);
-        quiz.setShow_correct_answers(createDTO.isShowCorrectAnswers());
-        quiz.setShuffle_answers(createDTO.isShuffleAnswers());
         // QUAN TRỌNG: Khởi tạo questions list để tránh NullPointerException
         quiz.setQuestions(new ArrayList<>());
 
@@ -222,11 +222,9 @@ public class QuizService {
                 question.setQuiz(quiz);
                 question.setQuestionText(genQuestion.getQuestionText());
                 question.setQuestionType(QuestionType.valueOf(genQuestion.getQuestionType()));
-                question.setExplanation(genQuestion.getExplanation());
                 question.setPoints(genQuestion.getPoints() != null ? genQuestion.getPoints() : 1);
                 question.setOrderIndex(i + 1);
                 question.setTimeLimit(genQuestion.getTimeLimit());
-                question.setRequired(true);
 
                 Question savedQuestion = questionRepository.save(question);
                 log.debug("Đã lưu câu hỏi {}: ID={}, Type={}",
@@ -261,14 +259,45 @@ public class QuizService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ListQuizzesResponse> getAllQuizzes() {
+    public Page<ListQuizzesResponse> getAllQuizzes(int page) {
         try {
-            Pageable pageable  = PageRequest.of(0, 10);
+            Pageable pageable  = PageRequest.of(page, 10);
             return quizRepository.findQuizzesAll(pageable);
         } catch (DataAccessException e) {
             throw new RuntimeException("Error retrieving quizzes", e);
         }
     }
 
+    public Page<QuestionWithAnswersDTO> getQuestionsWithAnswersByQuiz(long quizId, int page) {
+        // Tạo Pageable với kích thước trang là 1
+        Pageable pageable = PageRequest.of(page, 1);
+
+        // Lấy danh sách câu hỏi với phân trang
+        Page<Question> questionPage = questionRepository.getQuestionsWithAnswersByQuiz(quizId, pageable);
+
+        // Ánh xạ từ Page<Question> sang Page<QuestionWithAnswersDTO>
+        Page<QuestionWithAnswersDTO> questionDTOPage = questionPage.map(question -> {
+            // Ánh xạ danh sách Answer sang AnswerDTO
+            List<AnswerDTO> answerDTOs = question.getQuestionType() == QuestionType.SHORT_ANSWER
+                    ? null // Đặt answers thành null cho SHORT_ANSWER
+                    : question.getAnswers().stream()
+                    .map(answer -> new AnswerDTO(
+                            answer.getId(),
+                            answer.getAnswerText()
+                    ))
+                    .collect(Collectors.toList());
+
+            // Tạo QuestionWithAnswersDTO
+            return new QuestionWithAnswersDTO(
+                    question.getId(),
+                    question.getQuestionText(),
+                    question.getQuestionType(),
+                    question.getTimeLimit(),
+                    answerDTOs
+            );
+        });
+
+        return questionDTOPage;
+    }
 
 }

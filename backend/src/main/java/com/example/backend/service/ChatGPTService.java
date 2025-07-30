@@ -41,7 +41,7 @@ public class ChatGPTService {
             ChatRequest request = ChatRequest.builder()
                     .model("gpt-4o-mini")
                     .messages(Arrays.asList(
-                            new ChatMessage("system", "Bạn là một chuyên gia tạo câu hỏi trắc nghiệm. Trả lời theo định dạng JSON chính xác."),
+                            new ChatMessage("system", "Bạn là một chuyên gia tạo câu hỏi trắc nghiệm và tự luận. Trả lời theo định dạng JSON chính xác."),
                             new ChatMessage("user", prompt)
                     ))
                     .build();
@@ -91,7 +91,6 @@ public class ChatGPTService {
                 - `explanation`: giải thích tại sao đúng (cho các loại trắc nghiệm) hoặc mô tả ngắn gợi ý cho câu trả lời tự luận
                 - `points`: mặc định là 1
                 - `orderIndex`: số thứ tự câu hỏi (1 đến %d)
-                - `isRequired`: luôn là true
                 - `timeLimit`: thời gian giới hạn (tùy loại câu hỏi, gợi ý: 30–90 giây)
                 - `answers`: chỉ dùng cho MULTIPLE_CHOICE, MULTIPLE_SELECT, TRUE_FALSE, SHORT_ANSWER
         
@@ -102,9 +101,8 @@ public class ChatGPTService {
                       "questionText": "Ví dụ: Trái đất quay quanh Mặt trời là đúng hay sai?",
                       "questionType": "TRUE_FALSE",
                       "explanation": "Trái đất quay quanh Mặt trời là kiến thức thiên văn cơ bản.",
-                      "points": 1,
+                      "points": 1000,
                       "orderIndex": 1,
-                      "isRequired": true,
                       "timeLimit": 20,
                       "answers": [
                         {
@@ -122,10 +120,9 @@ public class ChatGPTService {
                     {
                       "questionText": "Ai là tác giả của Truyện Kiều?",
                       "questionType": "SHORT_ANSWER",
-                      "explanation": "Người học cần trả lời: Nguyễn Du.",
-                      "points": 1,
+                      "explanation": "Giải thích tại sao lại lựa chọn đáp án ",
+                      "points": 1000,
                       "orderIndex": 2,
-                      "isRequired": true,
                       "timeLimit": 30,
                       "answers": [
                         {

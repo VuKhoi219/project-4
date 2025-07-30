@@ -29,9 +29,7 @@ public class QuestionResponse {
         response.setQuestionText(question.getQuestionText());
         response.setQuestionType(question.getQuestionType().name());
         response.setPoints(question.getPoints());
-        response.setExplanation(question.getExplanation());
         response.setOrderIndex(question.getOrderIndex());
-        response.setRequired(question.isRequired());
         response.setTimeLimit(question.getTimeLimit());
 
         // Convert answers
