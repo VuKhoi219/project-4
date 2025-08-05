@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
+import java.util.List;
 
 
 @RestController
@@ -59,32 +60,30 @@ public class QuizController {
         }
     }
     @GetMapping("/{quizId}/questions")
-    public ResponseEntity<ApiResponse<Page<QuestionWithAnswersDTO>>> getQuestionsWithAnswersByQuiz(
-            @PathVariable @Min(1) long quizId,
-            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be >= 0") int page) {
+    public ResponseEntity<ApiResponse<List<QuestionWithAnswersDTO>>> getQuestionsWithAnswersByQuiz(
+            @PathVariable @Min(1) long quizId) {
         try {
-            Page<QuestionWithAnswersDTO> questionPage = quizService.getQuestionsWithAnswersByQuiz(quizId, page);
-            if (!questionPage.hasContent()) {
+            List<QuestionWithAnswersDTO> questionList = quizService.getQuestionsWithAnswersByQuiz(quizId);
+
+            if (questionList.isEmpty()) {
                 return ResponseEntity.ok(
-                        ApiResponse.success(questionPage, "Không có câu hỏi nào trong trang này")
+                        ApiResponse.success(questionList, "Không có câu hỏi nào")
                 );
             }
 
             return ResponseEntity.ok(
-                    ApiResponse.success(questionPage, "Lấy danh sách câu hỏi thành công")
+                    ApiResponse.success(questionList, "Lấy danh sách câu hỏi thành công")
             );
 
         } catch (IllegalArgumentException e) {
-            // Handle validation errors (invalid quizId, etc.)
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Dữ liệu đầu vào không hợp lệ", e.getMessage()));
-
         } catch (Exception e) {
-            // Handle general errors
             return ResponseEntity.internalServerError()
                     .body(ApiResponse.error("Có lỗi xảy ra khi lấy danh sách câu hỏi", e.getMessage()));
         }
     }
+
     @GetMapping()
     public ResponseEntity<ApiResponse<Page<ListQuizzesResponse>>> getQuizAll(
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be >= 0") int page) {

@@ -19,10 +19,9 @@ import org.springframework.data.domain.Page;
 
 @Service
 public class QuestionService {
-    public Page<QuestionResponse> getQuestionsByQuizIdPaged(Long quizId, int page, int size) {
-        return questionRepository.getQuestionsWithAnswersByQuiz(quizId, org.springframework.data.domain.PageRequest.of(page, size))
-                .map(QuestionResponse::fromEntity);
-    }
+//    public List<Question> getQuestionsByQuizIdPaged(Long quizId) {
+//        return questionRepository.getQuestionsWithAnswersByQuiz(quizId);
+//    }
 
     @Autowired
     private QuestionRepository questionRepository;
@@ -30,11 +29,10 @@ public class QuestionService {
     @Autowired
     private QuizRepository quizRepository;
 
-    public List<QuestionResponse> getQuestionsByQuizId(Long quizId) {
-        // Lấy tất cả câu hỏi của quiz, không phân trang
-        return questionRepository.getQuestionsWithAnswersByQuiz(quizId, PageRequest.of(0, 100)).getContent()
-                .stream().map(QuestionResponse::fromEntity).collect(Collectors.toList());
-    }
+//    public List<QuestionResponse> getQuestionsByQuizId(Long quizId) {
+//        // Lấy tất cả câu hỏi của quiz, không phân trang
+//        return questionRepository.getQuestionsWithAnswersByQuiz(quizId);
+//    }
 
     @Transactional
     public QuestionResponse addQuestion(Long quizId, QuestionRequest request) {
