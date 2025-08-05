@@ -8,6 +8,7 @@ import com.example.backend.dto.helper.QuestionWithAnswersDTO;
 import com.example.backend.dto.request.QuizRequest;
 import com.example.backend.dto.response.ChatResponse;
 import com.example.backend.dto.response.ListQuizzesResponse;
+import com.example.backend.dto.response.QuestionResponse;
 import com.example.backend.dto.response.QuizResponse;
 import com.example.backend.entity.*;
 import com.example.backend.repository.*;
@@ -268,36 +269,28 @@ public class QuizService {
         }
     }
 
-    public Page<QuestionWithAnswersDTO> getQuestionsWithAnswersByQuiz(long quizId, int page) {
-        // Tạo Pageable với kích thước trang là 1
-        Pageable pageable = PageRequest.of(page, 1);
+    public List<QuestionWithAnswersDTO> getQuestionsWithAnswersByQuiz(long quizId) {
+        List<Question> questions = questionRepository.getQuestionsWithAnswersByQuiz(quizId);
 
-        // Lấy danh sách câu hỏi với phân trang
-        Page<Question> questionPage = questionRepository.getQuestionsWithAnswersByQuiz(quizId, pageable);
+        return questions.stream()
+                .map(question -> {
+                    List<AnswerDTO> answerDTOs = question.getQuestionType() == QuestionType.SHORT_ANSWER
+                            ? null
+                            : question.getAnswers().stream()
+                            .map(answer -> new AnswerDTO(
+                                    answer.getId(),
+                                    answer.getAnswerText()
+                            )).collect(Collectors.toList());
 
-        // Ánh xạ từ Page<Question> sang Page<QuestionWithAnswersDTO>
-        Page<QuestionWithAnswersDTO> questionDTOPage = questionPage.map(question -> {
-            // Ánh xạ danh sách Answer sang AnswerDTO
-            List<AnswerDTO> answerDTOs = question.getQuestionType() == QuestionType.SHORT_ANSWER
-                    ? null // Đặt answers thành null cho SHORT_ANSWER
-                    : question.getAnswers().stream()
-                    .map(answer -> new AnswerDTO(
-                            answer.getId(),
-                            answer.getAnswerText()
-                    ))
-                    .collect(Collectors.toList());
-
-            // Tạo QuestionWithAnswersDTO
-            return new QuestionWithAnswersDTO(
-                    question.getId(),
-                    question.getQuestionText(),
-                    question.getQuestionType(),
-                    question.getTimeLimit(),
-                    answerDTOs
-            );
-        });
-
-        return questionDTOPage;
+                    return new QuestionWithAnswersDTO(
+                            question.getId(),
+                            question.getQuestionText(),
+                            question.getQuestionType(),
+                            question.getTimeLimit(),
+                            answerDTOs
+                    );
+                })
+                .collect(Collectors.toList());
     }
 
 }

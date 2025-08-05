@@ -133,7 +133,6 @@ const FinalResults: React.FC = () => {
                   <Stack spacing={2}>
                     <Button variant="contained" fullWidth startIcon={<RefreshIcon />} onClick={createNewRoom}>Chơi Lại (Phòng mới)</Button>
                     <Button variant="outlined" fullWidth startIcon={<HomeIcon />} onClick={() => navigate('/')}>Về Trang Chủ</Button>
-                    <Button variant="outlined" color="secondary" fullWidth startIcon={<ChartIcon />} onClick={() => navigate(`/quiz/${quizId}/room/${roomId}/leaderboard`)}>Xem BXH chi tiết</Button>
                   </Stack>
                 </CardContent>
               </Card>
