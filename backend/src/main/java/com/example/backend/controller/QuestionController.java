@@ -24,32 +24,33 @@ public class QuestionController {
     private final QuestionService questionService;
 
     // GET /api/quizzes/{quizId}/questions
-    @GetMapping("/quizzes/{quizId}/questions")
+    @GetMapping("/quizzes/{quizId}")
     public ResponseEntity<ApiResponse<Page<QuestionResponse>>> getQuestions(
             @PathVariable Long quizId,
             @RequestParam(defaultValue = "0") int page) {
-        try {
-            Page<QuestionResponse> questionPage = questionService.getQuestionsByQuizIdPaged(quizId, page, 1);
-            if (!questionPage.hasContent()) {
-                return ResponseEntity.ok(
-                        ApiResponse.success(questionPage, "Không có câu hỏi nào trong trang này")
-                );
-            }
-            return ResponseEntity.ok(
-                    ApiResponse.success(questionPage, "Lấy danh sách câu hỏi thành công")
-            );
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Dữ liệu đầu vào không hợp lệ", e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Có lỗi xảy ra khi lấy danh sách câu hỏi", e.getMessage()));
-        }
+//        try {
+//            List<QuestionResponse> questionPage = questionService.getQuestionsByQuizIdPaged(quizId);
+//            if (!questionPage.hasContent()) {
+//                return ResponseEntity.ok(
+//                        ApiResponse.success(questionPage, "Không có câu hỏi nào trong trang này")
+//                );
+//            }
+//            return ResponseEntity.ok(
+//                    ApiResponse.success(questionPage, "Lấy danh sách câu hỏi thành công")
+//            );
+//        } catch (IllegalArgumentException e) {
+//            return ResponseEntity.badRequest()
+//                    .body(ApiResponse.error("Dữ liệu đầu vào không hợp lệ", e.getMessage()));
+//        } catch (Exception e) {
+//            return ResponseEntity.internalServerError()
+//                    .body(ApiResponse.error("Có lỗi xảy ra khi lấy danh sách câu hỏi", e.getMessage()));
+//        }
+        return null ;
     }
 
 
     // POST /api/quizzes/{quizId}/questions
-    @PostMapping("/quizzes/{quizId}/questions")
+    @PostMapping("/quizzes/{quizId}")
     public ResponseEntity<ApiResponse<QuestionResponse>> addQuestion(
             @PathVariable Long quizId,
             @RequestBody QuestionRequest request) {
@@ -68,7 +69,7 @@ public class QuestionController {
 
 
     // PUT /api/questions/{id}
-    @PutMapping("/questions/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<QuestionResponse>> updateQuestion(
             @PathVariable Long id,
             @RequestBody QuestionRequest request) {
@@ -86,7 +87,7 @@ public class QuestionController {
 
 
     // DELETE /api/questions/{id}
-    @DeleteMapping("/questions/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteQuestion(@PathVariable Long id) {
         try {
             questionService.deleteQuestion(id);
@@ -101,7 +102,7 @@ public class QuestionController {
     }
 
     // PUT /api/questions/reorder
-    @PutMapping("/questions/reorder")
+    @PutMapping("/reorder")
     public ResponseEntity<ApiResponse<Void>> reorderQuestions(@RequestBody List<Long> questionIds) {
         try {
             questionService.reorderQuestions(questionIds);

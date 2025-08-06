@@ -1,12 +1,14 @@
 package com.example.backend.service;
 
 import com.example.backend.dto.helper.compareAnswer;
+import com.example.backend.dto.response.CheckAnswerResponse;
 import com.example.backend.repository.AnswerRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class AnswerService {
@@ -16,17 +18,38 @@ public class AnswerService {
         this.answerRepository = answerRepository;
     }
 
-    public boolean compareAnswers(List<compareAnswer> answers, long questionId) {
-        if (answers == null) {
-            return false;
-        }
-        List<compareAnswer> answersList = answerRepository.ListAnswerTextByQuestionId(questionId);
-        if (answersList == null) {
-            return false;
+    public CheckAnswerResponse compareAnswers(List<compareAnswer> answers, Long questionId) {
+        // Không có đáp án gửi lên
+        if (answers == null || answers.isEmpty()) {
+            List<compareAnswer> correctAnswers = answerRepository.ListAnswerTextByQuestionId(questionId);
+            String correctText = correctAnswers.stream()
+                    .map(compareAnswer::getAnswerText)
+                    .collect(Collectors.joining(", "));
+            return new CheckAnswerResponse(false, correctText, answers);
         }
 
-        Set<compareAnswer> answersListSet = new HashSet<>(answersList);
-        Set<compareAnswer> answersSet = new HashSet<>(answers);
-        return answersListSet.equals(answersSet);
+        List<compareAnswer> correctAnswers = answerRepository.ListAnswerTextByQuestionId(questionId);
+
+        if (correctAnswers == null || correctAnswers.isEmpty()) {
+            return new CheckAnswerResponse(false, "", answers);
+        }
+
+        // So sánh danh sách đáp án (chuyển về Set cho dễ so sánh)
+        Set<String> submittedSet = answers.stream()
+                .map(ans -> ans.getAnswerText().trim().toLowerCase())
+                .collect(Collectors.toSet());
+
+        Set<String> correctSet = correctAnswers.stream()
+                .map(ans -> ans.getAnswerText().trim().toLowerCase())
+                .collect(Collectors.toSet());
+
+        boolean isCorrect = submittedSet.equals(correctSet);
+
+        String correctText = correctAnswers.stream()
+                .map(compareAnswer::getAnswerText)
+                .collect(Collectors.joining(", "));
+
+        return new CheckAnswerResponse(isCorrect, correctText, answers);
     }
+
 }

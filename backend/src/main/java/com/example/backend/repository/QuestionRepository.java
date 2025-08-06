@@ -1,6 +1,7 @@
 package com.example.backend.repository;
 
 import com.example.backend.dto.helper.QuestionWithAnswersDTO;
+import com.example.backend.dto.response.QuestionResponse;
 import com.example.backend.entity.Question;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,5 +18,6 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     List<Question> findQuestionsWithAnswers(@Param("questionIds") long questionIds);
 
     @Query("SELECT DISTINCT q FROM Question q LEFT JOIN FETCH q.answers WHERE q.quiz.id = :quizId")
-    Page<Question> getQuestionsWithAnswersByQuiz(@Param("quizId") long quizId, Pageable pageable);
+    List<Question> getQuestionsWithAnswersByQuiz(@Param("quizId") long quizId);
+
 }

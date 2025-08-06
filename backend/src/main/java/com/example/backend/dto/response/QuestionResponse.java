@@ -2,6 +2,7 @@ package com.example.backend.dto.response;
 
 import com.example.backend.entity.Answer;
 import com.example.backend.entity.Question;
+import com.example.backend.entity.QuestionType;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -14,7 +15,7 @@ import java.util.stream.Collectors;
 public class QuestionResponse {
     private long id;
     private String questionText;
-    private String questionType;
+    private QuestionType questionType;
     private int points;
     private String explanation;
     private int orderIndex;
@@ -27,7 +28,7 @@ public class QuestionResponse {
 
         response.setId(question.getId());
         response.setQuestionText(question.getQuestionText());
-        response.setQuestionType(question.getQuestionType().name());
+        response.setQuestionType(QuestionType.valueOf(question.getQuestionType().name()));
         response.setPoints(question.getPoints());
         response.setOrderIndex(question.getOrderIndex());
         response.setTimeLimit(question.getTimeLimit());
