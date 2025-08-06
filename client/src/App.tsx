@@ -9,6 +9,10 @@ import Leaderboard from "./components/Leaderboard";
 import QuizController from "./components/QuizController";
 import FinalResult from "./components/FinalResults"
 import Home from "./components/Home"
+import AddQuestion from "./components/AddQuestion";
+import Login from "./components/Login";
+import Register from "./components/Register";
+
 function App() {
   return (
     <>
@@ -30,6 +34,8 @@ function App() {
               - /quiz/:quizId -> Người dùng muốn xem/tham gia một bộ đề có sẵn, sẽ được chuyển đến trang JoinQuiz để tạo phòng.
             */}
             <Route path="/" element={<Home/>} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route path="/quiz/:quizId" element={<Navigate to="join" />} />
             <Route path="/quiz/:quizId/join" element={<JoinQuiz />} />
 
