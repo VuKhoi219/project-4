@@ -77,62 +77,63 @@ public class QuizService {
 //
     @Transactional
     public Quiz createQuiz(QuizRequest createDTO, User user) {
-        // Validate user
-        User creator = userRepository.findById(user.getId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy user với ID: " + user.getId()));
+    // Validate user
+    User creator = userRepository.findById(user.getId())
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy user với ID: " + user.getId()));
 
-        // Validate category
-        Category category = null;
-        if (createDTO.getCategoryId() != 0) {
-            category = categoryRepository.findById(createDTO.getCategoryId())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy category với ID: " + createDTO.getCategoryId()));
+    // Validate category
+    Category category = null;
+    if (createDTO.getCategoryId() != 0) {
+        category = categoryRepository.findById(createDTO.getCategoryId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy category với ID: " + createDTO.getCategoryId()));
+    }
+
+    Quiz quiz = new Quiz();
+    quiz.setCreator(creator);
+    quiz.setCategory(category);
+    quiz.setTitle(createDTO.getTitle());
+    quiz.setDescription(createDTO.getDescription());
+    quiz.setSummary(createDTO.getSummary());
+    quiz.setSource_type(createDTO.getSourceType());
+    quiz.setQuestions(new ArrayList<>());
+
+    if (createDTO.getSourceType() == SourceType.FILE) {
+        // Quiz tự sinh, bắt buộc có file
+        if (createDTO.getFileId() == null) {
+            throw new RuntimeException("Quiz tự sinh phải có file_id");
         }
-
-        // Validate file và kiểm tra xem đã được xử lý chưa
         UploadedFile file = uploadedFileRepository.findById(createDTO.getFileId())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy file với ID: " + createDTO.getFileId()));
-
         if (!file.isReadyForEmbedding()) {
             throw new RuntimeException("File chưa được xử lý hoặc không có nội dung để tạo câu hỏi");
         }
-
-        // Tạo quiz
-        Quiz quiz = new Quiz();
-        quiz.setCreator(creator);
-        quiz.setCategory(category);
-        quiz.setTitle(createDTO.getTitle());
-        quiz.setDescription(createDTO.getDescription());
-        quiz.setSummary(createDTO.getSummary());
-        quiz.setSource_type(createDTO.getSourceType());
         quiz.setFile(file);
-        // QUAN TRỌNG: Khởi tạo questions list để tránh NullPointerException
-        quiz.setQuestions(new ArrayList<>());
+    } else {
+        // Quiz nhập tay, không cần file
+        quiz.setFile(null);
+    }
 
-        Quiz savedQuiz = quizRepository.save(quiz);
-        log.info("Đã tạo quiz với ID: {}", savedQuiz.getId());
+    Quiz savedQuiz = quizRepository.save(quiz);
+    log.info("Đã tạo quiz với ID: {}", savedQuiz.getId());
 
-        // Generate questions và track status
-        String generationStatus = "SUCCESS";
-        boolean questionsGenerated = true;
-
+    // Nếu là quiz tự sinh thì sinh câu hỏi tự động
+    if (createDTO.getSourceType() == SourceType.FILE) {
         try {
-            generateQuestionsFromAI(savedQuiz, file.getProcessedContent(),
+            generateQuestionsFromAI(savedQuiz, savedQuiz.getFile().getProcessedContent(),
                     createDTO.getNumberOfQuestions(),
                     createDTO.getDifficulty());
             log.info("Đã tự động sinh {} câu hỏi cho quiz ID: {}",
                     createDTO.getNumberOfQuestions(), savedQuiz.getId());
-
-            // Sau khi generate thành công, load lại quiz với questions
             return loadQuizWithQuestionsAndAnswers(savedQuiz.getId());
-
         } catch (Exception e) {
             log.error("Lỗi khi sinh câu hỏi tự động cho quiz ID {}: ", savedQuiz.getId(), e);
-            generationStatus = "FAILED";
-            questionsGenerated = false;
-
-            return savedQuiz; // Quiz được tạo nhưng không có questions
+            return savedQuiz;
         }
     }
+
+    // Quiz nhập tay chỉ trả về quiz đã lưu
+    return savedQuiz;
+}
 
     // Method helper để load quiz với questions và answers
     private Quiz loadQuizWithQuestionsAndAnswers(Long quizId) {
