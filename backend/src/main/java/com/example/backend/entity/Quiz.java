@@ -41,7 +41,7 @@ public class Quiz {
     private SourceType source_type = SourceType.TEXT;
 
     @ManyToOne
-    @JoinColumn(name = "file_id", nullable = false)
+    @JoinColumn(name = "file_id", nullable = true)
     private UploadedFile  file;
 
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

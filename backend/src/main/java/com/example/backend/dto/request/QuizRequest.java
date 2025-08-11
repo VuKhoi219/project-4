@@ -11,7 +11,7 @@ public class QuizRequest {
     private String description;
     private String summary;
     private SourceType sourceType = SourceType.TEXT;
-    private long fileId;
+    private Long fileId;
     // Các field mới cho AI generation
     private Integer numberOfQuestions = 10;
     private String difficulty = "medium"; // easy, medium, hard
