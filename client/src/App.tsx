@@ -1,5 +1,4 @@
-// import React from 'react';
-// import logo from './logo.svg';
+
 import './App.css';
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import JoinQuiz from "./components/JoinQuiz";
@@ -7,7 +6,7 @@ import WaitingRoom from "./components/WaitingRoom";
 import QuizPlay from "./components/QuizPlay";
 import Leaderboard from "./components/Leaderboard";
 import QuizController from "./components/QuizController";
-import FinalResult from "./components/FinalResults"
+import FinalResults from "./components/FinalResults"
 import Home from "./components/Home"
 import Login from "./components/Login";
 import Register from "./components/Register";
@@ -18,21 +17,7 @@ function App() {
     <>
       <Router>
         <div className="min-h-screen bg-gray-100">
-          {/* <Routes>
-            <Route path="/quiz/:quizId" element={<QuizController />} />
-            <Route path="/quiz/:quizId/join" element={<JoinQuiz />} />
-            <Route path="/quiz/:quizId/waiting" element={<WaitingRoom />} />
-            <Route path="/quiz/:quizId/play" element={<QuizPlay />} />
-            <Route path="/quiz/:quizId/leaderboard" element={<Leaderboard />} />
-            <Route path="/quiz/:quizId/room-manager" element={<RoomManager />} />
-            <Route path='/quiz/:quizId/final-results' element={<FinalResult/>}/>
-          </Routes> */}
-                  <Routes>
-            {/* 
-              Route mặc định để tạo/tham gia quiz.
-              - /quiz/new -> Người dùng muốn tạo một bộ đề quiz mới (tính năng tương lai).
-              - /quiz/:quizId -> Người dùng muốn xem/tham gia một bộ đề có sẵn, sẽ được chuyển đến trang JoinQuiz để tạo phòng.
-            */}
+          <Routes>
             <Route path="/" element={<Home/>} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -47,7 +32,7 @@ function App() {
             <Route path="/quiz/:quizId/room/:roomId/waiting" element={<WaitingRoom />} />
             <Route path="/quiz/:quizId/room/:roomId/play" element={<QuizPlay />} />
             <Route path="/quiz/:quizId/room/:roomId/leaderboard" element={<Leaderboard />} />
-            <Route path='/quiz/:quizId/room/:roomId/final-results' element={<FinalResult />} />
+            <Route path='/quiz/:quizId/room/:roomId/final-results' element={<FinalResults />} />
 
             {/* Fallback route */}
             <Route path="*" element={<Navigate to="/" />} />
