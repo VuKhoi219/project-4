@@ -3,24 +3,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ref, onValue, set, get, update, db } from "../config/firebase";
 import { Participant } from "../types";
 import {
-  FormControl, SelectChangeEvent, InputLabel, Select, MenuItem, Box, Button, Card, CardContent, 
-  Typography, Alert, TextField, InputAdornment, IconButton, List, ListItem, ListItemAvatar, 
-  ListItemText, Avatar, Chip, CircularProgress, Stack, Paper, Backdrop, Dialog, DialogTitle, 
-  DialogContent, DialogActions, Container, Grid, useTheme, useMediaQuery
+  Box, Button, Card, CardContent, Typography, Alert, TextField, InputAdornment, IconButton,
+  Avatar, CircularProgress, Stack, Paper, Backdrop, Dialog, DialogTitle,
+  DialogContent, DialogActions, Container, useTheme, useMediaQuery, List, ListItem, ListItemAvatar, ListItemText
 } from '@mui/material';
 import { styled, keyframes } from '@mui/material/styles';
-import {
-  SportsEsports as SportsEsportsIcon, Person as PersonIcon, Casino as CasinoIcon, 
-  Rocket as RocketIcon, Group as GroupIcon, Share as ShareIcon, PlayArrow as PlayArrowIcon, 
-  QrCode as QrCodeIcon, Close as CloseIcon
-} from '@mui/icons-material';
-import { AvatarCreator } from '@readyplayerme/react-avatar-creator';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, useGLTF, useAnimations } from '@react-three/drei';
-import type { AvatarCreatorConfig } from '@readyplayerme/react-avatar-creator';
-import { AvatarWithAnimation } from "./AvatarWithAnimation";
+import { Casino as CasinoIcon, Share as ShareIcon, PlayArrow as PlayArrowIcon, QrCode as QrCodeIcon } from '@mui/icons-material';
 
-// Responsive Styled components
 const GradientBox = styled(Box)(({ theme }) => ({
   background: 'linear-gradient(135deg, #e8f5e8 0%, #e3f2fd 100%)',
   minHeight: '100vh',
@@ -29,37 +18,21 @@ const GradientBox = styled(Box)(({ theme }) => ({
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'flex-start',
-  [theme.breakpoints.up('sm')]: {
-    padding: theme.spacing(2),
-    justifyContent: 'center',
-  },
 }));
 
 const HeaderCard = styled(Card)(({ theme }) => ({
   width: '100%',
-  maxWidth: '100%',
-  marginBottom: theme.spacing(2),
   backgroundColor: '#fff',
   border: `2px solid ${theme.palette.success.light}`,
   boxShadow: theme.shadows[4],
-  [theme.breakpoints.up('sm')]: {
-    maxWidth: 500,
-    marginBottom: theme.spacing(3),
-    boxShadow: theme.shadows[8],
-  },
+  marginBottom: theme.spacing(2)
 }));
 
 const MainCard = styled(Card)(({ theme }) => ({
   width: '100%',
-  maxWidth: '100%',
-  marginBottom: theme.spacing(2),
   boxShadow: theme.shadows[4],
   border: `1px solid ${theme.palette.grey[200]}`,
-  [theme.breakpoints.up('sm')]: {
-    maxWidth: 500,
-    marginBottom: theme.spacing(3),
-    boxShadow: theme.shadows[8],
-  },
+  marginBottom: theme.spacing(2)
 }));
 
 const pulseAnimation = keyframes`
@@ -70,112 +43,31 @@ const pulseAnimation = keyframes`
 
 const CountdownCard = styled(Card)(({ theme }) => ({
   width: '100%',
-  maxWidth: '100%',
   marginBottom: theme.spacing(2),
   backgroundColor: theme.palette.success.light,
   border: `2px solid ${theme.palette.success.main}`,
   boxShadow: theme.shadows[8],
-  animation: `${pulseAnimation} 1.5s ease-in-out infinite`,
-  [theme.breakpoints.up('sm')]: {
-    maxWidth: 500,
-    marginBottom: theme.spacing(3),
-    boxShadow: theme.shadows[12],
-  },
+  animation: `${pulseAnimation} 1.5s ease-in-out infinite`
 }));
 
-const ParticipantItem = styled(ListItem, { 
-  shouldForwardProp: (prop) => prop !== 'isCurrentUser' 
-})<{ isCurrentUser?: boolean }>(({ theme, isCurrentUser }) => ({
+const ParticipantItem = styled(ListItem)<{ isCurrentUser?: boolean }>(({ theme, isCurrentUser }) => ({
   backgroundColor: isCurrentUser ? theme.palette.primary.light : theme.palette.grey[50],
   border: isCurrentUser ? `2px solid ${theme.palette.primary.main}` : `1px solid ${theme.palette.grey[200]}`,
   borderRadius: theme.spacing(1),
   marginBottom: theme.spacing(1),
-  transform: isCurrentUser ? 'scale(1.02)' : 'scale(1)',
-  transition: 'all 0.2s ease-in-out',
   padding: theme.spacing(1),
-  [theme.breakpoints.up('sm')]: {
-    padding: theme.spacing(1.5),
-  },
 }));
 
 const ActionButton = styled(Button)(({ theme }) => ({
   padding: theme.spacing(1, 2),
   fontSize: '1rem',
   fontWeight: 600,
-  textTransform: 'none',
   borderRadius: theme.spacing(1),
-  [theme.breakpoints.up('sm')]: {
-    padding: theme.spacing(1.5, 4),
-    fontSize: '1.1rem',
-  },
 }));
-
-const ResponsiveCanvas = styled(Box)(({ theme }) => ({
-  height: 300,
-  width: '100%',
-  marginBottom: theme.spacing(2),
-  [theme.breakpoints.up('sm')]: {
-    height: 400,
-  },
-  [theme.breakpoints.up('md')]: {
-    height: 500,
-  },
-}));
-
-const AvatarCreatorBox = styled(Box)(({ theme }) => ({
-  width: '100%',
-  height: 600,
-  margin: 'auto',
-  marginBottom: theme.spacing(2),
-  [theme.breakpoints.up('sm')]: {
-    maxWidth: 500,
-    height: 800,
-  },
-  [theme.breakpoints.up('md')]: {
-    height: 1000,
-  },
-}));
-
-// Animation Selector Component
-const AnimationSelector: React.FC<{ onSelect: (url: string) => void }> = ({ onSelect }) => {
-  const [animations, setAnimations] = useState<string[]>([]);
-  const [selected, setSelected] = useState('');
-
-  useEffect(() => {
-    fetch('/animations/animations.json')
-      .then((res) => res.json())
-      .then((data) => setAnimations(data))
-      .catch((err) => console.error('Lỗi tải animations:', err));
-  }, []);
-
-  const handleChange = (event: SelectChangeEvent) => {
-    const value = event.target.value;
-    setSelected(value);
-    onSelect(value);
-  };
-
-  return (
-    <FormControl fullWidth>
-      <Select
-        labelId="animation-select-label"
-        value={selected}
-        onChange={handleChange}
-        size="medium"
-      >
-        {animations.map((url, index) => (
-          <MenuItem key={index} value={url}>
-            Chuyển động ăn mừng {index + 1}
-          </MenuItem>
-        ))}
-      </Select>
-    </FormControl>
-  );
-};
 
 const WaitingRoom: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
   
   const [participants, setParticipants] = useState<[string, Participant][]>([]);
   const [quizInfo, setQuizInfo] = useState<any>(null);
@@ -190,25 +82,27 @@ const WaitingRoom: React.FC = () => {
   const [showWarning, setShowWarning] = useState<string>("");
   const [showQRDialog, setShowQRDialog] = useState<boolean>(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
-  const [animations, setAnimations] = useState<string[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [selectedAnim, setSelectedAnim] = useState<string | null>(null);
+  const [imageList, setImageList] = useState<any[]>([]);
+
+  // Chọn avatar
+  const [showAvatarDialog, setShowAvatarDialog] = useState(false);
+  const [selectedAvatar, setSelectedAvatar] = useState<string>("");
 
   const { quizId, roomId } = useParams<{ quizId: string; roomId: string }>();
   const navigate = useNavigate();
 
-  const config: AvatarCreatorConfig = {
-    clearCache: true,
-    bodyType: 'fullbody',
-    quickStart: false
+  const getRandomLightColor = () => {
+    const hue = Math.floor(Math.random() * 360);
+    const saturation = Math.floor(Math.random() * (70 - 40) + 40);
+    const lightness = Math.floor(Math.random() * (90 - 70) + 70);
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   };
 
   useEffect(() => {
-    fetch('/animations/animations.json')
-      .then((res) => res.json())
-      .then((data) => setAnimations(data))
-      .catch((err) => console.error('Lỗi tải animations:', err));
+    fetch('/img/listImage.json')
+      .then(res => res.json())
+      .then(data => setImageList(data))
+      .catch(err => console.error(err));
   }, []);
 
   useEffect(() => {
@@ -289,16 +183,6 @@ const WaitingRoom: React.FC = () => {
     setUserName(`${randomAdj}${randomNoun}${randomNum}`);
   };
 
-  const handleOnAvatarExported = (event: any) => {
-    const url = event.data.url;
-    setAvatarUrl(url);
-  };
-
-  const handleSelect = (index: number) => {
-    setSelectedIndex(index);
-    setSelectedAnim(animations[index]);
-  };
-
   const handleJoinWithName = async () => {
     if (!userName.trim() || !quizId || !roomId) { 
       setShowWarning("Vui lòng nhập tên!"); 
@@ -306,10 +190,6 @@ const WaitingRoom: React.FC = () => {
     }
     if (userName.length > 20) { 
       setShowWarning("Tên không được quá 20 ký tự!"); 
-      return; 
-    }
-    if (!avatarUrl || !selectedAnim) { 
-      setShowWarning("Vui lòng tạo avatar và chọn chuyển động trước!"); 
       return; 
     }
 
@@ -324,31 +204,32 @@ const WaitingRoom: React.FC = () => {
         return;
       }
 
-      // Lưu vào participants
+      const randomAvatar = imageList[Math.floor(Math.random() * imageList.length)];
+      const avatarUrl = `/img/${randomAvatar}`;
+      const backgroundColor = getRandomLightColor();
+
       await set(userRef, { 
         joinedAt: Date.now(), 
         score: 0, 
         isActive: true, 
         displayName: userName,
-        avatarUrl: avatarUrl,
-        animationUrl: selectedAnim
+        avatar: avatarUrl,
+        background: backgroundColor
       });
 
-      // Lưu vào leaderboard
       await set(ref(db, `quizzes/${quizId}/rooms/${roomId}/leaderboard/${userName}`), { 
         bestScore: 0, 
         lastPlayed: Date.now(), 
         displayName: userName, 
-        rank: 0 
+        rank: 0,
+        avatar: avatarUrl
       });
 
-      // Nếu là host
       if (!roomInfo?.createdBy || roomInfo.createdBy === 'system') {
         await update(ref(db, `quizzes/${quizId}/rooms/${roomId}/info`), { createdBy: userName });
         setIsHost(true);
       }
 
-      // Lưu localStorage
       localStorage.setItem("userName", userName); 
       localStorage.setItem("quizId", quizId); 
       localStorage.setItem("roomId", roomId);
@@ -395,10 +276,6 @@ const WaitingRoom: React.FC = () => {
     setShowQRDialog(true);
   };
 
-  const closeQRDialog = () => {
-    setShowQRDialog(false);
-  };
-
   if (loading) {
     return (
       <Backdrop open={loading} sx={{ color: '#fff' }}>
@@ -410,123 +287,55 @@ const WaitingRoom: React.FC = () => {
   if (!hasJoinedRoom) {
     return (
       <GradientBox>
-        <Container maxWidth="sm" sx={{ padding: { xs: 1, sm: 2 } }}>
+        <Container maxWidth="sm">
           <HeaderCard>
-            <CardContent sx={{ p: { xs: 2, sm: 3 }, textAlign: 'center' }}>
-              <Typography variant={isMobile ? "h6" : "h5"} fontWeight="bold">
+            <CardContent sx={{ textAlign: 'center' }}>
+              <Typography variant="h5" fontWeight="bold">
                 PHÒNG CHỜ QUIZ
               </Typography>
             </CardContent>
           </HeaderCard>
 
           <MainCard>
-            <CardContent sx={{ p: { xs: 2, sm: 4 } }}>
-              <Typography 
-                variant={isMobile ? "h6" : "h5"} 
-                textAlign="center" 
-                fontWeight="bold" 
-                mb={2}
-              >
+            <CardContent>
+              <Typography variant="h5" textAlign="center" fontWeight="bold" mb={2}>
                 {quizInfo?.title || 'Quiz Game'}
               </Typography>
-              <Typography 
-                variant="body1" 
-                textAlign="center" 
-                mb={3} 
-                fontFamily="monospace" 
-                color="text.secondary"
-                sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
-              >
+              <Typography variant="body1" textAlign="center" mb={3} fontFamily="monospace" color="text.secondary">
                 Room ID: {roomId}
               </Typography>
 
-              {showWarning && (
-                <Alert severity="warning" sx={{ mb: 2 }}>
-                  {showWarning}
-                </Alert>
-              )}
+              {showWarning && <Alert severity="warning" sx={{ mb: 2 }}>{showWarning}</Alert>}
 
-              <TextField 
-                fullWidth 
-                value={userName} 
-                onChange={(e) => setUserName(e.target.value)} 
-                onKeyPress={e => e.key === 'Enter' && handleJoinWithName()} 
-                placeholder="Nhập tên của bạn (tối đa 20 ký tự)" 
+              <TextField
+                fullWidth
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                onKeyPress={e => e.key === 'Enter' && handleJoinWithName()}
+                placeholder="Nhập tên của bạn (tối đa 20 ký tự)"
                 disabled={joinLoading}
-                size={isMobile ? "small" : "medium"}
-                InputProps={{ 
+                InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton 
-                        title="Tên ngẫu nhiên" 
-                        onClick={generateRandomName}
-                        size={isMobile ? "small" : "medium"}
-                      >
+                      <IconButton title="Tên ngẫu nhiên" onClick={generateRandomName}>
                         <CasinoIcon />
                       </IconButton>
                     </InputAdornment>
-                  ) 
-                }} 
+                  )
+                }}
+                sx={{ mb: 2 }}
               />
 
-              {/* Avatar Creator - Responsive */}
-              {!avatarUrl && (
-                <AvatarCreatorBox>
-                  <AvatarCreator
-                    subdomain="quiz-8clzwi"
-                    config={config}
-                    onAvatarExported={handleOnAvatarExported}
-                    style={{ width: '100%', height: '100%' }}
-                  />
-                </AvatarCreatorBox>
-              )}
-
-              {avatarUrl && (
-                <>
-                  {/* Canvas hiển thị avatar - Responsive */}
-                  <ResponsiveCanvas>
-                    <Canvas camera={{ position: [0, 2, 5] }}>
-                      <ambientLight intensity={1} />
-                      <directionalLight position={[5, 5, 5]} />
-                      <OrbitControls enablePan={false} enableZoom={!isMobile} />
-                      {avatarUrl && selectedAnim && (
-                        <AvatarWithAnimation
-                          avatarUrl={avatarUrl}
-                          animationUrl={`/animations/${selectedAnim}`}
-                        />
-                      )}
-                    </Canvas>
-                  </ResponsiveCanvas>
-
-                  {/* Animation Selector - Responsive */}
-                  <Typography 
-                    variant={isMobile ? "body1" : "h6"} 
-                    sx={{ mb: 1, fontSize: { xs: '1rem', sm: '1.25rem' } }}
-                  >
-                    Chọn chuyển động:
-                  </Typography>
-                  <Typography 
-                    variant="body2" 
-                    color="text.secondary" 
-                    sx={{ mb: 2, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
-                  >
-                    Vui lòng chọn một chuyển động, nhân vật sẽ hiển thị chuyển động này khi tham gia quiz
-                  </Typography>
-                  <AnimationSelector onSelect={(url) => setSelectedAnim(url)} />
-                </>
-              )}
-
-              <ActionButton 
-                variant="contained" 
-                color="success" 
-                onClick={handleJoinWithName} 
-                disabled={joinLoading || !userName.trim()} 
-                fullWidth 
-                sx={{ mt: 2 }}
-                startIcon={joinLoading ? <CircularProgress size={20} /> : <RocketIcon />}
+              <Button
+                fullWidth
+                variant="contained"
+                color="primary"
+                onClick={handleJoinWithName}
+                disabled={joinLoading}
+                sx={{ py: 1.5, fontSize: '1rem', fontWeight: 'bold', borderRadius: '8px' }}
               >
-                Tham Gia Phòng
-              </ActionButton>
+                {joinLoading ? <CircularProgress size={24} /> : "Tham gia phòng"}
+              </Button>
             </CardContent>
           </MainCard>
         </Container>
@@ -536,221 +345,153 @@ const WaitingRoom: React.FC = () => {
 
   return (
     <GradientBox>
-      <Container maxWidth="sm" sx={{ padding: { xs: 1, sm: 2 } }}>
+      <Container maxWidth="md">
         <HeaderCard>
-          <CardContent sx={{ p: { xs: 2, sm: 3 }, textAlign: 'center' }}>
-            <Typography variant={isMobile ? "body1" : "h6"} fontWeight="bold">
-              {quizInfo?.title}
+          <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant={isMobile ? "h6" : "h5"} fontWeight="bold">
+              {quizInfo?.title || 'Quiz Game'}
+            </Typography>
+            <Typography variant="body1" fontFamily="monospace">
+              Room ID: {roomId}
             </Typography>
           </CardContent>
         </HeaderCard>
 
-        <MainCard>
-          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-            <Typography textAlign="center" color="text.secondary" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
-              Mời bạn bè với Room ID:
-            </Typography>
-            <Typography 
-              variant={isMobile ? "h6" : "h5"} 
-              textAlign="center" 
-              fontWeight="bold" 
-              fontFamily="monospace" 
-              color="primary.main" 
-              mb={2}
-            >
-              {roomId}
-            </Typography>
-            <Stack 
-              direction={isMobile ? "column" : "row"} 
-              spacing={1} 
-              sx={{ gap: { xs: 1, sm: 1 } }}
-            >
-              <Button 
-                variant="contained" 
-                onClick={copyRoomLink} 
-                startIcon={<ShareIcon />} 
-                sx={{ flex: 1, fontSize: { xs: '0.8rem', sm: '1rem' } }}
-                size={isMobile ? "medium" : "large"}
-              >
-                Copy Link
-              </Button>
-              <Button 
-                variant="outlined" 
-                onClick={showQRCode} 
-                startIcon={<QrCodeIcon />} 
-                sx={{ flex: 1, fontSize: { xs: '0.8rem', sm: '1rem' } }}
-                size={isMobile ? "medium" : "large"}
-              >
-                QR Code
-              </Button>
-            </Stack>
-          </CardContent>
-        </MainCard>
-        
         {countdown > 0 && (
           <CountdownCard>
-            <CardContent sx={{ textAlign: 'center', p: { xs: 2, sm: 3 } }}>
-              <Typography variant={isMobile ? "h6" : "h5"} color="success.dark">
-                Quiz Bắt Đầu Sau
-              </Typography>
-              <Typography variant={isMobile ? "h3" : "h2"} fontWeight="bold">
-                {countdown}
+            <CardContent sx={{ textAlign: 'center' }}>
+              <Typography variant="h6" fontWeight="bold" color="white">
+                Bắt đầu trong {countdown}...
               </Typography>
             </CardContent>
           </CountdownCard>
         )}
-        
+
         <MainCard>
-          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-            <Typography 
-              variant={isMobile ? "body1" : "h6"} 
-              fontWeight="bold" 
-              textAlign="center" 
-              mb={2}
-            >
-              <GroupIcon sx={{ verticalAlign: 'middle', mr: 1 }} /> 
-              Người chơi ({participants.length})
-            </Typography>
-            <Box sx={{ maxHeight: { xs: 200, sm: 250 }, overflowY: 'auto', p: 1 }}>
-              {participants.length > 0 ? (
-                participants.map(([name, info], index) => (
-                  <ParticipantItem key={name} isCurrentUser={name === userName}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+              <Typography variant="h6" fontWeight="bold">
+                Người tham gia ({participants.length})
+              </Typography>
+              <Stack direction="row" spacing={1}>
+                <ActionButton variant="outlined" startIcon={<ShareIcon  />} onClick={copyRoomLink}>
+                  Chia sẻ
+                </ActionButton>
+                <ActionButton variant="outlined" startIcon={<QrCodeIcon />} onClick={showQRCode}>
+                  QR
+                </ActionButton>
+              </Stack>
+            </Stack>
+
+            <List>
+              {participants.map(([name, player]) => {
+                const isCurrentUser = name === userName;
+                return (
+                  <ParticipantItem 
+                    key={name} 
+                    isCurrentUser={isCurrentUser}
+                    style={{
+                      backgroundColor: player.background || getRandomLightColor(),
+                    }}
+                  >
                     <ListItemAvatar>
-                      <Avatar sx={{ width: { xs: 32, sm: 40 }, height: { xs: 32, sm: 40 } }}>
-                        {info.displayName.charAt(0).toUpperCase()}
-                      </Avatar>
+                      <Avatar src={player.avatar} />
                     </ListItemAvatar>
-                    <ListItemText 
-                      primary={
-                        <Typography 
-                          fontWeight="bold" 
-                          sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
-                        >
-                          {info.displayName}
-                          {name === userName ? ' (Bạn)' : ''}
-                          {roomInfo?.createdBy === info.displayName ? ' 👑' : ''}
-                        </Typography>
-                      } 
+                    <ListItemText
+                      primary={player.displayName}
+                      secondary={player.score !== undefined ? `${player.score} điểm` : null}
                     />
+                    {isCurrentUser && (
+                      <Button size="small" variant="outlined" onClick={() => setShowAvatarDialog(true)}>
+                        Đổi Avatar
+                      </Button>
+                    )}
                   </ParticipantItem>
-                ))
-              ) : (
-                <Typography 
-                  textAlign="center" 
-                  color="text.secondary"
-                  sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
-                >
-                  Chưa có ai tham gia, hãy mời bạn bè!
-                </Typography>
-              )}
-            </Box>
+                );
+              })}
+            </List>
+
           </CardContent>
         </MainCard>
-        
-        {isHost && !isQuizStarted && (
-          <Box textAlign="center" mt={2}>
-            <ActionButton 
-              variant="contained" 
-              color="success" 
-              onClick={handleStartQuiz} 
-              startIcon={<PlayArrowIcon />} 
-              size={isMobile ? "medium" : "large"}
-              sx={{ fontSize: { xs: '0.9rem', sm: '1.1rem' } }}
-            >
-              Bắt đầu cho {participants.length} người
-            </ActionButton>
-            <Typography 
-              variant="caption" 
-              display="block" 
-              mt={1}
-              sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
-            >
-              Bạn là chủ phòng, hãy bắt đầu khi sẵn sàng!
-            </Typography>
-          </Box>
+
+        {isHost && (
+          <ActionButton
+            fullWidth
+            variant="contained"
+            color="primary"
+            startIcon={<PlayArrowIcon />}
+            onClick={handleStartQuiz}
+            sx={{ mt: 2 }}
+          >
+            Bắt đầu Quiz
+          </ActionButton>
         )}
-        
-        {!isHost && !isQuizStarted && (
-          <Alert 
-            severity="info" 
-            sx={{ 
-              fontSize: { xs: '0.8rem', sm: '0.875rem' },
-              '& .MuiAlert-message': { fontSize: 'inherit' }
+      </Container>
+
+      {/* Dialog chọn avatar */}
+      <Dialog open={showAvatarDialog} onClose={() => setShowAvatarDialog(false)}   maxWidth="md" fullWidth>
+        <DialogTitle>Chọn Avatar Mới</DialogTitle>
+        <DialogContent>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(70px, 1fr))", // rộng hơn
+              gap: 2,
+              justifyItems: "center"
             }}
           >
-            Đang chờ chủ phòng ({roomInfo?.createdBy || '...'}) bắt đầu...
-          </Alert>
-        )}
+            {imageList.map((img, i) => (
+              <Avatar
+                key={i}
+                src={`/img/${img}`}
+                sx={{
+                  width: 64,
+                  height: 64,
+                  cursor: "pointer",
+                  border: selectedAvatar === img ? "2px solid #1976d2" : "2px solid transparent",
+                  transition: "0.2s",
+                  "&:hover": { transform: "scale(1.1)" }
+                }}
+                onClick={() => setSelectedAvatar(img)}
+              />
+            ))}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowAvatarDialog(false)}>Hủy</Button>
+          <Button
+            variant="contained"
+            disabled={!selectedAvatar}
+            onClick={async () => {
+              const avatarUrl = `/img/${selectedAvatar}`;
+              await update(ref(db, `quizzes/${quizId}/rooms/${roomId}/participants/${userName}`), {
+                avatar: avatarUrl
+              });
+              await update(ref(db, `quizzes/${quizId}/rooms/${roomId}/leaderboard/${userName}`), {
+                avatar: avatarUrl
+              });
+              setShowAvatarDialog(false);
+            }}
+          >
+            Lưu
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Dialog hiển thị QR Code */}
+      <Dialog open={showQRDialog} onClose={() => setShowQRDialog(false)}>
+        <DialogTitle>Mã QR phòng</DialogTitle>
+        <DialogContent sx={{ textAlign: "center" }}>
+          {qrCodeUrl ? (
+            <img src={qrCodeUrl} alt="QR Code" style={{ width: "200px", height: "200px" }} />
+          ) : (
+            <Typography>Đang tạo mã QR...</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowQRDialog(false)}>Đóng</Button>
+        </DialogActions>
+      </Dialog>
 
-        {/* QR Code Dialog - Responsive */}
-        <Dialog 
-          open={showQRDialog} 
-          onClose={closeQRDialog} 
-          maxWidth="sm" 
-          fullWidth
-          fullScreen={isMobile}
-        >
-          <DialogTitle sx={{ textAlign: 'center', position: 'relative', p: { xs: 2, sm: 3 } }}>
-            <Typography variant={isMobile ? "h6" : "h5"} fontWeight="bold">
-              Quét QR Code để tham gia
-            </Typography>
-            <IconButton 
-              onClick={closeQRDialog}
-              sx={{ 
-                position: 'absolute', 
-                right: { xs: 8, sm: 16 }, 
-                top: { xs: 8, sm: 16 } 
-              }}
-              size={isMobile ? "small" : "medium"}
-            >
-              <CloseIcon />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent sx={{ textAlign: 'center', pb: 3, px: { xs: 2, sm: 3 } }}>
-            {qrCodeUrl && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                <Paper elevation={3} sx={{ p: { xs: 1, sm: 2 }, display: 'inline-block' }}>
-                  <img 
-                    src={qrCodeUrl} 
-                    alt="QR Code" 
-                    style={{ 
-                      width: isMobile ? '180px' : '200px', 
-                      height: isMobile ? '180px' : '200px', 
-                      display: 'block' 
-                    }}
-                  />
-                </Paper>
-                <Typography 
-                  variant="body2" 
-                  color="text.secondary"
-                  sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
-                >
-                  Người khác có thể quét mã này để tham gia phòng
-                </Typography>
-                <Typography 
-                  variant="body2" 
-                  fontFamily="monospace" 
-                  color="primary.main"
-                  sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
-                >
-                  Room ID: {roomId}
-                </Typography>
-              </Box>
-            )}
-          </DialogContent>
-          <DialogActions sx={{ justifyContent: 'center', pb: 2, px: { xs: 2, sm: 3 } }}>
-            <Button 
-              onClick={copyRoomLink} 
-              variant="outlined" 
-              startIcon={<ShareIcon />}
-              size={isMobile ? "medium" : "large"}
-              sx={{ fontSize: { xs: '0.8rem', sm: '1rem' } }}
-            >
-              Copy Link
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Container>
     </GradientBox>
   );
 };

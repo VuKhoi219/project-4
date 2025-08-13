@@ -43,7 +43,7 @@ const BaseBox = styled(Box)`
 `;
 
 const GetReadyBox = styled(BaseBox)`
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #55b5f5 0%, #7c3aed 100%);
 `;
 
 const ShowAnswerBox = styled(BaseBox)`
@@ -157,17 +157,19 @@ const QuizPlay: React.FC = () => {
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const isHost = useMemo(() => quizStatus.startedBy === userName, [quizStatus, userName]);
-  const leaderboard = useMemo(
-    () =>
-      Object.entries(participants)
-        .map(([name, data]) => ({
-          name: data.displayName || name,
-          score: data.score || 0,
-          isCurrentPlayer: name === userName,
-        }))
-        .sort((a, b) => b.score - a.score),
-    [participants, userName]
-  );
+  const leaderboard = useMemo(() => {
+    if (!participants) return [];
+    return Object.entries(participants)
+      .map(([name, data]) => ({
+        name: data.displayName || name,
+        avatar: data.avatar || "", // thêm avatar để render
+        score: data.score || 0,
+        isCurrentPlayer: name === userName,
+      }))
+      .sort((a, b) => b.score - a.score);
+  }, [participants, userName]);
+
+
 
   // Load questions for the current page
   const loadQuestions = async (page: number) => {
@@ -255,6 +257,31 @@ const QuizPlay: React.FC = () => {
       unsubCurrentState();
     };
   }, [quizId, roomId, userName, navigate]);
+  useEffect(() => {
+    if (!quizId || !roomId || !userName || !questions[currentQuestionIndex]) return;
+
+    const currentQ = questions[currentQuestionIndex];
+    const attemptRef = ref(db, `quizzes/${quizId}/rooms/${roomId}/playHistory/${userName}/attempts/${currentQ.id}`);
+
+    get(attemptRef).then(snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        setHasAnswered(true);
+        const parsedAnswer = typeof data.answer === "string" ? JSON.parse(data.answer) : data.answer;
+        setSelectedAnswer(Array.isArray(parsedAnswer) ? parsedAnswer : [parsedAnswer]);
+        setIsCorrect(data.isCorrect);
+        setEarnedPoints(data.score);
+        setAnswerResult(data.answerResult || null);
+      } else {
+        // Nếu chưa có câu trả lời
+        setHasAnswered(false);
+        setSelectedAnswer([]);
+        setIsCorrect(false);
+        setEarnedPoints(0);
+        setAnswerResult(null);
+      }
+    });
+  }, [quizId, roomId, userName, currentQuestionIndex, questions]);
 
   useEffect(() => {
     if (currentPage > 0) {
@@ -530,35 +557,65 @@ const QuizPlay: React.FC = () => {
         </ShowAnswerBox>
       );
 
-    case 'leaderboard':
-      return (
-        <LeaderboardBox>
-          <Container maxWidth="lg" sx={{ textAlign: 'center' }}>
-            <Typography variant="h3" fontWeight="bold" mb={4}>
-              🏆 Bảng Xếp Hạng 🏆
-            </Typography>
-            <Stack spacing={1}>
-              {leaderboard.slice(0, 5).map((p, i) => (
-                <Fade in={true} timeout={500 + i * 200} key={p.name}>
-                  <PlayerCard isCurrentPlayer={p.isCurrentPlayer}>
-                    <CardContent sx={{ p: 1.5 }}>
-                      <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
-                        <Avatar sx={{ bgcolor: '#fff', color: '#000', fontWeight: 'bold' }}>{i + 1}</Avatar>
-                        <Typography variant="h6" flexGrow={1} textAlign="left">
-                          {p.name}
-                        </Typography>
-                        <Typography variant="h5" fontWeight="bold">
-                          {p.score}
-                        </Typography>
-                      </Stack>
-                    </CardContent>
-                  </PlayerCard>
-                </Fade>
-              ))}
-            </Stack>
-          </Container>
-        </LeaderboardBox>
-      );
+      case 'leaderboard':
+        return (
+          <LeaderboardBox>
+            <Container maxWidth="lg" sx={{ textAlign: 'center' }}>
+              <Typography variant="h3" fontWeight="bold" mb={4}>
+                🏆 Bảng Xếp Hạng 🏆
+              </Typography>
+
+              <Stack spacing={1} maxWidth={600} mx="auto">
+                {leaderboard.slice(0, 5).map((p, i) => {
+                  // Gắn huy chương cho top 3
+                  const medals = ['🥇', '🥈', '🥉'];
+                  const medal = i < 3 ? medals[i] : `${i + 1}`;
+
+                  return (
+                    <Fade in={true} timeout={500 + i * 200} key={p.name}>
+                      <PlayerCard isCurrentPlayer={p.isCurrentPlayer}>
+                        <CardContent sx={{ p: 1.5 }}>
+                          <Stack direction="row" alignItems="center" spacing={2}>
+                            {/* Avatar hoặc chữ cái */}
+                            <Avatar
+                              src={p.avatar || undefined}
+                              sx={{
+                                width: 56,
+                                height: 56,
+                                bgcolor: p.avatar ? 'transparent' : '#fff',
+                                color: p.avatar ? 'inherit' : '#000',
+                                fontWeight: 'bold',
+                                border: '2px solid white'
+                              }}
+                            >
+                              {!p.avatar && p.name.charAt(0).toUpperCase()}
+                            </Avatar>
+
+                            {/* Tên và điểm */}
+                            <Box flexGrow={1} textAlign="left">
+                              <Typography variant="h6" fontWeight="bold">
+                                {medal} {p.name}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {p.score} điểm
+                              </Typography>
+                            </Box>
+
+                            {/* Điểm to bên phải */}
+                            <Typography variant="h5" fontWeight="bold" color="secondary">
+                              {p.score}
+                            </Typography>
+                          </Stack>
+                        </CardContent>
+                      </PlayerCard>
+                    </Fade>
+                  );
+                })}
+              </Stack>
+            </Container>
+          </LeaderboardBox>
+        );
+
 
     case 'playing':
     default:
@@ -576,12 +633,6 @@ const QuizPlay: React.FC = () => {
                   {currentQ.text}
                 </Typography>
                 <Stack direction="row" justifyContent="space-around" spacing={2}>
-                  {/* <Typography variant="body1" fontWeight="bold">
-                    Điểm: {totalScore}
-                  </Typography>
-                  <Typography variant="body1" fontWeight="bold">
-                    Hạng: #{leaderboard.findIndex(p => p.name === userName) + 1}
-                  </Typography> */}
                 </Stack>
               </CardContent>
             </GlassCard>
@@ -605,13 +656,7 @@ const QuizPlay: React.FC = () => {
                 }}
               />
             </Box>
-            {/* {hasAnswered && (
-              <Fade in={true} timeout={500}>
-                <Alert severity={isCorrect ? 'success' : 'error'} sx={{ mb: 3, justifyContent: 'center' }}>
-                  {isCorrect ? `Chính xác! +${earnedPoints} điểm` : 'Sai rồi! Đang chờ những người khác...'}
-                </Alert>
-              </Fade>
-            )} */}
+
             {currentQ.type === QuestionType.MULTIPLE_CHOICE && (
               <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>
                 {currentQ.options.map((option, index) => {

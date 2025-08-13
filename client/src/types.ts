@@ -85,6 +85,8 @@ export interface Participant {
   displayName: string;
   isActive: boolean;
   lastAnswered?: number;
+  avatar?: string;      // ✅ thêm vào
+  background?: string;  // ✅ thêm vào
 }
 
 export interface LeaderboardEntry {
