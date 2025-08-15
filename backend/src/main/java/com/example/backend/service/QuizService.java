@@ -3,6 +3,8 @@ package com.example.backend.service;
 import com.example.backend.dto.generated.GeneratedAnswerDTO;
 import com.example.backend.dto.generated.GeneratedQuestionDTO;
 import com.example.backend.dto.generated.GeneratedQuestionsWrapper;
+import com.example.backend.dto.generated.GeneratedQuizResponse;
+import com.example.backend.dto.request.GenerateAIQuizRequest;
 import com.example.backend.dto.helper.AnswerDTO;
 import com.example.backend.dto.helper.QuestionWithAnswersDTO;
 import com.example.backend.dto.request.QuizRequest;
@@ -40,6 +42,71 @@ public class QuizService {
     private final ChatGPTService chatGPTService;
     private final ObjectMapper objectMapper;
 
+    @Transactional
+    public GeneratedQuizResponse generateQuizContent(GenerateAIQuizRequest request) {
+        log.info("Start generating quiz content for title: {}", request.getTitle());
+        
+        // Gọi ChatGPT để sinh nội dung
+        ChatResponse response = chatGPTService.generateQuestions(request.getTitle(), 5, "MEDIUM");
+
+        if (response == null || response.getChoices() == null || response.getChoices().isEmpty()) {
+            throw new RuntimeException("Không nhận được phản hồi từ AI");
+        }
+
+        String aiResponse = response.getChoices().get(0).getMessage().getContent();
+        
+        // Parse JSON response từ AI
+        try {
+            GeneratedQuestionsWrapper wrapper = objectMapper.readValue(aiResponse, GeneratedQuestionsWrapper.class);
+            
+            // Chuyển đổi từ GeneratedQuestionsWrapper sang GeneratedQuizResponse
+            GeneratedQuizResponse quizResponse = new GeneratedQuizResponse();
+            quizResponse.setTitle(request.getTitle());
+            quizResponse.setQuestions(wrapper.getQuestions());
+            
+            return quizResponse;
+        } catch (JsonProcessingException e) {
+            log.error("Error parsing AI response", e);
+            throw new RuntimeException("Không thể xử lý phản hồi từ AI");
+        }
+    }
+
+    @Transactional
+public Quiz saveGeneratedQuiz(GenerateAIQuizRequest generatedQuiz, User user) {
+    Quiz quiz = new Quiz();
+    quiz.setTitle(generatedQuiz.getTitle());
+    quiz.setCreator(user);
+    quiz.setSource_type(SourceType.TEXT);
+    
+    Quiz savedQuiz = quizRepository.save(quiz);
+    
+    int questionOrder = 1;
+    for (GeneratedQuestionDTO questionDTO : generatedQuiz.getQuestions()) {
+        Question question = new Question();
+        question.setQuiz(savedQuiz);
+        question.setQuestionText(questionDTO.getQuestionText());
+        question.setQuestionType(QuestionType.valueOf(questionDTO.getQuestionType())); // Use the actual question type
+        question.setPoints(questionDTO.getPoints() != null ? questionDTO.getPoints() : 1);
+        question.setTimeLimit(questionDTO.getTimeLimit()); // Set the time limit
+        question.setOrderIndex(questionOrder++);
+        
+        Question savedQuestion = questionRepository.save(question);
+        
+        if (questionDTO.getAnswers() != null && !questionDTO.getAnswers().isEmpty()) {
+            for (GeneratedAnswerDTO answerDTO : questionDTO.getAnswers()) {
+                Answer answer = new Answer();
+                answer.setQuestion(savedQuestion);
+                answer.setAnswerText(answerDTO.getAnswerText());
+                answer.setCorrect(answerDTO.getIsCorrect());
+                answer.setOrderIndex(answerDTO.getOrderIndex());
+                
+                answerRepository.save(answer);
+            }
+        }
+    }
+    
+    return loadQuizWithQuestionsAndAnswers(savedQuiz.getId());
+}
 
 //    @Transactional
 //    public Quiz createQuiz(QuizRequest createDTO, User user) {
@@ -260,6 +327,11 @@ public class QuizService {
         log.info("Đã lưu thành công tất cả {} câu hỏi", generatedQuestions.size());
     }
 
+    public Quiz getQuizById(Long id) {
+        return quizRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy quiz với ID: " + id));
+    }
+
     @Transactional(readOnly = true)
     public Page<ListQuizzesResponse> getAllQuizzes(int page) {
         try {
@@ -292,6 +364,49 @@ public class QuizService {
                     );
                 })
                 .collect(Collectors.toList());
+    }
+
+    public GeneratedQuizResponse getGeneratedQuizById(Long quizId) {
+        // Lấy quiz và danh sách câu hỏi
+        Quiz quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy quiz với ID: " + quizId));
+                
+        List<Question> questions = questionRepository.getQuestionsWithAnswersByQuiz(quizId);
+
+        // Tạo response
+        GeneratedQuizResponse response = new GeneratedQuizResponse();
+        response.setTitle(quiz.getTitle());
+
+        // Map questions
+        List<GeneratedQuestionDTO> questionDTOs = questions.stream()
+                .map(question -> {
+                    GeneratedQuestionDTO questionDTO = new GeneratedQuestionDTO();
+                    questionDTO.setQuestionText(question.getQuestionText());
+                    questionDTO.setQuestionType(question.getQuestionType().toString());
+                    questionDTO.setPoints(question.getPoints());
+                    questionDTO.setTimeLimit(question.getTimeLimit());
+
+                    // Xử lý answers tùy theo loại câu hỏi
+                    if (question.getQuestionType() != QuestionType.SHORT_ANSWER) {
+                        List<GeneratedAnswerDTO> answerDTOs = question.getAnswers().stream()
+                                .map(answer -> {
+                                    GeneratedAnswerDTO answerDTO = new GeneratedAnswerDTO();
+                                    answerDTO.setAnswerText(answer.getAnswerText());
+                                    answerDTO.setIsCorrect(answer.isCorrect());
+                                    answerDTO.setOrderIndex(answer.getOrderIndex());
+                                    return answerDTO;
+                                })
+                                .sorted(Comparator.comparing(GeneratedAnswerDTO::getOrderIndex))
+                                .collect(Collectors.toList());
+                        questionDTO.setAnswers(answerDTOs);
+                    }
+
+                    return questionDTO;
+                })
+                .collect(Collectors.toList());
+
+        response.setQuestions(questionDTOs);
+        return response;
     }
 
 }
