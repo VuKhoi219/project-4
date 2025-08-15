@@ -1,0 +1,65 @@
+.questionEdit {
+  margin-bottom: 15px;
+}
+
+.answerEdit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.radioInput {
+  margin: 0;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.radioLabel {
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.editActions {
+  margin-top: 15px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.questionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.button.small {
+  padding: 6px 12px;
+  font-size: 14px;
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.button.small:hover {
+  background: #e5e7eb;
+}
+
+.input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.answerEdit .input {
+  flex: 1;
+}

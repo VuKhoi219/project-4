@@ -11,6 +11,7 @@ import Home from "./components/Home"
 import Login from "./components/Login";
 import Register from "./components/Register";
 import CreateQuiz from "./components/CreateQuiz";
+import GenQuiz from './components/GenQuiz';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
             <Route path="/quiz/:quizId" element={<Navigate to="join" />} />
             <Route path="/quiz/:quizId/join" element={<JoinQuiz />} />
             <Route path="/quiz/new" element={<CreateQuiz />} />
+            <Route path="/quiz/generate" element={<GenQuiz />} />
             {/* 
               Các route cho một phòng chơi cụ thể.
               Tất cả các trang liên quan đến một game đang diễn ra đều cần cả quizId và roomId.
