@@ -1,0 +1,389 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #1B4F52; /* Màu nền tối chính */
+  color: #E0F7FA; /* Text màu sáng */
+}
+
+.error {
+  color: #FF6F61; /* Đỏ nhạt cho lỗi */
+  background-color: rgba(255, 111, 97, 0.2); /* Nền lỗi mờ */
+  padding: 10px 15px;
+  border-radius: 8px;
+  margin-top: 15px;
+  max-width: 500px;
+  text-align: center;
+}
+
+/* --- Initial "Matrix" View Styles (Hình 1) --- */
+.matrixBackground {
+  background-color: #1E5D61; /* Đậm hơn một chút cho nền matrix */
+  background-image: url('../assets/back_groud_genquiz.jpg');
+  background-size: cover;
+  background-position: center;
+  color: #E0F7FA;
+  position: relative;
+}
+.matrixBackground::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(27, 79, 82, 0.7); /* Lớp phủ mờ dựa trên màu nền */
+  z-index: 1;
+}
+
+.initialContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 2;
+  padding: 20px;
+}
+
+.aiTitle {
+  font-size: 5rem;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0.1em;
+  color: #00E1FF; /* Màu sáng cho tiêu đề */
+}
+
+.aiSubtitle {
+  font-size: 1.25rem;
+  margin: 10px 0 30px 0;
+  color: #B0BEC5; /* Xanh nhạt hơn cho phụ đề */
+}
+
+.inputWrapper {
+  background-color: #264A4D; /* Màu nền tối cho input */
+  border-radius: 50px;
+  padding: 8px 25px;
+  width: 100%;
+  max-width: 550px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.inputWrapper input {
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 1.2rem;
+  color: #E0F7FA;
+  background-color: transparent;
+}
+
+.optionsBar {
+  display: flex;
+  gap: 20px;
+  margin: 20px 0;
+  font-size: 0.9rem;
+}
+.optionsBar span {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+  color: #A3E4B7; /* Xanh lá nhạt cho options */
+}
+
+.generateButton {
+  background-color: #00E1FF; /* Màu xanh neon sáng */
+  color: #1B4F52; /* Text tối để tương phản */
+  border: none;
+  border-radius: 50px;
+  padding: 15px 35px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 15px #00E1FF, 0 0 25px #00E1FF;
+}
+.generateButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.generateButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px #00E1FF, 0 0 35px #00E1FF;
+}
+
+/* --- Editor View Styles (Hình 2) --- */
+.editorContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  background-color: #1B4F52; /* Nền tối */
+  color: #E0F7FA;
+}
+
+.editorHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #1E5D61; /* Đậm hơn cho header */
+}
+.headerButton {
+  background: none;
+  border: 1px solid #A3E4B7; /* Viền xanh lá nhạt */
+  color: #A3E4B7;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-right: 10px;
+  font-weight: bold;
+}
+.headerButton.doneButton {
+  background-color: #A3E4B7; /* Xanh lá nhạt cho nút Done */
+  border-color: #A3E4B7;
+  color: #1B4F52;
+}
+.lastEdit {
+  font-size: 0.8rem;
+  color: #B0BEC5; /* Xanh nhạt hơn */
+}
+
+.editorMain {
+  flex-grow: 1;
+  display: flex;
+  padding: 20px;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+.mediaPane {
+  flex-basis: 35%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.mediaBox {
+  background-color: #264A4D; /* Nền tối cho media box */
+  border-radius: 10px;
+  width: 100%;
+  height: 250px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  border: 2px dashed #A3E4B7; /* Viền sáng */
+}
+.mediaBox button {
+  background-color: #ffffff; /* Vàng nhạt cho nút */
+  color: #1B4F52;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.questionPane {
+  flex-basis: 65%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.formSection {
+  background-color: #1E5D61; /* Nền tối hơn */
+  padding: 15px;
+  border-radius: 8px;
+}
+.formSection label {
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+  display: block;
+  color: #00E1FF; /* Màu sáng cho label */
+}
+.formSection textarea,
+.formSection input {
+  width: 100%;
+  background-color: #264A4D; /* Nền tối cho input */
+  border: 1px solid #A3E4B7; /* Viền sáng */
+  border-radius: 5px;
+  padding: 12px;
+  color: #E0F7FA;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+.formSection textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.answersList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.answerInputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.correctnessToggle {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 5px;
+  color: #1B4F52;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+.correctnessToggle.correct { background-color: #A3E4B7; } /* Xanh lá nhạt */
+.correctnessToggle.incorrect { background-color: #FF6F61; } /* Đỏ nhạt */
+
+.editorFooter {
+  background-color: #1E5D61; /* Nền tối cho footer */
+  padding: 10px 0;
+  display: flex;
+  justify-content: center;
+}
+.questionTabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #264A4D; /* Nền tối hơn */
+  padding: 8px;
+  border-radius: 8px;
+}
+.questionTab {
+  background-color: #2F6A6D; /* Xanh đậm hơn cho tab */
+  color: #E0F7FA;
+  border: none;
+  width: 35px;
+  height: 35px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.questionTab.active {
+  background-color: #ffffff; /* Vàng nhạt cho tab active */
+  color: #1B4F52;
+  font-weight: bold;
+}
+.addQuestionButton {
+  background-color: #ffffff; /* Vàng nhạt cho nút thêm */
+  color: #1B4F52;
+  border: none;
+  width: 35px;
+  height: 35px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.5rem;
+}
+
+/* --- Success Message --- */
+.success {
+  text-align: center;
+  color: #E0F7FA;
+}
+
+.successIcon {
+  font-size: 50px;
+  width: 80px;
+  height: 80px;
+  line-height: 80px;
+  border-radius: 50%;
+  background-color: #A3E4B7; /* Xanh lá nhạt cho thành công */
+  margin: 0 auto 20px;
+}
+.initialContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 2;
+  padding: 20px;
+   /* Nền trắng sáng */
+  border-radius: 10px;
+  /* Bóng nhẹ */
+}
+
+.aiTitle {
+  font-size: 5rem;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0.1em;
+  color: #ffffff; /* Xanh đậm cho tiêu đề */
+}
+
+.aiSubtitle {
+  font-size: 1.25rem;
+  margin: 10px 0 30px 0;
+  color: #8b8b8b; /* Xám nhạt cho phụ đề */
+}
+
+.inputWrapper {
+  background-color: #F5F5F5; /* Xám nhạt cho input wrapper */
+  border-radius: 50px;
+  padding: 8px 25px;
+  width: 100%;
+  max-width: 550px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Bóng nhẹ */
+}
+
+.inputWrapper input {
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 1.2rem;
+  color: #d1cfcf; /* Text tối */
+  background-color: transparent;
+}
+
+.optionsBar {
+  display: flex;
+  gap: 20px;
+  margin: 20px 0;
+  font-size: 0.9rem;
+}
+.optionsBar span {
+   /* Xám nhạt cho options */
+  padding: 8px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+  color: #a3acad; /* Xanh đậm cho text options */
+}
+
+.generateButton {
+  background-color: #23aa27; /* Xanh lá nhạt cho nút */
+   /* Text trắng */
+  border: none;
+  border-radius: 50px;
+  padding: 15px 35px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+}
+.generateButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.generateButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.7);
+}
+
+.error {
+  color: #D32F2F; /* Đỏ nhạt cho lỗi */
+  background-color: rgba(211, 47, 47, 0.1); /* Nền lỗi mờ */
+  padding: 10px 15px;
+  border-radius: 8px;
+  margin-top: 15px;
+  max-width: 500px;
+  text-align: center;
+}

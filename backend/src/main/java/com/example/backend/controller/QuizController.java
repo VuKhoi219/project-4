@@ -1,7 +1,11 @@
 package com.example.backend.controller;
 
-
+import com.example.backend.dto.generated.GeneratedQuizResponse;
+import com.example.backend.dto.generated.GeneratedQuestionDTO;
+import com.example.backend.dto.generated.GeneratedAnswerDTO;
+import com.example.backend.dto.request.GenerateAIQuizRequest;
 import com.example.backend.dto.helper.QuestionWithAnswersDTO;
+import com.example.backend.dto.helper.AnswerDTO;
 import com.example.backend.dto.request.QuizRequest;
 import com.example.backend.dto.response.ApiResponse;
 import com.example.backend.dto.response.ListQuizzesResponse;
@@ -28,6 +32,44 @@ import java.util.List;
 @Slf4j  // Lombok annotation
 public class QuizController {
     private final QuizService quizService;
+
+    @PostMapping("/generate-ai")
+    public ResponseEntity<ApiResponse<GeneratedQuizResponse>> generateQuizContent(
+            @Valid @RequestBody GenerateAIQuizRequest request,
+            @AuthenticationPrincipal User user) {
+        try {
+            log.info("Generating quiz content for title: {} by user {}", 
+                    request.getTitle(), user != null ? user.getId() : "anonymous");
+
+            GeneratedQuizResponse generatedContent = quizService.generateQuizContent(request);
+
+            return ResponseEntity.ok()
+                    .body(ApiResponse.success(generatedContent, "Đã tạo nội dung Quiz thành công"));
+
+        } catch (Exception e) {
+            log.error("Error generating quiz content", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Không thể tạo nội dung Quiz: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/save-generated")
+public ResponseEntity<ApiResponse<QuizResponse>> saveGeneratedQuiz(
+        @Valid @RequestBody GenerateAIQuizRequest generatedQuiz,
+        @AuthenticationPrincipal User user) {
+    try {
+        log.info("Saving generated quiz: {} by user {}", 
+                 generatedQuiz.getTitle(), user != null ? user.getId() : "anonymous");
+        Quiz savedQuiz = quizService.saveGeneratedQuiz(generatedQuiz, user);
+        QuizResponse response = QuizResponse.fromEntity(savedQuiz);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(response, "Đã lưu Quiz thành công"));
+    } catch (Exception e) {
+        log.error("Error saving generated quiz", e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("Không thể lưu Quiz: " + e.getMessage()));
+    }
+}
 
     @PostMapping
     public ResponseEntity<ApiResponse<QuizResponse>> createQuiz(
@@ -81,6 +123,23 @@ public class QuizController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body(ApiResponse.error("Có lỗi xảy ra khi lấy danh sách câu hỏi", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/generate-ai/{id}")
+    public ResponseEntity<ApiResponse<GeneratedQuizResponse>> getGeneratedQuizById(
+            @PathVariable @Min(1) Long id) {
+        try {
+            log.info("Getting generated quiz content by id: {}", id);
+            
+            GeneratedQuizResponse response = quizService.getGeneratedQuizById(id);
+            return ResponseEntity.ok()
+                    .body(ApiResponse.success(response, "Lấy nội dung Quiz thành công"));
+
+        } catch (Exception e) {
+            log.error("Error getting quiz content", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Không thể lấy nội dung Quiz: " + e.getMessage()));
         }
     }
 

@@ -1,114 +1,95 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+// Hãy đảm bảo bạn đã tạo file Auth.css mới này trong cùng thư mục styles
 import '../styles/Auth.css';
 
-interface LoginForm {
-  username: string;
-  password: string;
-}
-
-const Login: React.FC = () => {
+const Login = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<LoginForm>({ username: '', password: '' });
-  const [error, setError] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
+  const [formData, setFormData] = useState({ username: '', password: '' });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setError(''); // Clear error on input change
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-
+    setError(''); // Xóa lỗi cũ khi submit
     try {
-      const response = await axios.post('http://localhost:8080/api/auth/login', {
-        username: formData.username,
-        password: formData.password,
-      });
-
-      const { data } = response.data;
-      // Assuming the backend returns a token in AuthenticationResponse
+      const res = await axios.post('http://localhost:8080/api/auth/login', formData);
+      const { data } = res.data;
       localStorage.setItem('token', data.token);
-      localStorage.setItem('userId', data.userId);
-      localStorage.setItem('username', data.username);
-
-      navigate('/'); // Redirect to home page after successful login
-    } catch (err: any) {
+      navigate('/');
+    } catch {
+      setError('Đăng nhập thất bại. Vui lòng kiểm tra lại email và mật khẩu.');
+    } finally {
       setLoading(false);
-      if (err.response?.data?.error) {
-        setError(err.response.data.message || 'Đăng nhập thất bại');
-      } else {
-        setError('Đã xảy ra lỗi. Vui lòng thử lại.');
-      }
     }
   };
 
   return (
-    <div className="auth-page">
-      <header className="header">
-        <div className="header-content">
-          <div className="logo">
-            <h1>QUIZ<span>.com</span></h1>
-          </div>
-          <div className="header-actions">
-            <Link to="/register">
-              <button className="create-quiz-btn">Đăng ký</button>
-            </Link>
-          </div>
-        </div>
-      </header>
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="logo-placeholder">Your logo</div>
+        <h1>Login</h1>
 
-      <section className="auth-section">
-        <div className="container">
-          <div className="auth-card">
-            <h2 className="section-title">Đăng nhập</h2>
-            {error && <p className="error-message">{error}</p>}
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>Email hoặc Tên đăng nhập</label>
-                <input
-                  type="text"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleInputChange}
-                  placeholder="Nhập email hoặc tên đăng nhập"
-                  className="input-field"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Mật khẩu</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  placeholder="Nhập mật khẩu"
-                  className="input-field"
-                  required
-                />
-              </div>
-              <div className="actions">
-                <button
-                  type="submit"
-                  className={`action-btn submit-btn ${loading ? 'loading' : ''}`}
-                  disabled={loading}
-                >
-                  {loading ? 'Đang xử lý...' : 'Đăng nhập'}
-                </button>
-              </div>
-            </form>
-            <p className="auth-link">
-              Bạn chưa có tài khoản? <Link to="/register">Đăng ký</Link>
-            </p>
+        <form onSubmit={handleSubmit}>
+          <label htmlFor="email-input">Email</label>
+          <input
+            id="email-input"
+            type="text"
+            name="username" // Giữ nguyên 'username' để không thay đổi logic
+            value={formData.username}
+            onChange={handleChange}
+            placeholder="username@gmail.com"
+          />
+
+          <label htmlFor="password-input">Password</label>
+          <div className="password-wrapper">
+            <input
+              id="password-input"
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Password"
+            />
           </div>
-        </div>
-      </section>
+          <a href="#" className="forgot-password">Forgot Password?</a>
+
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign in'}
+          </button>
+           {/* Thông báo lỗi hiển thị ngay dưới nút */}
+          {error && <p className="error-message">{error}</p>}
+        </form>
+
+        {/* Chức năng đăng nhập bằng mạng xã hội sẽ được thêm sau
+        <div className="separator">or continue with</div>*/}
+
+        
+        {/* Mạng xã hội – đăng nhập bằng Google/GitHub/Facebook
+<div className="social-login">
+  <button className="btn-social" aria-label="Log in with Google">
+    <img src="/google.png" alt="Google" />
+  </button>
+  <button className="btn-social" aria-label="Log in with GitHub">
+    <img src="https://i.ibb.co/bJC2S1m/github-mark-white.png" alt="GitHub" />
+  </button>
+  <button className="btn-social" aria-label="Log in with Facebook">
+    <img src="/facebook.png" alt="Facebook" />
+  </button>
+</div>
+*/}
+
+        <p className="register-link">
+          Don't have an account yet? <Link to="/register">Register for free</Link>
+        </p>
+      </div>
     </div>
   );
 };
