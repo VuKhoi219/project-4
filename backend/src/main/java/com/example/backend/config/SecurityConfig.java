@@ -35,6 +35,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/quizzes").permitAll()
                         .requestMatchers("/api/quizzes/*/questions").permitAll()
                         .requestMatchers("/api/answer/compare/**").permitAll()
+                        .requestMatchers( "/api/final-result").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

@@ -113,7 +113,7 @@ const AnswerResultCard = styled(Card)<{ isCorrect?: boolean }>`
 `;
 
 // Score Calculation
-const calculateScore = (timeLeft: number, maxTime: number, maxPoints: number = 100): number => {
+const calculateScore = (timeLeft: number, maxTime: number, maxPoints: number = 1000): number => {
   if (timeLeft <= 0) return 0;
   const minScore = Math.floor(maxPoints * 0.1);
   const timeScore = Math.floor(maxPoints * (timeLeft / maxTime));
@@ -136,6 +136,7 @@ const QuizPlay: React.FC = () => {
   const [pageSize, setPageSize] = useState<number>(10);
   const [totalQuestions, setTotalQuestions] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
+
   
   // New state for detailed answer result
   const [answerResult, setAnswerResult] = useState<{
@@ -157,6 +158,13 @@ const QuizPlay: React.FC = () => {
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const isHost = useMemo(() => quizStatus.startedBy === userName, [quizStatus, userName]);
+    // 👇 Thêm ở đây
+  const [animatedTimeLeft, setAnimatedTimeLeft] = useState(timeLeft);
+  const [animatedScore, setAnimatedScore] = useState(0);
+  const [displayLeaderboard, setDisplayLeaderboard] = useState<any[]>([]);
+  const [answered, setAnswered] = useState(false); // Đã chốt câu trả lời chưa
+  const [selectedOptions, setSelectedOptions] = useState([]); // Cho multiple-select
+  const [score, setScore] = useState(0);
   const leaderboard = useMemo(() => {
     if (!participants) return [];
     return Object.entries(participants)
@@ -184,7 +192,7 @@ const QuizPlay: React.FC = () => {
           correctAnswer: q.correctAnswers?.[0]?.answerText || q.answers?.find(a => a.isCorrect)?.answerText || "",
           correctAnswers: q.correctAnswers?.map(a => a.answerText) || [],
           acceptedAnswers: q.acceptedAnswers || [],
-          timeLimit: q.timeLimit || 30,
+          timeLimit: q.timeLimit || 15,
           type: q.questionType as QuestionType,
         }));
         setQuestions(prev => [...prev, ...mappedQuestions]);
@@ -351,6 +359,7 @@ const QuizPlay: React.FC = () => {
   const lockRef = useRef(false);
 
   const handleAnswer = async (answer: string | string[]) => {
+    // Nếu đã trả lời hoặc không ở trạng thái playing thì bỏ qua
     if (lockRef.current || hasAnswered || gameState !== 'playing' || !quizId || !roomId) return;
     lockRef.current = true;
 
@@ -359,14 +368,18 @@ const QuizPlay: React.FC = () => {
     let points = 0;
 
     try {
-      const answers = Array.isArray(answer) ? answer.map(a => ({ answerText: a })) : [{ answerText: answer }];
+      const answers = Array.isArray(answer)
+        ? answer.map(a => ({ answerText: a }))
+        : [{ answerText: answer }];
+
       const response = await apiService.checkAnswer(currentQ.id, answers);
-      
+
       if (response.success) {
         isCorrect = response.data.correct;
+
+        // 🎯 Chốt điểm ngay thời điểm trả lời (không tính lại)
         points = isCorrect ? calculateScore(timeLeft, currentQ.timeLimit || 30) : 0;
-        
-        // Store detailed answer result
+
         setAnswerResult({
           correct: response.data.correct,
           correctAnswerText: response.data.correctAnswerText,
@@ -376,16 +389,20 @@ const QuizPlay: React.FC = () => {
         throw new Error(response.error || 'Lỗi khi kiểm tra câu trả lời');
       }
 
+      // Lưu trạng thái đã trả lời, điểm giữ nguyên khi đồng hồ chạy tiếp
       const newTotal = totalScore + points;
       setHasAnswered(true);
       setSelectedAnswer(Array.isArray(answer) ? answer : [answer]);
       setIsCorrect(isCorrect);
       setEarnedPoints(points);
 
+      // Cập nhật điểm vào Firebase
       const participantRef = ref(db, `quizzes/${quizId}/rooms/${roomId}/participants/${userName}`);
       await update(participantRef, { score: newTotal, lastAnswered: Date.now() });
+
       const leaderboardRef = ref(db, `quizzes/${quizId}/rooms/${roomId}/leaderboard/${userName}`);
       await update(leaderboardRef, { bestScore: newTotal });
+
       const attemptRef = ref(db, `quizzes/${quizId}/rooms/${roomId}/playHistory/${userName}/attempts/${currentQ.id}`);
       await set(attemptRef, { 
         questionId: currentQ.id, 
@@ -394,7 +411,7 @@ const QuizPlay: React.FC = () => {
         score: points, 
         timeLeft, 
         playedAt: Date.now(),
-        answerResult: response.data // Store the full answer result
+        answerResult: response.data
       });
     } catch (error) {
       console.error("Error checking answer:", error);
@@ -402,6 +419,7 @@ const QuizPlay: React.FC = () => {
     }
     lockRef.current = false;
   };
+
 
   const handleMultipleSelect = (option: string) => {
     setSelectedAnswer(prev =>
@@ -423,7 +441,50 @@ const QuizPlay: React.FC = () => {
     lockRef.current = false;
   }, [currentQuestionIndex]);
 
-  if (loading || !questions.length) {
+  
+  // Smooth animation for time left & score in playing state
+  useEffect(() => {
+    if (gameState === 'playing' && questions[currentQuestionIndex]) {
+      const questionTime = (questions[currentQuestionIndex]?.timeLimit || 30) * 1000;
+      const start = performance.now();
+      const tick = (now: number) => {
+        const elapsed = now - start;
+        const remainingMs = Math.max(0, questionTime - elapsed);
+        setAnimatedTimeLeft(remainingMs / 1000);
+        const score = (remainingMs / questionTime) * 1000; // max 1000 points
+        setAnimatedScore(Math.max(0, score));
+        if (remainingMs > 0 && gameState === 'playing') {
+          requestAnimationFrame(tick);
+        }
+      };
+      requestAnimationFrame(tick);
+    }
+  }, [gameState, currentQuestionIndex, questions]);
+
+
+  // Animate leaderboard scores
+  useEffect(() => {
+    if (gameState === 'leaderboard' && leaderboard.length > 0) {
+      let frame = 0;
+      const duration = 1500;
+      const totalFrames = duration / 16;
+      const interval = setInterval(() => {
+        frame++;
+        setDisplayLeaderboard(
+          leaderboard.map((p) => ({
+            ...p,
+            score: Math.round((p.score * frame) / totalFrames),
+          }))
+        );
+        if (frame >= totalFrames) {
+          clearInterval(interval);
+          setDisplayLeaderboard(leaderboard);
+        }
+      }, 16);
+      return () => clearInterval(interval);
+    }
+  }, [gameState, leaderboard]);
+if (loading || !questions.length) {
     return (
       <BaseBox sx={{ background: '#1f2937' }}>
         <CircularProgress color="inherit" />
@@ -566,7 +627,7 @@ const QuizPlay: React.FC = () => {
               </Typography>
 
               <Stack spacing={1} maxWidth={600} mx="auto">
-                {leaderboard.slice(0, 5).map((p, i) => {
+                {(displayLeaderboard.length > 0 ? displayLeaderboard : leaderboard).slice(0, 5).map((p, i) => {
                   // Gắn huy chương cho top 3
                   const medals = ['🥇', '🥈', '🥉'];
                   const medal = i < 3 ? medals[i] : `${i + 1}`;
@@ -641,11 +702,11 @@ const QuizPlay: React.FC = () => {
                 variant="h3"
                 color={timeLeft <= 5 ? 'error.main' : 'primary.main'}
               >
-                {timeLeft}
+                {animatedTimeLeft.toFixed(2)}s
               </CountdownText>
               <LinearProgress
                 variant="determinate"
-                value={(timeLeft / (currentQ.timeLimit || 30)) * 100}
+                value={(animatedTimeLeft / (currentQ.timeLimit || 30)) * 100}
                 sx={{
                   height: 12,
                   borderRadius: 6,
@@ -655,7 +716,10 @@ const QuizPlay: React.FC = () => {
                   },
                 }}
               />
-            </Box>
+              <Typography mt={1} variant="h6" color="secondary">
+    Điểm hiện tại: {Math.round(animatedScore)}
+  </Typography>
+</Box>
 
             {currentQ.type === QuestionType.MULTIPLE_CHOICE && (
               <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>

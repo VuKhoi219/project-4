@@ -41,7 +41,23 @@ const apiService = {
   fetchQuizzes: async (page: number): Promise<ApiResponse> => {
     const res = await publicApi.get(`/quizzes?page${page}`);
     return res.data
-  }
+  },
+
+  createFinalResults: async (quizId: number, points: number, namePlayer: string, token?: string): Promise<any> => {
+    const headers: any = {};
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const res = await privateApi.post(
+      `/final-result`,
+      { quizId, points, namePlayer },
+      { headers }
+    );
+
+    return res.data;
+  },
+
   
   
 };
