@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { motion, Variants } from "framer-motion";
 import confetti from "canvas-confetti";
+import apiService from "../services/api";
 
 interface Player {
   displayName: string;
@@ -79,6 +80,34 @@ const FinalResults: React.FC = () => {
       }, 800);
     }
   }, [players]);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (players.length > 0 && !saved) {
+      setSaved(true); // ✅ chặn gọi nhiều lần
+
+      const token = localStorage.getItem("token");
+      const userName = localStorage.getItem("userName");
+
+      const currentPlayer = players.find(p => p.displayName === userName);
+
+      if (currentPlayer) {
+        apiService.createFinalResults(
+          Number(quizId),
+          currentPlayer.score,
+          currentPlayer.displayName,
+          token || undefined
+        ).catch(err => console.error("Lỗi lưu kết quả:", err));
+      } else {
+        apiService.createFinalResults(
+          Number(quizId),
+          players[0].score,
+          "chưa login"
+        );
+      }
+    }
+  }, [players, quizId, saved]);
+
 
   // 🎯 Avatar bounce
   const bounceAnimation = {
