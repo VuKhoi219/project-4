@@ -2,6 +2,7 @@ package com.example.backend.service;
 
 import com.example.backend.dto.request.FinalResultRequest;
 import com.example.backend.dto.response.FinalResultResponse;
+import com.example.backend.dto.response.ResponseQuizHot;
 import com.example.backend.entity.FinalResult;
 import com.example.backend.entity.Quiz;
 import com.example.backend.entity.User;
@@ -47,14 +48,6 @@ public class FinalResultService {
         return mapToResponse(savedResult);
     }
 
-//    @Transactional(readOnly = true)
-//    public List<FinalResultResponse> getFinalResultsByUser(User currentUser) {
-//        List<FinalResult> finalResults = finalResultRepository.findAllByUserId(currentUser.getId());
-//        return finalResults.stream()
-//                .map(this::mapToResponse)
-//                .collect(Collectors.toList());
-//    }
-
     private FinalResultResponse mapToResponse(FinalResult finalResult) {
         FinalResultResponse response = new FinalResultResponse();
         response.setId(finalResult.getId());
@@ -65,5 +58,14 @@ public class FinalResultService {
         response.setNamePlayer(finalResult.getNamePlayer());
         response.setQuizId(finalResult.getQuiz().getId());
         return response;
+    }
+    public List<ResponseQuizHot> findTop10QuizzesHot() {
+        List<ResponseQuizHot> responseQuizHots = finalResultRepository.findTop10QuizHot();
+
+        if (responseQuizHots.isEmpty()) {
+            return List.of(); // trả về list rỗng
+        }
+
+        return responseQuizHots;
     }
 }

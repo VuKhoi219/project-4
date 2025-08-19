@@ -24,9 +24,9 @@ import {
 } from '@mui/material';
 import styled from '@emotion/styled';
 import { keyframes } from '@emotion/react';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
 // Animations and Styled Components
-// Animations
 const pulse = keyframes`0%, 100% { opacity: 1; } 50% { opacity: 0.7; }`;
 const bounce = keyframes`0%, 20%, 53%, 80%, 100% { transform: translateY(0); } 40%, 43% { transform: translateY(-8px); } 70% { transform: translateY(-4px); }`;
 
@@ -59,10 +59,13 @@ const PlayingBox = styled(BaseBox)`
   color: #1f2937;
 `;
 
+const WaitingForHostBox = styled(BaseBox)`
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+`;
+
 const AnimatedTitle = styled(Typography)`
   animation: ${pulse} 2s infinite;
   font-weight: 700;
-  
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 `;
 
@@ -104,12 +107,26 @@ const OptionButton = styled(Button)`
   }
 `;
 
-// Answer Result Card styled component
 const AnswerResultCard = styled(Card)<{ isCorrect?: boolean }>`
   background: ${props => (props.isCorrect ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)')};
   border: 2px solid ${props => (props.isCorrect ? '#22c55e' : '#ef4444')};
   border-radius: 12px;
   margin-bottom: 16px;
+`;
+
+const HostControlButton = styled(Button)`
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: white;
+  padding: 12px 24px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+  animation: ${pulse} 2s infinite;
+  &:hover {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    transform: scale(1.05);
+  }
 `;
 
 // Score Calculation
@@ -125,6 +142,7 @@ const QuizPlay: React.FC = () => {
   const [participants, setParticipants] = useState<Record<string, any>>({});
   const [quizStatus, setQuizStatus] = useState<any>({});
   const [currentState, setCurrentState] = useState<any>({});
+  const [roomInfo, setRoomInfo] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [totalScore, setTotalScore] = useState<number>(0);
   const [hasAnswered, setHasAnswered] = useState<boolean>(false);
@@ -137,15 +155,12 @@ const QuizPlay: React.FC = () => {
   const [totalQuestions, setTotalQuestions] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
 
-  
-  // New state for detailed answer result
   const [answerResult, setAnswerResult] = useState<{
     correct: boolean;
     correctAnswerText: string;
     userAnswers: { answerText: string }[];
   } | null>(null);
 
-  // Track previous question index to detect actual question changes
   const prevQuestionIndexRef = useRef<number>(-1);
 
   const { quizId, roomId } = useParams<{ quizId: string; roomId: string }>();
@@ -155,29 +170,34 @@ const QuizPlay: React.FC = () => {
   const gameState = currentState?.phase || 'get-ready';
   const currentQuestionIndex = currentState?.questionIndex || 0;
   const timeLeft = currentState?.timeLeft || 0;
+  const waitingForHost = currentState?.waitingForHost || false;
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const isHost = useMemo(() => quizStatus.startedBy === userName, [quizStatus, userName]);
-    // 👇 Thêm ở đây
+  
+  // Kiểm tra quyền chủ phòng
+  const isHost = useMemo(() => {
+    return roomInfo?.createdBy === userName || quizStatus.startedBy === userName;
+  }, [roomInfo, quizStatus, userName]);
+
+  const hostControlEnabled = useMemo(() => {
+    return roomInfo?.hostControlEnabled || false;
+  }, [roomInfo]);
+
   const [animatedTimeLeft, setAnimatedTimeLeft] = useState(timeLeft);
   const [animatedScore, setAnimatedScore] = useState(0);
   const [displayLeaderboard, setDisplayLeaderboard] = useState<any[]>([]);
-  const [answered, setAnswered] = useState(false); // Đã chốt câu trả lời chưa
-  const [selectedOptions, setSelectedOptions] = useState([]); // Cho multiple-select
-  const [score, setScore] = useState(0);
+
   const leaderboard = useMemo(() => {
     if (!participants) return [];
     return Object.entries(participants)
       .map(([name, data]) => ({
         name: data.displayName || name,
-        avatar: data.avatar || "", // thêm avatar để render
+        avatar: data.avatar || "",
         score: data.score || 0,
         isCurrentPlayer: name === userName,
       }))
       .sort((a, b) => b.score - a.score);
   }, [participants, userName]);
-
-
 
   // Load questions for the current page
   const loadQuestions = async (page: number) => {
@@ -215,6 +235,16 @@ const QuizPlay: React.FC = () => {
       navigate('/');
       return;
     }
+
+    // Lắng nghe thông tin phòng
+    const roomInfoRef = ref(db, `quizzes/${quizId}/rooms/${roomId}/info`);
+    const unsubRoomInfo = onValue(roomInfoRef, (snapshot) => {
+      const info = snapshot.val();
+      if (info) {
+        setRoomInfo(info);
+      }
+    });
+
     const statusRef = ref(db, `quizzes/${quizId}/rooms/${roomId}/status`);
     const unsubStatus = onValue(statusRef, (snapshot) => {
       const status = snapshot.val();
@@ -237,7 +267,6 @@ const QuizPlay: React.FC = () => {
     const unsubCurrentState = onValue(currentStateRef, (snapshot) => {
       const state = snapshot.val();
       if (state) {
-        // Only reset when question actually changes
         if (state.questionIndex !== prevQuestionIndexRef.current) {
           console.log('Question changed from', prevQuestionIndexRef.current, 'to', state.questionIndex);
           setHasAnswered(false);
@@ -260,11 +289,92 @@ const QuizPlay: React.FC = () => {
 
     loadQuestions(0);
     return () => {
+      unsubRoomInfo();
       unsubStatus();
       unsubParticipants();
       unsubCurrentState();
     };
   }, [quizId, roomId, userName, navigate]);
+
+  // Xử lý timer logic với host control
+  useEffect(() => {
+    if (!isHost || !quizId || !roomId) return;
+    if (timerRef.current) clearInterval(timerRef.current);
+    const currentStatePath = `quizzes/${quizId}/rooms/${roomId}/currentState`;
+    const updatePhase = (phase: string, additionalData?: any) => 
+      update(ref(db, currentStatePath), { phase, ...additionalData });
+
+    if (gameState === 'get-ready') {
+      timerRef.current = setTimeout(
+        () => update(ref(db, currentStatePath), { 
+          phase: 'playing', 
+          timeLeft: questions[currentQuestionIndex]?.timeLimit || 30 
+        }),
+        3000
+      );
+    } else if (gameState === 'playing') {
+      timerRef.current = setInterval(async () => {
+        const timeSnapshot = await get(ref(db, `${currentStatePath}/timeLeft`));
+        const newTime = (timeSnapshot.val() || 0) - 1;
+        if (newTime >= 0) set(ref(db, `${currentStatePath}/timeLeft`), newTime);
+        else {
+          clearInterval(timerRef.current!);
+          updatePhase('show-answer');
+        }
+      }, 1000);
+    } else if (gameState === 'show-answer') {
+      timerRef.current = setTimeout(() => updatePhase('leaderboard'), 5000);
+    } else if (gameState === 'leaderboard' && !hostControlEnabled) {
+      // Chỉ tự động chuyển khi không bật host control
+      timerRef.current = setTimeout(() => {
+        const nextQuestionIndex = currentQuestionIndex + 1;
+        if (nextQuestionIndex < totalQuestions) {
+          update(ref(db, currentStatePath), { 
+            questionIndex: nextQuestionIndex, 
+            phase: 'get-ready',
+            waitingForHost: false
+          });
+        } else {
+          update(ref(db, `quizzes/${quizId}/rooms/${roomId}/status`), { 
+            isCompleted: true, 
+            completedAt: Date.now() 
+          });
+        }
+      }, 8000);
+    } else if (gameState === 'leaderboard' && hostControlEnabled && !waitingForHost) {
+      // Khi bật host control, chuyển sang trạng thái chờ host sau 3 giây
+      timerRef.current = setTimeout(() => {
+        update(ref(db, currentStatePath), { waitingForHost: true });
+      }, 3000);
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isHost, gameState, quizId, roomId, currentQuestionIndex, totalQuestions, questions, hostControlEnabled, waitingForHost]);
+
+  // Xử lý khi chủ phòng bấm next
+  const handleHostNextQuestion = async () => {
+    if (!isHost || !quizId || !roomId) return;
+
+    const nextQuestionIndex = currentQuestionIndex + 1;
+    const currentStatePath = `quizzes/${quizId}/rooms/${roomId}/currentState`;
+
+    if (nextQuestionIndex < totalQuestions) {
+      await update(ref(db, currentStatePath), { 
+        questionIndex: nextQuestionIndex, 
+        phase: 'get-ready',
+        waitingForHost: false
+      });
+    } else {
+      await update(ref(db, `quizzes/${quizId}/rooms/${roomId}/status`), { 
+        isCompleted: true, 
+        completedAt: Date.now() 
+      });
+    }
+  };
+
+  // Các useEffect khác giữ nguyên...
   useEffect(() => {
     if (!quizId || !roomId || !userName || !questions[currentQuestionIndex]) return;
 
@@ -281,7 +391,6 @@ const QuizPlay: React.FC = () => {
         setEarnedPoints(data.score);
         setAnswerResult(data.answerResult || null);
       } else {
-        // Nếu chưa có câu trả lời
         setHasAnswered(false);
         setSelectedAnswer([]);
         setIsCorrect(false);
@@ -298,47 +407,7 @@ const QuizPlay: React.FC = () => {
   }, [currentPage]);
 
   useEffect(() => {
-    if (!isHost || !quizId || !roomId) return;
-    if (timerRef.current) clearInterval(timerRef.current);
-    const currentStatePath = `quizzes/${quizId}/rooms/${roomId}/currentState`;
-    const updatePhase = (phase: string) => update(ref(db, currentStatePath), { phase });
-
-    if (gameState === 'get-ready') {
-      timerRef.current = setTimeout(
-        () => update(ref(db, currentStatePath), { phase: 'playing', timeLeft: questions[currentQuestionIndex]?.timeLimit || 30 }),
-        3000
-      );
-    } else if (gameState === 'playing') {
-      timerRef.current = setInterval(async () => {
-        const timeSnapshot = await get(ref(db, `${currentStatePath}/timeLeft`));
-        const newTime = (timeSnapshot.val() || 0) - 1;
-        if (newTime >= 0) set(ref(db, `${currentStatePath}/timeLeft`), newTime);
-        else {
-          clearInterval(timerRef.current!);
-          updatePhase('show-answer');
-        }
-      }, 1000);
-    } else if (gameState === 'show-answer') {
-      timerRef.current = setTimeout(() => updatePhase('leaderboard'), 5000);
-    } else if (gameState === 'leaderboard') {
-      timerRef.current = setTimeout(() => {
-        const nextQuestionIndex = currentQuestionIndex + 1;
-        if (nextQuestionIndex < totalQuestions) {
-          update(ref(db, currentStatePath), { questionIndex: nextQuestionIndex, phase: 'get-ready' });
-        } else {
-          update(ref(db, `quizzes/${quizId}/rooms/${roomId}/status`), { isCompleted: true, completedAt: Date.now() });
-        }
-      }, 8000);
-    }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isHost, gameState, quizId, roomId, currentQuestionIndex, totalQuestions, questions]);
-
-  // Handle timeout - submit answer when time runs out
-  useEffect(() => {
     if (gameState === 'playing' && timeLeft === 0 && !hasAnswered && questions[currentQuestionIndex]) {
-      // Auto-submit current answer when time runs out
       const currentQ = questions[currentQuestionIndex];
       if (currentQ.type === QuestionType.SHORT_ANSWER && shortAnswer.trim()) {
         console.log('Auto-submitting short answer due to timeout:', shortAnswer);
@@ -347,9 +416,7 @@ const QuizPlay: React.FC = () => {
         console.log('Auto-submitting multiple select due to timeout:', selectedAnswer);
         handleAnswer(selectedAnswer);
       }
-      // For other question types, submit empty answer or handle as needed
       else if (currentQ.type === QuestionType.MULTIPLE_CHOICE || currentQ.type === QuestionType.TRUE_FALSE) {
-        // Submit empty answer to record the attempt
         console.log('Auto-submitting empty answer due to timeout');
         handleAnswer("");
       }
@@ -359,7 +426,6 @@ const QuizPlay: React.FC = () => {
   const lockRef = useRef(false);
 
   const handleAnswer = async (answer: string | string[]) => {
-    // Nếu đã trả lời hoặc không ở trạng thái playing thì bỏ qua
     if (lockRef.current || hasAnswered || gameState !== 'playing' || !quizId || !roomId) return;
     lockRef.current = true;
 
@@ -376,8 +442,6 @@ const QuizPlay: React.FC = () => {
 
       if (response.success) {
         isCorrect = response.data.correct;
-
-        // 🎯 Chốt điểm ngay thời điểm trả lời (không tính lại)
         points = isCorrect ? calculateScore(timeLeft, currentQ.timeLimit || 30) : 0;
 
         setAnswerResult({
@@ -389,14 +453,12 @@ const QuizPlay: React.FC = () => {
         throw new Error(response.error || 'Lỗi khi kiểm tra câu trả lời');
       }
 
-      // Lưu trạng thái đã trả lời, điểm giữ nguyên khi đồng hồ chạy tiếp
       const newTotal = totalScore + points;
       setHasAnswered(true);
       setSelectedAnswer(Array.isArray(answer) ? answer : [answer]);
       setIsCorrect(isCorrect);
       setEarnedPoints(points);
 
-      // Cập nhật điểm vào Firebase
       const participantRef = ref(db, `quizzes/${quizId}/rooms/${roomId}/participants/${userName}`);
       await update(participantRef, { score: newTotal, lastAnswered: Date.now() });
 
@@ -420,7 +482,6 @@ const QuizPlay: React.FC = () => {
     lockRef.current = false;
   };
 
-
   const handleMultipleSelect = (option: string) => {
     setSelectedAnswer(prev =>
       prev.includes(option) ? prev.filter(a => a !== option) : [...prev, option]
@@ -441,7 +502,6 @@ const QuizPlay: React.FC = () => {
     lockRef.current = false;
   }, [currentQuestionIndex]);
 
-  
   // Smooth animation for time left & score in playing state
   useEffect(() => {
     if (gameState === 'playing' && questions[currentQuestionIndex]) {
@@ -451,7 +511,7 @@ const QuizPlay: React.FC = () => {
         const elapsed = now - start;
         const remainingMs = Math.max(0, questionTime - elapsed);
         setAnimatedTimeLeft(remainingMs / 1000);
-        const score = (remainingMs / questionTime) * 1000; // max 1000 points
+        const score = (remainingMs / questionTime) * 1000;
         setAnimatedScore(Math.max(0, score));
         if (remainingMs > 0 && gameState === 'playing') {
           requestAnimationFrame(tick);
@@ -460,7 +520,6 @@ const QuizPlay: React.FC = () => {
       requestAnimationFrame(tick);
     }
   }, [gameState, currentQuestionIndex, questions]);
-
 
   // Animate leaderboard scores
   useEffect(() => {
@@ -484,7 +543,8 @@ const QuizPlay: React.FC = () => {
       return () => clearInterval(interval);
     }
   }, [gameState, leaderboard]);
-if (loading || !questions.length) {
+
+  if (loading || !questions.length) {
     return (
       <BaseBox sx={{ background: '#1f2937' }}>
         <CircularProgress color="inherit" />
@@ -510,6 +570,47 @@ if (loading || !questions.length) {
       <PlayingBox>
         <Typography variant="h5">Chờ câu hỏi tiếp theo...</Typography>
       </PlayingBox>
+    );
+  }
+
+  // Hiển thị màn hình chờ host khi bật host control
+  if (gameState === 'leaderboard' && hostControlEnabled && waitingForHost) {
+    return (
+      <WaitingForHostBox>
+        <Container maxWidth="md" sx={{ textAlign: 'center' }}>
+          <Fade in={true} timeout={1000}>
+            <div>
+              <AnimatedTitle variant="h2" sx={{ fontSize: { xs: '2.5rem', md: '4rem' }, mb: 3 }}>
+                ⏳ Chờ chủ phòng
+              </AnimatedTitle>
+              <Typography variant="h5" mb={4}>
+                {isHost ? 'Bạn là chủ phòng, hãy bấm để tiếp tục!' : 'Đang chờ chủ phòng chuyển câu hỏi tiếp theo...'}
+              </Typography>
+              
+              {isHost && (
+                <HostControlButton
+                  onClick={handleHostNextQuestion}
+                  startIcon={<ArrowForwardIcon />}
+                  size="large"
+                >
+                  {currentQuestionIndex + 1 < totalQuestions ? 'Câu tiếp theo' : 'Kết thúc quiz'}
+                </HostControlButton>
+              )}
+              
+              {!isHost && (
+                <GlassCard sx={{ p: 3, display: 'inline-block' }}>
+                  <Typography variant="h6">
+                    Chủ phòng: <strong>{roomInfo?.createdBy || 'Unknown'}</strong>
+                  </Typography>
+                  <Typography variant="body1" color="rgba(255,255,255,0.8)">
+                    Đang chuẩn bị câu hỏi tiếp theo...
+                  </Typography>
+                </GlassCard>
+              )}
+            </div>
+          </Fade>
+        </Container>
+      </WaitingForHostBox>
     );
   }
 
@@ -546,7 +647,6 @@ if (loading || !questions.length) {
                   {currentQ.text}
                 </Typography>
                 
-                {/* Show correct answer */}
                 <Box bgcolor="rgba(34, 197, 94, 0.8)" p={2} borderRadius={8} mb={2}>
                   <Typography variant="h6" fontWeight="bold" mb={1}>
                     ✅ Đáp án đúng
@@ -557,7 +657,6 @@ if (loading || !questions.length) {
                   </Typography>
                 </Box>
 
-                {/* Show user's answer if they answered and it was wrong */}
                 {hasAnswered && answerResult && !answerResult.correct && (
                   <>
                     <Divider sx={{ my: 2, bgcolor: 'rgba(255, 255, 255, 0.3)' }} />
@@ -575,7 +674,6 @@ if (loading || !questions.length) {
                   </>
                 )}
 
-                {/* Show accepted answers for short answer questions */}
                 {currentQ.type === QuestionType.SHORT_ANSWER && (currentQ.acceptedAnswers ?? []).length > 0 && (
                   <Typography variant="body1" mt={2} sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
                     Các đáp án được chấp nhận: {(currentQ.acceptedAnswers ?? []).join(", ")}
@@ -584,7 +682,6 @@ if (loading || !questions.length) {
               </CardContent>
             </GlassCard>
 
-            {/* Show user's result */}
             {hasAnswered && (
               <Fade in={true} timeout={1000}>
                 <AnswerResultCard isCorrect={isCorrect}>
@@ -606,7 +703,6 @@ if (loading || !questions.length) {
               </Fade>
             )}
 
-            {/* Show if user didn't answer */}
             {!hasAnswered && (
               <Fade in={true} timeout={1000}>
                 <Alert severity="info" sx={{ color: 'white', bgcolor: 'info.main' }}>
@@ -618,65 +714,74 @@ if (loading || !questions.length) {
         </ShowAnswerBox>
       );
 
-      case 'leaderboard':
-        return (
-          <LeaderboardBox>
-            <Container maxWidth="lg" sx={{ textAlign: 'center' }}>
-              <Typography variant="h3" fontWeight="bold" mb={4}>
-                🏆 Bảng Xếp Hạng 🏆
-              </Typography>
+    case 'leaderboard':
+      return (
+        <LeaderboardBox>
+          <Container maxWidth="lg" sx={{ textAlign: 'center' }}>
+            <Typography variant="h3" fontWeight="bold" mb={4}>
+              🏆 Bảng Xếp Hạng 🏆
+            </Typography>
 
-              <Stack spacing={1} maxWidth={600} mx="auto">
-                {(displayLeaderboard.length > 0 ? displayLeaderboard : leaderboard).slice(0, 5).map((p, i) => {
-                  // Gắn huy chương cho top 3
-                  const medals = ['🥇', '🥈', '🥉'];
-                  const medal = i < 3 ? medals[i] : `${i + 1}`;
+            <Stack spacing={1} maxWidth={600} mx="auto">
+              {(displayLeaderboard.length > 0 ? displayLeaderboard : leaderboard).slice(0, 5).map((p, i) => {
+                const medals = ['🥇', '🥈', '🥉'];
+                const medal = i < 3 ? medals[i] : `${i + 1}`;
 
-                  return (
-                    <Fade in={true} timeout={500 + i * 200} key={p.name}>
-                      <PlayerCard isCurrentPlayer={p.isCurrentPlayer}>
-                        <CardContent sx={{ p: 1.5 }}>
-                          <Stack direction="row" alignItems="center" spacing={2}>
-                            {/* Avatar hoặc chữ cái */}
-                            <Avatar
-                              src={p.avatar || undefined}
-                              sx={{
-                                width: 56,
-                                height: 56,
-                                bgcolor: p.avatar ? 'transparent' : '#fff',
-                                color: p.avatar ? 'inherit' : '#000',
-                                fontWeight: 'bold',
-                                border: '2px solid white'
-                              }}
-                            >
-                              {!p.avatar && p.name.charAt(0).toUpperCase()}
-                            </Avatar>
+                return (
+                  <Fade in={true} timeout={500 + i * 200} key={p.name}>
+                    <PlayerCard isCurrentPlayer={p.isCurrentPlayer}>
+                      <CardContent sx={{ p: 1.5 }}>
+                        <Stack direction="row" alignItems="center" spacing={2}>
+                          <Avatar
+                            src={p.avatar || undefined}
+                            sx={{
+                              width: 56,
+                              height: 56,
+                              bgcolor: p.avatar ? 'transparent' : '#fff',
+                              color: p.avatar ? 'inherit' : '#000',
+                              fontWeight: 'bold',
+                              border: '2px solid white'
+                            }}
+                          >
+                            {!p.avatar && p.name.charAt(0).toUpperCase()}
+                          </Avatar>
 
-                            {/* Tên và điểm */}
-                            <Box flexGrow={1} textAlign="left">
-                              <Typography variant="h6" fontWeight="bold">
-                                {medal} {p.name}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                {p.score} điểm
-                              </Typography>
-                            </Box>
-
-                            {/* Điểm to bên phải */}
-                            <Typography variant="h5" fontWeight="bold" color="secondary">
-                              {p.score}
+                          <Box flexGrow={1} textAlign="left">
+                            <Typography variant="h6" fontWeight="bold">
+                              {medal} {p.name}
                             </Typography>
-                          </Stack>
-                        </CardContent>
-                      </PlayerCard>
-                    </Fade>
-                  );
-                })}
-              </Stack>
-            </Container>
-          </LeaderboardBox>
-        );
+                            <Typography variant="body2" color="text.secondary">
+                              {p.score} điểm
+                            </Typography>
+                          </Box>
 
+                          <Typography variant="h5" fontWeight="bold" color="secondary">
+                            {p.score}
+                          </Typography>
+                        </Stack>
+                      </CardContent>
+                    </PlayerCard>
+                  </Fade>
+                );
+              })}
+            </Stack>
+
+            {/* Hiển thị thông báo cho host control */}
+            {hostControlEnabled && !waitingForHost && (
+              <Fade in={true} timeout={2000}>
+                <Box mt={4}>
+                  <Typography variant="h6" color="rgba(255,255,255,0.9)">
+                    {isHost ? 
+                      "Bạn sẽ có thể chuyển câu tiếp theo trong giây lát..." : 
+                      `Chờ chủ phòng ${roomInfo?.createdBy} chuyển câu tiếp theo...`
+                    }
+                  </Typography>
+                </Box>
+              </Fade>
+            )}
+          </Container>
+        </LeaderboardBox>
+      );
 
     case 'playing':
     default:
@@ -693,10 +798,9 @@ if (loading || !questions.length) {
                 <Typography variant="h4" my={2} fontWeight={500}>
                   {currentQ.text}
                 </Typography>
-                <Stack direction="row" justifyContent="space-around" spacing={2}>
-                </Stack>
               </CardContent>
             </GlassCard>
+            
             <Box mb={3} textAlign="center">
               <CountdownText
                 variant="h3"
@@ -717,9 +821,9 @@ if (loading || !questions.length) {
                 }}
               />
               <Typography mt={1} variant="h6" color="secondary">
-    Điểm hiện tại: {Math.round(animatedScore)}
-  </Typography>
-</Box>
+                Điểm hiện tại: {Math.round(animatedScore)}
+              </Typography>
+            </Box>
 
             {currentQ.type === QuestionType.MULTIPLE_CHOICE && (
               <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>
@@ -752,6 +856,7 @@ if (loading || !questions.length) {
                 })}
               </Box>
             )}
+            
             {currentQ.type === QuestionType.MULTIPLE_SELECT && (
               <Box>
                 <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>
@@ -804,6 +909,7 @@ if (loading || !questions.length) {
                 </Button>
               </Box>
             )}
+            
             {currentQ.type === QuestionType.TRUE_FALSE && (
               <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>
                 {['Đúng', 'Sai'].map((option, index) => {
@@ -835,6 +941,7 @@ if (loading || !questions.length) {
                 })}
               </Box>
             )}
+            
             {currentQ.type === QuestionType.SHORT_ANSWER && (
               <Box>
                 <TextField
