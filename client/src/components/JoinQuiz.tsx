@@ -3,27 +3,45 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ref, set, get, db } from "../config/firebase";
-import { Box, Button, Card, CardContent, Typography, CircularProgress, Paper, Stack, Alert } from '@mui/material';
+import { 
+  Box, Button, Card, CardContent, Typography, CircularProgress, 
+  Paper, Stack, Alert, FormControlLabel, Checkbox, Divider 
+} from '@mui/material';
 import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import HomeIcon from '@mui/icons-material/Home';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 // Styled components
 const GradientBox = styled(Box)(({ theme }) => ({
   background: 'linear-gradient(135deg, #e3f2fd 0%, #c5cae9 100%)',
-  minHeight: '100vh',
+  minHeight: '100vh', // Đảm bảo ít nhất full viewport height
   padding: theme.spacing(2),
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  justifyContent: 'center',
+  // ✅ Thay đổi chính: Từ 'center' thành 'flex-start' 
+  justifyContent: 'flex-start', // Bắt đầu từ trên xuống thay vì căn giữa
+  paddingTop: theme.spacing(4), // Thêm padding top để không dính sát trên cùng
+  paddingBottom: theme.spacing(4), // Thêm padding bottom
 }));
 
 const MainCard = styled(Card)(({ theme }) => ({
-  maxWidth: 450,
+  maxWidth: '90%', // Thay đổi từ 450px thành 90% để responsive
   width: '100%',
   boxShadow: theme.shadows[16],
   borderRadius: Number(theme.shape.borderRadius) * 2,
+  marginBottom: theme.spacing(3),
+  // Responsive breakpoints
+  [theme.breakpoints.up('sm')]: {
+    maxWidth: 600, // Tablet: 600px
+  },
+  [theme.breakpoints.up('md')]: {
+    maxWidth: 800, // Desktop: 800px
+  },
+  [theme.breakpoints.up('lg')]: {
+    maxWidth: 1000, // Large desktop: 1000px
+  },
 }));
 
 const ActionButton = styled(Button)(({ theme }) => ({
@@ -37,11 +55,18 @@ const ActionButton = styled(Button)(({ theme }) => ({
   }
 }));
 
+const SettingsCard = styled(Card)(({ theme }) => ({
+  backgroundColor: '#f8f9ff',
+  border: '1px solid #e3f2fd',
+  marginBottom: theme.spacing(2),
+}));
+
 const JoinQuiz: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string>("");
   const [quizInfo, setQuizInfo] = useState<any>(null);
+  const [hostControlEnabled, setHostControlEnabled] = useState(false);
 
   const { quizId } = useParams<{ quizId: string }>();
   const navigate = useNavigate();
@@ -58,25 +83,19 @@ const JoinQuiz: React.FC = () => {
       try {
         const snapshot = await get(infoRef);
 
-        // LOGIC MỚI: "Tạo nếu chưa tồn tại"
         if (snapshot.exists()) {
-          // Nếu quiz đã tồn tại, chỉ cần lấy thông tin
           setQuizInfo(snapshot.val());
         } else {
-          // Nếu quiz CHƯA tồn tại, tạo thông tin mặc định
           console.log(`Quiz with ID "${quizId}" not found. Creating a default one.`);
           
           const defaultQuizInfo = {
             title: `Bộ Đề Mặc Định (${quizId})`,
             description: "Đây là một bộ đề được tạo tự động.",
-            totalQuestions: 5, // Dựa trên MOCK_QUESTIONS
+            totalQuestions: 5,
             pointsPerQuestion: 100
           };
 
-          // Ghi thông tin mặc định này vào Firebase
           await set(infoRef, defaultQuizInfo);
-
-          // Sau khi tạo, cập nhật state để hiển thị
           setQuizInfo(defaultQuizInfo);
         }
       } catch (err) {
@@ -107,6 +126,9 @@ const JoinQuiz: React.FC = () => {
           createdBy: "system",
           createdAt: Date.now(),
           maxParticipants: 20,
+          // Thêm cài đặt quyền chủ phòng
+          hostControlEnabled: hostControlEnabled,
+          hostName: "system",
         },
         status: {
           isStarted: false,
@@ -119,6 +141,8 @@ const JoinQuiz: React.FC = () => {
           phase: 'waiting',
           questionIndex: 0,
           timeLeft: 30,
+          // Thêm trạng thái chờ chủ phòng
+          waitingForHost: false,
         },
         participants: {},
         leaderboard: {},
@@ -164,6 +188,47 @@ const JoinQuiz: React.FC = () => {
             </Paper>
           )}
 
+          {/* Cài đặt phòng */}
+          <SettingsCard>
+            <CardContent sx={{ p: 2 }}>
+              <Stack direction="row" alignItems="center" spacing={1} mb={2}>
+                <SettingsIcon color="primary" />
+                <Typography variant="h6" fontWeight="bold">Cài đặt phòng</Typography>
+              </Stack>
+              
+              <Stack direction="row" spacing={4} flexWrap="wrap">
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={hostControlEnabled}
+                      onChange={(e) => setHostControlEnabled(e.target.checked)}
+                      color="primary"
+                    />
+                  }
+                  label={
+                    <Box>
+                      <Typography variant="body1" fontWeight="medium">
+                        Chủ phòng điều khiển chuyển câu
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Khi bật, chủ phòng sẽ cần bấm "Câu tiếp theo" để chuyển câu hỏi mới thay vì tự động
+                      </Typography>
+                    </Box>
+                  }
+                  sx={{ alignItems: 'flex-start', mb: 1 }}
+                />
+                
+                {/* Bạn có thể thêm nhiều settings khác ở đây */}
+                {/* 
+                <FormControlLabel
+                  control={<Checkbox />}
+                  label="Setting khác"
+                />
+                */}
+              </Stack>
+            </CardContent>
+          </SettingsCard>
+
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
           )}
@@ -186,11 +251,29 @@ const JoinQuiz: React.FC = () => {
           </Typography>
         </CardContent>
       </MainCard>
-      <Box mt={3}>
-        <Button startIcon={<HomeIcon />} onClick={() => navigate('/')} color="inherit" sx={{ textTransform: 'none' }}>
-          Về Trang chủ
-        </Button>
-      </Box>
+
+      {/* Nút "Về Trang chủ" - Bây giờ sẽ hiển thị bên ngoài MainCard */}
+      <Button 
+        startIcon={<HomeIcon />} 
+        onClick={() => navigate('/')} 
+        color="inherit" 
+        sx={{ 
+          textTransform: 'none',
+          mt: 2, // Thêm margin top
+          mb: 2  // Thêm margin bottom
+        }}
+      >
+        Về Trang chủ
+      </Button>
+
+      {/* Bạn có thể thêm nhiều content khác ở đây */}
+      {/* 
+      <Card sx={{ maxWidth: 450, width: '100%', mt: 2 }}>
+        <CardContent>
+          <Typography>Thêm nội dung khác ở đây</Typography>
+        </CardContent>
+      </Card>
+      */}
     </GradientBox>
   );
 };

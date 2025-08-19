@@ -10,8 +10,10 @@ import com.example.backend.dto.request.QuizRequest;
 import com.example.backend.dto.response.ApiResponse;
 import com.example.backend.dto.response.ListQuizzesResponse;
 import com.example.backend.dto.response.QuizResponse;
+import com.example.backend.dto.response.ResponseQuizHot;
 import com.example.backend.entity.Quiz;
 import com.example.backend.entity.User;
+import com.example.backend.service.FinalResultService;
 import com.example.backend.service.QuizService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,7 @@ import java.util.List;
 @Slf4j  // Lombok annotation
 public class QuizController {
     private final QuizService quizService;
+    private final FinalResultService finalResultService;
 
     @PostMapping("/generate-ai")
     public ResponseEntity<ApiResponse<GeneratedQuizResponse>> generateQuizContent(
@@ -166,5 +169,20 @@ public ResponseEntity<ApiResponse<QuizResponse>> saveGeneratedQuiz(
                     .body(ApiResponse.error("Có lỗi xảy ra khi lấy danh sách quiz", e.getMessage()));
         }
     }
+    @GetMapping("/quizzes-hot")
+    public ResponseEntity<ApiResponse<List<ResponseQuizHot>>> getQuizzesByQuiz() {
+        try {
+            List<ResponseQuizHot> hotQuizzes = finalResultService.findTop10QuizzesHot();
 
+            if (hotQuizzes.isEmpty()) {
+                return ResponseEntity.ok(ApiResponse.error("Không có quiz nào hot"));
+            }
+
+            return ResponseEntity.ok(ApiResponse.success(hotQuizzes, "Top 10 quizzes hot"));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .internalServerError()
+                    .body(ApiResponse.error("Lỗi khi lấy danh sách quiz hot", e.getMessage()));
+        }
+    }
 }

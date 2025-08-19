@@ -24,4 +24,5 @@ QuizRepository extends JpaRepository<Quiz, Integer> {
 
     @Query("SELECT new com.example.backend.dto.response.ListQuizzesResponse(q.id, q.title, q.description) FROM Quiz q")
     Page<ListQuizzesResponse> findQuizzesAll(Pageable pageable);
+
 }

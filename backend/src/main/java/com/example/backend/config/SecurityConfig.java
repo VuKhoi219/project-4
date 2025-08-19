@@ -36,6 +36,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/quizzes/*/questions").permitAll()
                         .requestMatchers("/api/answer/compare/**").permitAll()
                         .requestMatchers( "/api/final-result").permitAll()
+                        .requestMatchers("/api/quizzes/quizzes-hot").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
