@@ -75,12 +75,7 @@ public class ChatGPTService {
                    - Câu hỏi chỉ có 2 đáp án: "Đúng" và "Sai".
                    - Một trong 2 sẽ là `"isCorrect": true`.
         
-                4. SHORT_ANSWER:
-                    - Chỉ có 1 đáp án đúng.
-                    - Người dùng cần tự điền câu trả lời ngắn (1–2 câu).
-                    - Chỉ có 1 đáp án đúng.
-                    - Người dùng cần tự điền câu trả lời ngắn (1–2 câu).
-                    - Vẫn trả về trường `answers`, với 1 phần tử duy nhất.
+              
         
                 === Nội dung dùng để tạo câu hỏi ===
                 %s
