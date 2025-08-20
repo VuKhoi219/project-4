@@ -1,18 +1,15 @@
 package com.example.backend.controller;
 
 import com.example.backend.dto.generated.GeneratedQuizResponse;
-import com.example.backend.dto.generated.GeneratedQuestionDTO;
-import com.example.backend.dto.generated.GeneratedAnswerDTO;
+
 import com.example.backend.dto.request.GenerateAIQuizRequest;
 import com.example.backend.dto.helper.QuestionWithAnswersDTO;
-import com.example.backend.dto.helper.AnswerDTO;
 import com.example.backend.dto.request.QuizRequest;
-import com.example.backend.dto.response.ApiResponse;
-import com.example.backend.dto.response.ListQuizzesResponse;
-import com.example.backend.dto.response.QuizResponse;
-import com.example.backend.dto.response.ResponseQuizHot;
+import com.example.backend.dto.response.*;
 import com.example.backend.entity.Quiz;
 import com.example.backend.entity.User;
+import com.example.backend.repository.QuizRepository;
+import com.example.backend.repository.UserRepository;
 import com.example.backend.service.FinalResultService;
 import com.example.backend.service.QuizService;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +31,8 @@ import java.util.List;
 @Slf4j  // Lombok annotation
 public class QuizController {
     private final QuizService quizService;
+    private final QuizRepository quizRepository;
+    private final UserRepository userRepository;
     private final FinalResultService finalResultService;
 
     @PostMapping("/generate-ai")
@@ -41,8 +40,8 @@ public class QuizController {
             @Valid @RequestBody GenerateAIQuizRequest request,
             @AuthenticationPrincipal User user) {
         try {
-            log.info("Generating quiz content for title: {} by user {}", 
-                    request.getTitle(), user != null ? user.getId() : "anonymous");
+            log.info("Generating quiz content for title: {} by user {} , number question {}, difficulty {}",
+                    request.getContent(), user != null ? user.getId() : "anonymous", request.getNumberOfQuestions(), request.getDifficulty());
 
             GeneratedQuizResponse generatedContent = quizService.generateQuizContent(request);
 
@@ -57,22 +56,22 @@ public class QuizController {
     }
 
     @PostMapping("/save-generated")
-public ResponseEntity<ApiResponse<QuizResponse>> saveGeneratedQuiz(
-        @Valid @RequestBody GenerateAIQuizRequest generatedQuiz,
-        @AuthenticationPrincipal User user) {
-    try {
-        log.info("Saving generated quiz: {} by user {}", 
-                 generatedQuiz.getTitle(), user != null ? user.getId() : "anonymous");
-        Quiz savedQuiz = quizService.saveGeneratedQuiz(generatedQuiz, user);
-        QuizResponse response = QuizResponse.fromEntity(savedQuiz);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(response, "Đã lưu Quiz thành công"));
-    } catch (Exception e) {
-        log.error("Error saving generated quiz", e);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("Không thể lưu Quiz: " + e.getMessage()));
+    public ResponseEntity<ApiResponse<QuizResponse>> saveGeneratedQuiz(
+            @Valid @RequestBody GenerateAIQuizRequest generatedQuiz,
+            @AuthenticationPrincipal User user) {
+        try {
+            log.info("Saving generated quiz: {} by user {}",
+                     generatedQuiz.getTitle(), user != null ? user.getId() : "anonymous");
+            Quiz savedQuiz = quizService.saveGeneratedQuiz(generatedQuiz, user);
+            QuizResponse response = QuizResponse.fromEntity(savedQuiz);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.success(response, "Đã lưu Quiz thành công"));
+        } catch (Exception e) {
+            log.error("Error saving generated quiz", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Không thể lưu Quiz: " + e.getMessage()));
+        }
     }
-}
 
     @PostMapping
     public ResponseEntity<ApiResponse<QuizResponse>> createQuiz(
@@ -157,7 +156,6 @@ public ResponseEntity<ApiResponse<QuizResponse>> saveGeneratedQuiz(
                         ApiResponse.success(quizzesPage, "Không có quiz nào")
                 );
             }
-
             return ResponseEntity.ok(
                     ApiResponse.success(quizzesPage, "Lấy danh sách quiz thành công")
             );
@@ -177,12 +175,51 @@ public ResponseEntity<ApiResponse<QuizResponse>> saveGeneratedQuiz(
             if (hotQuizzes.isEmpty()) {
                 return ResponseEntity.ok(ApiResponse.error("Không có quiz nào hot"));
             }
-
             return ResponseEntity.ok(ApiResponse.success(hotQuizzes, "Top 10 quizzes hot"));
         } catch (Exception e) {
             return ResponseEntity
                     .internalServerError()
                     .body(ApiResponse.error("Lỗi khi lấy danh sách quiz hot", e.getMessage()));
         }
+    }
+    @GetMapping("/save-creator")
+    public ResponseEntity<ApiResponse<String>> saveCreator(
+            @RequestParam Long quizId,
+            @RequestParam Long userId
+    ) {
+        try {
+            // Lấy quiz theo id
+            Quiz quiz = quizRepository.findById(quizId)
+                    .orElseThrow(() -> new RuntimeException("Quiz không tồn tại"));
+
+            // Lấy user theo id
+            User creator = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+
+            // Set creator cho quiz
+            quiz.setCreator(creator);
+
+            // Lưu lại quiz
+            quizRepository.save(quiz);
+
+            return ResponseEntity.ok(ApiResponse.success(
+                    "Đã gán creator cho quiz thành công"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .internalServerError()
+                    .body(ApiResponse.error("Lỗi khi lưu creator vào quiz", e.getMessage()));
+        }
+    }
+    @GetMapping("/detail-quiz/{id}")
+    public ResponseEntity<ApiResponse<QuizDetailResponse>> getDetailQuizById(@PathVariable  Long id) {
+        try {
+            QuizDetailResponse response = quizService.getQuizDetailById(id);
+            return ResponseEntity.ok(ApiResponse.success(response, "Chi tiết quiz"));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .internalServerError()
+                    .body(ApiResponse.error("Lỗi khi lấy quiz detail", e.getMessage()));        }
+
     }
 }

@@ -12,6 +12,7 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import CreateQuiz from "./components/CreateQuiz";
 import GenQuiz from './components/GenQuiz';
+import Notfound from './components/NotFoundPage';
 
 function App() {
   return (
@@ -36,8 +37,10 @@ function App() {
             <Route path="/quiz/:quizId/room/:roomId/leaderboard" element={<Leaderboard />} />
             <Route path='/quiz/:quizId/room/:roomId/final-results' element={<FinalResults />} />
 
+            {/* Trang 404 */}
+            <Route path='/404' element={<Notfound/> } />
             {/* Fallback route */}
-            <Route path="*" element={<Navigate to="/" />} />
+            <Route path="*" element={<Navigate to="/404" />} />
           </Routes>
         </div>
       </Router>

@@ -8,10 +8,7 @@ import com.example.backend.dto.request.GenerateAIQuizRequest;
 import com.example.backend.dto.helper.AnswerDTO;
 import com.example.backend.dto.helper.QuestionWithAnswersDTO;
 import com.example.backend.dto.request.QuizRequest;
-import com.example.backend.dto.response.ChatResponse;
-import com.example.backend.dto.response.ListQuizzesResponse;
-import com.example.backend.dto.response.QuestionResponse;
-import com.example.backend.dto.response.QuizResponse;
+import com.example.backend.dto.response.*;
 import com.example.backend.entity.*;
 import com.example.backend.repository.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -44,104 +41,71 @@ public class QuizService {
 
     @Transactional
     public GeneratedQuizResponse generateQuizContent(GenerateAIQuizRequest request) {
-        log.info("Start generating quiz content for title: {}", request.getTitle());
-        
+        log.info("Start generating quiz content for topic: {}", request.getContent());
+
         // Gọi ChatGPT để sinh nội dung
-        ChatResponse response = chatGPTService.generateQuestions(request.getTitle(), 5, "MEDIUM");
+        ChatResponse response = chatGPTService.generateQuestions(request.getContent(), request.getNumberOfQuestions(), request.getDifficulty());
 
         if (response == null || response.getChoices() == null || response.getChoices().isEmpty()) {
             throw new RuntimeException("Không nhận được phản hồi từ AI");
         }
 
         String aiResponse = response.getChoices().get(0).getMessage().getContent();
-        
-        // Parse JSON response từ AI
+
+        // Parse JSON response từ AI trực tiếp vào GeneratedQuizResponse
         try {
-            GeneratedQuestionsWrapper wrapper = objectMapper.readValue(aiResponse, GeneratedQuestionsWrapper.class);
-            
-            // Chuyển đổi từ GeneratedQuestionsWrapper sang GeneratedQuizResponse
-            GeneratedQuizResponse quizResponse = new GeneratedQuizResponse();
-            quizResponse.setTitle(request.getTitle());
-            quizResponse.setQuestions(wrapper.getQuestions());
-            
+            // Làm sạch response nếu có markdown wrapper
+            if (aiResponse.startsWith("```json")) {
+                aiResponse = aiResponse.replaceFirst("```json\\s*", "").replaceFirst("```\\s*$", "");
+            }
+            GeneratedQuizResponse quizResponse = objectMapper.readValue(aiResponse, GeneratedQuizResponse.class);
             return quizResponse;
         } catch (JsonProcessingException e) {
-            log.error("Error parsing AI response", e);
-            throw new RuntimeException("Không thể xử lý phản hồi từ AI");
+            log.error("Error parsing AI response: {}", aiResponse, e);
+            throw new RuntimeException("Không thể xử lý phản hồi từ AI: " + e.getMessage());
         }
     }
 
     @Transactional
-public Quiz saveGeneratedQuiz(GenerateAIQuizRequest generatedQuiz, User user) {
-    Quiz quiz = new Quiz();
-    quiz.setTitle(generatedQuiz.getTitle());
-    quiz.setCreator(user);
-    quiz.setSource_type(SourceType.TEXT);
-    
-    Quiz savedQuiz = quizRepository.save(quiz);
-    
-    int questionOrder = 1;
-    for (GeneratedQuestionDTO questionDTO : generatedQuiz.getQuestions()) {
-        Question question = new Question();
-        question.setQuiz(savedQuiz);
-        question.setQuestionText(questionDTO.getQuestionText());
-        question.setQuestionType(QuestionType.valueOf(questionDTO.getQuestionType())); // Use the actual question type
-        question.setPoints(questionDTO.getPoints() != null ? questionDTO.getPoints() : 1);
-        question.setTimeLimit(questionDTO.getTimeLimit()); // Set the time limit
-        question.setOrderIndex(questionOrder++);
-        
-        Question savedQuestion = questionRepository.save(question);
-        
-        if (questionDTO.getAnswers() != null && !questionDTO.getAnswers().isEmpty()) {
-            for (GeneratedAnswerDTO answerDTO : questionDTO.getAnswers()) {
-                Answer answer = new Answer();
-                answer.setQuestion(savedQuestion);
-                answer.setAnswerText(answerDTO.getAnswerText());
-                answer.setCorrect(answerDTO.getIsCorrect());
-                answer.setOrderIndex(answerDTO.getOrderIndex());
-                
-                answerRepository.save(answer);
+    public Quiz saveGeneratedQuiz(GenerateAIQuizRequest generatedQuiz, User user) {
+        Quiz quiz = new Quiz();
+        quiz.setTitle(generatedQuiz.getTitle());
+        quiz.setDescription(generatedQuiz.getDescription());
+        quiz.setSummary(generatedQuiz.getSummary());
+        if (user != null) {
+            quiz.setCreator(user);
+        }
+        quiz.setSource_type(SourceType.TEXT);
+
+        Quiz savedQuiz = quizRepository.save(quiz);
+
+        int questionOrder = 1;
+        for (GeneratedQuestionDTO questionDTO : generatedQuiz.getQuestions()) {
+            Question question = new Question();
+            question.setQuiz(savedQuiz);
+            question.setQuestionText(questionDTO.getQuestionText());
+            question.setQuestionType(QuestionType.valueOf(questionDTO.getQuestionType())); // Use the actual question type
+            question.setPoints(questionDTO.getPoints() != null ? questionDTO.getPoints() : 1);
+            question.setTimeLimit(questionDTO.getTimeLimit()); // Set the time limit
+            question.setOrderIndex(questionOrder++);
+
+            Question savedQuestion = questionRepository.save(question);
+
+            if (questionDTO.getAnswers() != null && !questionDTO.getAnswers().isEmpty()) {
+                for (GeneratedAnswerDTO answerDTO : questionDTO.getAnswers()) {
+                    Answer answer = new Answer();
+                    answer.setQuestion(savedQuestion);
+                    answer.setAnswerText(answerDTO.getAnswerText());
+                    answer.setCorrect(answerDTO.getIsCorrect());
+                    answer.setOrderIndex(answerDTO.getOrderIndex());
+
+                    answerRepository.save(answer);
+                }
             }
         }
-    }
-    
-    return loadQuizWithQuestionsAndAnswers(savedQuiz.getId());
-}
 
-//    @Transactional
-//    public Quiz createQuiz(QuizRequest createDTO, User user) {
-//        User creator = userRepository.findById(user.getId())
-//                .orElseThrow(() -> new RuntimeException("Không tìm thấy user với ID: " + user.getId()));
-//
-//        Category category = null;
-//        if (createDTO.getCategoryId() != 0) {
-//            category = categoryRepository.findById(createDTO.getCategoryId())
-//                    .orElseThrow(() -> new RuntimeException("Không tìm thấy category với ID: " + createDTO.getCategoryId()));
-//        }
-//        UploadedFile file = uploadedFileRepository.findById(createDTO.getFileId()).orElseThrow(()-> new RuntimeException("không tìm thấy file yêu cầu với id " + createDTO.getFileId()));
-//
-//        Quiz quiz = new Quiz();
-//        quiz.setCreator(creator);
-//        quiz.setCategory(category);
-//        quiz.setTitle(createDTO.getTitle());
-//        quiz.setDescription(createDTO.getDescription());
-//        quiz.setSummary(createDTO.getSummary());
-//        quiz.setSource_type(createDTO.getSourceType());
-//        quiz.setFile(file);
-//        quiz.setShow_correct_answers(createDTO.isShowCorrectAnswers());
-//        quiz.setShuffle_answers(createDTO.isShuffleAnswers());
-//        quiz.setShareLink(generateUniqueShareLink());
-//
-//        Quiz savedQuiz = quizRepository.save(quiz);
-//        return savedQuiz; // Trả về Quiz entity thay vì QuizResponse
-//    }
-//
-//    public QuizResponse getQuizById(long id) {
-//        Quiz quiz = quizRepository.findById(id)
-//                .orElseThrow(() -> new ResourceNotFoundException("Quiz not found with id: " + id));
-//        return convertToResponseDTO(quiz);
-//    }
-//
+        return loadQuizWithQuestionsAndAnswers(savedQuiz.getId());
+    }
     @Transactional
     public Quiz createQuiz(QuizRequest createDTO, User user) {
     // Validate user
@@ -409,4 +373,11 @@ public Quiz saveGeneratedQuiz(GenerateAIQuizRequest generatedQuiz, User user) {
         return response;
     }
 
+    public QuizDetailResponse getQuizDetailById(Long quizId) {
+        if(quizId == null) {
+            throw new RuntimeException("Quiz id is null");
+        }
+        QuizDetailResponse response = quizRepository.findQuizDetailById(quizId);
+        return response;
+    }
 }

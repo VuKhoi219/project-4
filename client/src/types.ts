@@ -158,3 +158,17 @@ export interface ApiResponse {
   };
   error: any;
 }
+export interface ApiResponseDetail<T = any> {
+  success: boolean;
+  message: string;
+  data: T;
+  error: any;
+}
+
+// Cho API detail quiz
+export interface QuizDetailData {
+  title: string;
+  description: string;
+  summary: string;
+  totalQuestions: number;
+}

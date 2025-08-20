@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 // Hãy đảm bảo bạn đã tạo file Auth.css mới này trong cùng thư mục styles
@@ -10,6 +10,20 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Kiểm tra xem có quiz pending để share không
+  const [pendingQuizMessage, setPendingQuizMessage] = useState('');
+
+  useEffect(() => {
+    // Kiểm tra xem có quiz đang chờ share không
+    const pendingQuizId = localStorage.getItem('pendingShareQuizId');
+    const shouldReturnToQuiz = localStorage.getItem('returnToQuizAfterLogin');
+    const lastSavedQuizId = localStorage.getItem('lastSavedQuizId');
+    
+    if ((pendingQuizId && shouldReturnToQuiz === 'true') || lastSavedQuizId) {
+      setPendingQuizMessage('Đăng nhập để tiếp tục share quiz của bạn!');
+    }
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError('');
@@ -19,12 +33,30 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     setError(''); // Xóa lỗi cũ khi submit
+    
     try {
       const res = await axios.post('http://localhost:8080/api/auth/login', formData);
       const { data } = res.data;
       localStorage.setItem('token', data.token);
-      navigate('/');
-    } catch {
+      localStorage.setItem('username', data.username); 
+      // Kiểm tra xem có cần redirect về quiz không
+      const pendingQuizId = localStorage.getItem('pendingShareQuizId');
+      const shouldReturnToQuiz = localStorage.getItem('returnToQuizAfterLogin');
+      const lastSavedQuizId = localStorage.getItem('lastSavedQuizId');
+      console.log("Pending Quiz ID:", pendingQuizId);
+      console.log("Should Return to Quiz:", shouldReturnToQuiz);
+      console.log("Last Saved Quiz ID:", lastSavedQuizId);
+      if (pendingQuizId && shouldReturnToQuiz === 'true') {
+        // Có quiz pending, redirect về trang GenQuiz để tiếp tục share
+        navigate('/quiz/generate');
+      } else if (lastSavedQuizId) {
+        // Có quiz đã lưu, redirect về quiz detail
+        navigate(`/quiz/${lastSavedQuizId}`);
+      } else {
+        // Không có quiz pending, về trang chủ
+        navigate('/');
+      }
+    } catch (err: any) {
       setError('Đăng nhập thất bại. Vui lòng kiểm tra lại email và mật khẩu.');
     } finally {
       setLoading(false);
@@ -36,6 +68,14 @@ const Login = () => {
       <div className="auth-card">
         <div className="logo-placeholder">Your logo</div>
         <h1>Login</h1>
+        
+        {/* Hiển thị thông báo về quiz pending nếu có */}
+        {pendingQuizMessage && (
+          <div className="pending-quiz-message">
+            <div className="quiz-icon">📝</div>
+            <p>{pendingQuizMessage}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <label htmlFor="email-input">Email</label>
@@ -62,7 +102,7 @@ const Login = () => {
           <a href="#" className="forgot-password">Forgot Password?</a>
 
           <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign in'}
+            {loading ? 'Signing in...' : pendingQuizMessage ? 'Sign in to continue' : 'Sign in'}
           </button>
            {/* Thông báo lỗi hiển thị ngay dưới nút */}
           {error && <p className="error-message">{error}</p>}

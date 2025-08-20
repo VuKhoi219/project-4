@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ApiResponse } from '../types';
+import { ApiResponse, ApiResponseDetail, QuizDetailData } from '../types';
 
 // 🔹 Public instance (không cần token)
 const publicApi = axios.create({
@@ -48,7 +48,6 @@ const apiService = {
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
     }
-
     const res = await privateApi.post(
       `/final-result`,
       { quizId, points, namePlayer },
@@ -57,9 +56,10 @@ const apiService = {
 
     return res.data;
   },
-
-  
-  
+  findDetailQuiz: async (quizId: number): Promise<ApiResponseDetail<QuizDetailData>> => {
+    const res = await publicApi.get(`/quizzes/detail-quiz/${quizId}`);
+    return res.data;
+  }
 };
 
 export default apiService;
