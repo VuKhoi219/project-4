@@ -37,6 +37,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/answer/compare/**").permitAll()
                         .requestMatchers( "/api/final-result").permitAll()
                         .requestMatchers("/api/quizzes/quizzes-hot").permitAll()
+                        .requestMatchers("/api/quizzes/save-generated").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/quizzes/generate-ai").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/quizzes/detail-quiz/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

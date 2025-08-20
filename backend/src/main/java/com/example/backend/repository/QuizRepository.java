@@ -1,6 +1,7 @@
 package com.example.backend.repository;
 
 import com.example.backend.dto.response.ListQuizzesResponse;
+import com.example.backend.dto.response.QuizDetailResponse;
 import com.example.backend.entity.Category;
 import com.example.backend.entity.Quiz;
 import com.example.backend.entity.User;
@@ -22,7 +23,12 @@ QuizRepository extends JpaRepository<Quiz, Integer> {
     @Query("SELECT DISTINCT q FROM Quiz q LEFT JOIN FETCH q.questions WHERE q.id = :quizId")
     Optional<Quiz> findQuizWithQuestions(@Param("quizId") Long quizId);
 
-    @Query("SELECT new com.example.backend.dto.response.ListQuizzesResponse(q.id, q.title, q.description) FROM Quiz q")
+    @Query("SELECT new com.example.backend.dto.response.ListQuizzesResponse(q.id, q.title, q.description) FROM Quiz q WHERE q.creator is not null ")
     Page<ListQuizzesResponse> findQuizzesAll(Pageable pageable);
 
+    @Query("SELECT new com.example.backend.dto.response.QuizDetailResponse(q.title, COUNT(que), q.summary, q.description) " +
+            "FROM Quiz q LEFT JOIN q.questions que " +
+            "WHERE q.id = :id and q.creator is not null " +
+            "GROUP BY q.id, q.title, q.description, q.summary")
+    QuizDetailResponse findQuizDetailById(@Param("id") Long id);
 }

@@ -57,7 +57,15 @@ const Home = () => {
 
     fetchQuizzes();
   }, [activeCategory]);
+  const [username, setUsername] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
+  useEffect(() => {
+    const storedUsername = localStorage.getItem("username");
+    if (storedUsername) {
+      setUsername(storedUsername);
+    }
+  }, []);
   const handleQuizClick = (quizId: number) => {
     navigate(`/quiz/${quizId}/join`);
   };
@@ -91,18 +99,39 @@ const Home = () => {
           />
         </div>
         <div className={styles['header-actions']}>
-          <button
-            className={styles['sign-in-btn']}
-            onClick={() => navigate('/login')}
-          >
-            Đăng nhập
-          </button>
-          <button
-            className={styles['mobile-menu-toggle']}
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          {username ? (
+            <div className={styles['user-menu']}>
+              <button 
+                onClick={() => setMenuOpen(!menuOpen)} 
+                className={styles['user-btn']}
+              >
+                <span className={styles['user-icon']}>👋</span>
+                Xin chào, {username}
+              </button>
+              {menuOpen && (
+                <div className={styles['dropdown']}>
+                  <button
+                    onClick={() => {
+                      localStorage.clear(); // xoá tất cả
+                      setUsername(null);
+                      navigate('/'); // về trang chủ
+                    }}
+                  >
+                    Đăng xuất
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <button
+                className={styles['sign-in-btn']}
+                onClick={() => navigate('/login')}
+              >
+                Đăng nhập
+              </button>
+            </>
+          )}
         </div>
         {mobileMenuOpen && (
           <div className={styles['mobile-menu']}>
@@ -271,7 +300,7 @@ const Home = () => {
                 onClick={() => handleQuizClick(quiz.id)}
               >
                 <img
-                  src={quiz.thumbnailUrl || 'https://via.placeholder.com/150'}
+                  src={quiz.thumbnailUrl || 'https://media.quizizz.com/_mdserver/main/media/resource/gs/quizizz-media/quizzes/c44b27fd-ff6e-43dd-8954-ea3dcd768b03-v2?w=200&h=200'}
                   alt={quiz.title}
                   className={styles['quiz-image']}
                 />
@@ -325,18 +354,20 @@ const Home = () => {
         </section>
 
         {/* Final CTA */}
-        <section className={styles['cta-section']}>
-          <h2 className={styles['cta-title']}>Sẵn sàng tạo quiz với AI?</h2>
-          <p className={styles['cta-description']}>
-            Đăng ký ngay để trải nghiệm công cụ tạo quiz thông minh giúp bạn tiết kiệm thời gian và nâng cao hiệu quả học tập, giảng dạy.
-          </p>
-          <button
-            className={styles['cta-btn']}
-            onClick={() => navigate('/register')}
-          >
-            Dùng thử miễn phí ngay
-          </button>
-        </section>
+        {!username && (
+          <section className={styles['cta-section']}>
+            <h2 className={styles['cta-title']}>Sẵn sàng tạo quiz với AI?</h2>
+            <p className={styles['cta-description']}>
+              Đăng ký ngay để trải nghiệm công cụ tạo quiz thông minh giúp bạn tiết kiệm thời gian và nâng cao hiệu quả học tập, giảng dạy.
+            </p>
+            <button
+              className={styles['cta-btn']}
+              onClick={() => navigate('/register')}
+            >
+              Dùng thử miễn phí ngay
+            </button>
+          </section>
+        )}
 
         {/* Footer */}
         <footer className={styles.footer}>

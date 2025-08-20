@@ -1,7 +1,8 @@
 /* --- General Resets and Font --- */
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #fff;
@@ -28,7 +29,7 @@ body {
 */
 .auth-container::before,
 .auth-container::after {
-  content: '';
+  content: "";
   position: absolute;
   filter: blur(50px);
   opacity: 0.3;
@@ -50,7 +51,6 @@ body {
   bottom: -120px;
   right: -140px;
 }
-
 
 /* --- Frosted Glass Authentication Card --- */
 .auth-card {
@@ -174,17 +174,17 @@ body {
 
 .separator::before,
 .separator::after {
-  content: '';
+  content: "";
   flex: 1;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .separator:not(:empty)::before {
-  margin-right: .5em;
+  margin-right: 0.5em;
 }
 
 .separator:not(:empty)::after {
-  margin-left: .5em;
+  margin-left: 0.5em;
 }
 
 .social-login {
@@ -232,4 +232,135 @@ body {
 
 .register-link a:hover {
   text-decoration: underline;
+}
+/* Thêm vào file Auth.css hiện có */
+
+.pending-quiz-message {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  animation: slideInDown 0.5s ease-out;
+}
+
+.pending-quiz-message .quiz-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.pending-quiz-message p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Cập nhật button khi có pending quiz */
+.btn-primary:has-text("Sign in to continue") {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  font-weight: 600;
+}
+
+/* Styles cho modal success trong GenQuiz */
+.shareSuccess {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  text-align: center;
+  animation: fadeInScale 0.3s ease-out;
+}
+
+.loginButton {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  margin-left: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.loginButton:hover {
+  background-color: #0056b3;
+}
+
+.viewQuizButton {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.viewQuizButton:hover {
+  background-color: #218838;
+}
+
+.shareButton {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: transform 0.2s;
+}
+
+.shareButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.shareButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.exitButton {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.exitButton:hover {
+  background-color: #545b62;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }

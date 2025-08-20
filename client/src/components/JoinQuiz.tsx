@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ref, set, get, db } from "../config/firebase";
+import { ref, set, db } from "../config/firebase";
+import apiService from "../services/api";
 import { 
   Box, Button, Card, CardContent, Typography, CircularProgress, 
   Paper, Stack, Alert, FormControlLabel, Checkbox, Divider 
@@ -12,35 +13,41 @@ import AddIcon from '@mui/icons-material/Add';
 import HomeIcon from '@mui/icons-material/Home';
 import SettingsIcon from '@mui/icons-material/Settings';
 
+// Interface cho dữ liệu quiz detail
+interface QuizDetailData {
+  title: string;
+  description: string;
+  summary: string;
+  totalQuestions: number;
+}
+
 // Styled components
 const GradientBox = styled(Box)(({ theme }) => ({
   background: 'linear-gradient(135deg, #e3f2fd 0%, #c5cae9 100%)',
-  minHeight: '100vh', // Đảm bảo ít nhất full viewport height
+  minHeight: '100vh',
   padding: theme.spacing(2),
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  // ✅ Thay đổi chính: Từ 'center' thành 'flex-start' 
-  justifyContent: 'flex-start', // Bắt đầu từ trên xuống thay vì căn giữa
-  paddingTop: theme.spacing(4), // Thêm padding top để không dính sát trên cùng
-  paddingBottom: theme.spacing(4), // Thêm padding bottom
+  justifyContent: 'flex-start',
+  paddingTop: theme.spacing(4),
+  paddingBottom: theme.spacing(4),
 }));
 
 const MainCard = styled(Card)(({ theme }) => ({
-  maxWidth: '90%', // Thay đổi từ 450px thành 90% để responsive
+  maxWidth: '90%',
   width: '100%',
   boxShadow: theme.shadows[16],
   borderRadius: Number(theme.shape.borderRadius) * 2,
   marginBottom: theme.spacing(3),
-  // Responsive breakpoints
   [theme.breakpoints.up('sm')]: {
-    maxWidth: 600, // Tablet: 600px
+    maxWidth: 600,
   },
   [theme.breakpoints.up('md')]: {
-    maxWidth: 800, // Desktop: 800px
+    maxWidth: 800,
   },
   [theme.breakpoints.up('lg')]: {
-    maxWidth: 1000, // Large desktop: 1000px
+    maxWidth: 1000,
   },
 }));
 
@@ -65,7 +72,7 @@ const JoinQuiz: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string>("");
-  const [quizInfo, setQuizInfo] = useState<any>(null);
+  const [quizInfo, setQuizInfo] = useState<QuizDetailData | null>(null);
   const [hostControlEnabled, setHostControlEnabled] = useState(false);
 
   const { quizId } = useParams<{ quizId: string }>();
@@ -78,39 +85,72 @@ const JoinQuiz: React.FC = () => {
       return;
     }
 
+    // Kiểm tra xem quizId có phải là số không
+    const numericQuizId = parseInt(quizId);
+    if (isNaN(numericQuizId)) {
+      navigate('/404'); // Chuyển đến trang 404 nếu ID không hợp lệ
+      return;
+    }
+
     const fetchQuizInfo = async () => {
-      const infoRef = ref(db, `quizzes/${quizId}/info`);
       try {
-        const snapshot = await get(infoRef);
+        setLoading(true);
+        setError("");
 
-        if (snapshot.exists()) {
-          setQuizInfo(snapshot.val());
+        const response = await apiService.findDetailQuiz(numericQuizId);
+        
+        if (response.success && response.data) {
+            const mapped: QuizDetailData = {
+              title: response.data.title,
+              description: response.data.description,
+              summary: response.data.summary || "",
+              totalQuestions: response.data.totalQuestions,
+            };
+            setQuizInfo(mapped);
         } else {
-          console.log(`Quiz with ID "${quizId}" not found. Creating a default one.`);
+          // Xử lý trường hợp API trả về success: false
+          console.error("API Error:", response.error || response.message);
           
-          const defaultQuizInfo = {
-            title: `Bộ Đề Mặc Định (${quizId})`,
-            description: "Đây là một bộ đề được tạo tự động.",
-            totalQuestions: 5,
-            pointsPerQuestion: 100
-          };
-
-          await set(infoRef, defaultQuizInfo);
-          setQuizInfo(defaultQuizInfo);
+          // Kiểm tra các trường hợp lỗi cụ thể
+          if (response.message?.toLowerCase().includes('not found') || 
+              response.error?.toLowerCase().includes('not found')) {
+            navigate('/404'); // Chuyển đến trang 404
+            return;
+          }
+          
+          setError(response.message || "Không thể tải thông tin quiz");
         }
-      } catch (err) {
-        console.error(err);
-        setError("Lỗi khi tải hoặc tạo thông tin quiz. Vui lòng kiểm tra kết nối mạng và quyền truy cập Firebase.");
+      } catch (err: any) {
+        console.error("Network/API Error:", err);
+        
+        // Xử lý các loại lỗi khác nhau
+        if (err.response?.status === 404) {
+          navigate('/404');
+          return;
+        }
+        
+        if (err.response?.status === 403) {
+          navigate('/403'); // Nếu có trang 403
+          return;
+        }
+        
+        if (err.response?.status >= 500) {
+          setError("Lỗi máy chủ. Vui lòng thử lại sau.");
+        } else if (err.code === 'NETWORK_ERROR' || !err.response) {
+          setError("Lỗi kết nối mạng. Vui lòng kiểm tra kết nối internet.");
+        } else {
+          setError("Đã có lỗi xảy ra khi tải thông tin quiz. Vui lòng thử lại.");
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchQuizInfo();
-  }, [quizId]);
+  }, [quizId, navigate]);
 
   const handleCreateRoom = async () => {
-    if (!quizId) return;
+    if (!quizId || !quizInfo) return;
 
     setIsCreating(true);
     setError("");
@@ -126,9 +166,12 @@ const JoinQuiz: React.FC = () => {
           createdBy: "system",
           createdAt: Date.now(),
           maxParticipants: 20,
-          // Thêm cài đặt quyền chủ phòng
           hostControlEnabled: hostControlEnabled,
           hostName: "system",
+          // Thêm thông tin quiz từ API
+          quizTitle: quizInfo.title,
+          quizDescription: quizInfo.description,
+          totalQuestions: quizInfo.totalQuestions,
         },
         status: {
           isStarted: false,
@@ -141,7 +184,6 @@ const JoinQuiz: React.FC = () => {
           phase: 'waiting',
           questionIndex: 0,
           timeLeft: 30,
-          // Thêm trạng thái chờ chủ phòng
           waitingForHost: false,
         },
         participants: {},
@@ -164,11 +206,53 @@ const JoinQuiz: React.FC = () => {
     }
   };
 
+  // Hiển thị loading
   if (loading) {
     return (
       <GradientBox>
-        <CircularProgress />
-        <Typography sx={{ color: 'text.primary', mt: 2 }}>Đang kiểm tra bộ đề...</Typography>
+        <CircularProgress size={60} />
+        <Typography sx={{ color: 'text.primary', mt: 2, fontSize: '1.1rem' }}>
+          Đang kiểm tra bộ đề...
+        </Typography>
+      </GradientBox>
+    );
+  }
+
+  // Hiển thị lỗi nếu không có thông tin quiz
+  if (!quizInfo && !loading) {
+    return (
+      <GradientBox>
+        <MainCard>
+          <CardContent sx={{ p: 4, textAlign: 'center' }}>
+            <Typography variant="h5" color="error" mb={2}>
+              Không thể tải thông tin quiz
+            </Typography>
+            
+            {error && (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                {error}
+              </Alert>
+            )}
+            
+            <Stack spacing={2}>
+              <Button
+                variant="outlined"
+                onClick={() => window.location.reload()}
+                disabled={loading}
+              >
+                Thử lại
+              </Button>
+              
+              <Button
+                variant="contained"
+                startIcon={<HomeIcon />}
+                onClick={() => navigate('/')}
+              >
+                Về Trang chủ
+              </Button>
+            </Stack>
+          </CardContent>
+        </MainCard>
       </GradientBox>
     );
   }
@@ -182,9 +266,35 @@ const JoinQuiz: React.FC = () => {
           </Typography>
           
           {quizInfo && (
-            <Paper elevation={0} sx={{ p: 2, bgcolor: 'grey.100', mb: 3, textAlign: 'center', borderRadius: 2 }}>
-              <Typography variant="h6" fontWeight="bold">{quizInfo.title}</Typography>
-              <Typography variant="body2" color="text.secondary">{quizInfo.description || 'Tham gia và thể hiện kiến thức của bạn!'}</Typography>
+            <Paper elevation={0} sx={{ p: 3, bgcolor: 'grey.100', mb: 3, borderRadius: 2 }}>
+              <Typography variant="h6" fontWeight="bold" textAlign="center" mb={1}>
+                {quizInfo.title}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" textAlign="center" mb={2}>
+                {quizInfo.description}
+              </Typography>
+              
+              <Divider sx={{ my: 2 }} />
+              
+              <Stack direction="row" spacing={3} justifyContent="center" flexWrap="wrap">
+                <Box textAlign="center">
+                  <Typography variant="h6" color="primary" fontWeight="bold">
+                    {quizInfo.totalQuestions}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Câu hỏi
+                  </Typography>
+                </Box>
+              </Stack>
+              
+              {quizInfo.summary && (
+                <>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="body2" color="text.secondary" textAlign="center">
+                    {quizInfo.summary}
+                  </Typography>
+                </>
+              )}
             </Paper>
           )}
 
@@ -217,14 +327,6 @@ const JoinQuiz: React.FC = () => {
                   }
                   sx={{ alignItems: 'flex-start', mb: 1 }}
                 />
-                
-                {/* Bạn có thể thêm nhiều settings khác ở đây */}
-                {/* 
-                <FormControlLabel
-                  control={<Checkbox />}
-                  label="Setting khác"
-                />
-                */}
               </Stack>
             </CardContent>
           </SettingsCard>
@@ -238,7 +340,7 @@ const JoinQuiz: React.FC = () => {
               variant="contained"
               color="success"
               onClick={handleCreateRoom}
-              disabled={isCreating || !!error}
+              disabled={isCreating || !!error || !quizInfo}
               startIcon={isCreating ? <CircularProgress size={20} color="inherit" /> : <AddIcon />}
               fullWidth
             >
@@ -252,28 +354,19 @@ const JoinQuiz: React.FC = () => {
         </CardContent>
       </MainCard>
 
-      {/* Nút "Về Trang chủ" - Bây giờ sẽ hiển thị bên ngoài MainCard */}
+      {/* Nút "Về Trang chủ" */}
       <Button 
         startIcon={<HomeIcon />} 
         onClick={() => navigate('/')} 
         color="inherit" 
         sx={{ 
           textTransform: 'none',
-          mt: 2, // Thêm margin top
-          mb: 2  // Thêm margin bottom
+          mt: 2,
+          mb: 2
         }}
       >
         Về Trang chủ
       </Button>
-
-      {/* Bạn có thể thêm nhiều content khác ở đây */}
-      {/* 
-      <Card sx={{ maxWidth: 450, width: '100%', mt: 2 }}>
-        <CardContent>
-          <Typography>Thêm nội dung khác ở đây</Typography>
-        </CardContent>
-      </Card>
-      */}
     </GradientBox>
   );
 };

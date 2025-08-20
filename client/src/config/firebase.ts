@@ -2,12 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getDatabase, ref, onValue, set,get, update, push, Database, DatabaseReference } from "firebase/database";
-console.log('Environment Variables:', {
-  apiKey: process.env.REACT_APP_API_KEY,
-  projectId: process.env.REACT_APP_PROJECT_ID,
-  databaseURL: process.env.REACT_APP_DATABASE_URL,
-  fullConfig: process.env
-});
+
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -20,14 +15,6 @@ const firebaseConfig = {
   measurementId: process.env.REACT_APP_MEASUREMENT_ID,
   databaseURL: process.env.REACT_APP_DATABASE_URL, // Thêm dòng này
 };
-
-// Debug: Kiểm tra config
-console.log('Firebase Config Check:', {
-  projectId: firebaseConfig.projectId,
-  databaseURL: firebaseConfig.databaseURL,
-  hasApiKey: !!firebaseConfig.apiKey
-});
-  console.log('Full Firebase Config:', firebaseConfig);
 
 // Khởi tạo Firebase
 const app = initializeApp(firebaseConfig);

@@ -9,12 +9,14 @@ import com.example.backend.dto.generated.GeneratedQuestionDTO;
 
 @Data
 public class GenerateAIQuizRequest {
-    @NotBlank(message = "Title không được để trống")
     private String title;
-    
-    private String questionType; // Removed @NotBlank since it's not required for saving
-
+    @NotBlank(message = "Content không được để trống")
+    private String content;
+    private String description;
+    private String summary;
+    private int numberOfQuestions;
+    private String difficulty;
+    private String questionType;
     private int timeLimit;
-
     private List<GeneratedQuestionDTO> questions;
 }

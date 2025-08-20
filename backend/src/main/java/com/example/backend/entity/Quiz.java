@@ -21,7 +21,7 @@ public class Quiz {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "creator_id", nullable = false)
+    @JoinColumn(name = "creator_id", nullable = true)
     private User creator;
 
     @ManyToOne
