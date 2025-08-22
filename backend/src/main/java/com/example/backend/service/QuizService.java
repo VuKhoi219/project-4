@@ -44,7 +44,8 @@ public class QuizService {
         log.info("Start generating quiz content for topic: {}", request.getContent());
 
         // Gọi ChatGPT để sinh nội dung
-        ChatResponse response = chatGPTService.generateQuestions(request.getContent(), request.getNumberOfQuestions(), request.getDifficulty());
+        ChatResponse response = chatGPTService.generateQuestions(request.getContent(), request.getNumberOfQuestions(),
+                request.getDifficulty());
 
         if (response == null || response.getChoices() == null || response.getChoices().isEmpty()) {
             throw new RuntimeException("Không nhận được phản hồi từ AI");
@@ -84,7 +85,8 @@ public class QuizService {
             Question question = new Question();
             question.setQuiz(savedQuiz);
             question.setQuestionText(questionDTO.getQuestionText());
-            question.setQuestionType(QuestionType.valueOf(questionDTO.getQuestionType())); // Use the actual question type
+            question.setQuestionType(QuestionType.valueOf(questionDTO.getQuestionType())); // Use the actual question
+                                                                                           // type
             question.setPoints(questionDTO.getPoints() != null ? questionDTO.getPoints() : 1);
             question.setTimeLimit(questionDTO.getTimeLimit()); // Set the time limit
             question.setOrderIndex(questionOrder++);
@@ -106,65 +108,67 @@ public class QuizService {
 
         return loadQuizWithQuestionsAndAnswers(savedQuiz.getId());
     }
+
     @Transactional
     public Quiz createQuiz(QuizRequest createDTO, User user) {
-    // Validate user
-    User creator = userRepository.findById(user.getId())
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy user với ID: " + user.getId()));
+        // Validate user
+        User creator = userRepository.findById(user.getId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy user với ID: " + user.getId()));
 
-    // Validate category
-    Category category = null;
-    if (createDTO.getCategoryId() != 0) {
-        category = categoryRepository.findById(createDTO.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy category với ID: " + createDTO.getCategoryId()));
-    }
-
-    Quiz quiz = new Quiz();
-    quiz.setCreator(creator);
-    quiz.setCategory(category);
-    quiz.setTitle(createDTO.getTitle());
-    quiz.setDescription(createDTO.getDescription());
-    quiz.setSummary(createDTO.getSummary());
-    quiz.setSource_type(createDTO.getSourceType());
-    quiz.setQuestions(new ArrayList<>());
-
-    if (createDTO.getSourceType() == SourceType.FILE) {
-        // Quiz tự sinh, bắt buộc có file
-        if (createDTO.getFileId() == null) {
-            throw new RuntimeException("Quiz tự sinh phải có file_id");
+        // Validate category
+        Category category = null;
+        if (createDTO.getCategoryId() != 0) {
+            category = categoryRepository.findById(createDTO.getCategoryId())
+                    .orElseThrow(
+                            () -> new RuntimeException("Không tìm thấy category với ID: " + createDTO.getCategoryId()));
         }
-        UploadedFile file = uploadedFileRepository.findById(createDTO.getFileId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy file với ID: " + createDTO.getFileId()));
-        if (!file.isReadyForEmbedding()) {
-            throw new RuntimeException("File chưa được xử lý hoặc không có nội dung để tạo câu hỏi");
+
+        Quiz quiz = new Quiz();
+        quiz.setCreator(creator);
+        quiz.setCategory(category);
+        quiz.setTitle(createDTO.getTitle());
+        quiz.setDescription(createDTO.getDescription());
+        quiz.setSummary(createDTO.getSummary());
+        quiz.setSource_type(createDTO.getSourceType());
+        quiz.setQuestions(new ArrayList<>());
+
+        if (createDTO.getSourceType() == SourceType.FILE) {
+            // Quiz tự sinh, bắt buộc có file
+            if (createDTO.getFileId() == null) {
+                throw new RuntimeException("Quiz tự sinh phải có file_id");
+            }
+            UploadedFile file = uploadedFileRepository.findById(createDTO.getFileId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy file với ID: " + createDTO.getFileId()));
+            if (!file.isReadyForEmbedding()) {
+                throw new RuntimeException("File chưa được xử lý hoặc không có nội dung để tạo câu hỏi");
+            }
+            quiz.setFile(file);
+        } else {
+            // Quiz nhập tay, không cần file
+            quiz.setFile(null);
         }
-        quiz.setFile(file);
-    } else {
-        // Quiz nhập tay, không cần file
-        quiz.setFile(null);
-    }
 
-    Quiz savedQuiz = quizRepository.save(quiz);
-    log.info("Đã tạo quiz với ID: {}", savedQuiz.getId());
+        Quiz savedQuiz = quizRepository.save(quiz);
+        log.info("Đã tạo quiz với ID: {}", savedQuiz.getId());
 
-    // Nếu là quiz tự sinh thì sinh câu hỏi tự động
-    if (createDTO.getSourceType() == SourceType.FILE) {
-        try {
-            generateQuestionsFromAI(savedQuiz, savedQuiz.getFile().getProcessedContent(),
-                    createDTO.getNumberOfQuestions(),
-                    createDTO.getDifficulty());
-            log.info("Đã tự động sinh {} câu hỏi cho quiz ID: {}",
-                    createDTO.getNumberOfQuestions(), savedQuiz.getId());
-            return loadQuizWithQuestionsAndAnswers(savedQuiz.getId());
-        } catch (Exception e) {
-            log.error("Lỗi khi sinh câu hỏi tự động cho quiz ID {}: ", savedQuiz.getId(), e);
-            return savedQuiz;
+        // Nếu là quiz tự sinh thì sinh câu hỏi tự động
+        if (createDTO.getSourceType() == SourceType.FILE) {
+            try {
+                generateQuestionsFromAI(savedQuiz, savedQuiz.getFile().getProcessedContent(),
+                        createDTO.getNumberOfQuestions(),
+                        createDTO.getDifficulty());
+                log.info("Đã tự động sinh {} câu hỏi cho quiz ID: {}",
+                        createDTO.getNumberOfQuestions(), savedQuiz.getId());
+                return loadQuizWithQuestionsAndAnswers(savedQuiz.getId());
+            } catch (Exception e) {
+                log.error("Lỗi khi sinh câu hỏi tự động cho quiz ID {}: ", savedQuiz.getId(), e);
+                return savedQuiz;
+            }
         }
-    }
 
-    // Quiz nhập tay chỉ trả về quiz đã lưu
-    return savedQuiz;
-}
+        // Quiz nhập tay chỉ trả về quiz đã lưu
+        return savedQuiz;
+    }
 
     // Method helper để load quiz với questions và answers
     private Quiz loadQuizWithQuestionsAndAnswers(Long quizId) {
@@ -299,7 +303,7 @@ public class QuizService {
     @Transactional(readOnly = true)
     public Page<ListQuizzesResponse> getAllQuizzes(int page) {
         try {
-            Pageable pageable  = PageRequest.of(page, 10);
+            Pageable pageable = PageRequest.of(page, 10);
             return quizRepository.findQuizzesAll(pageable);
         } catch (DataAccessException e) {
             throw new RuntimeException("Error retrieving quizzes", e);
@@ -314,18 +318,17 @@ public class QuizService {
                     List<AnswerDTO> answerDTOs = question.getQuestionType() == QuestionType.SHORT_ANSWER
                             ? null
                             : question.getAnswers().stream()
-                            .map(answer -> new AnswerDTO(
-                                    answer.getId(),
-                                    answer.getAnswerText()
-                            )).collect(Collectors.toList());
+                                    .map(answer -> new AnswerDTO(
+                                            answer.getId(),
+                                            answer.getAnswerText()))
+                                    .collect(Collectors.toList());
 
                     return new QuestionWithAnswersDTO(
                             question.getId(),
                             question.getQuestionText(),
                             question.getQuestionType(),
                             question.getTimeLimit(),
-                            answerDTOs
-                    );
+                            answerDTOs);
                 })
                 .collect(Collectors.toList());
     }
@@ -334,7 +337,7 @@ public class QuizService {
         // Lấy quiz và danh sách câu hỏi
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy quiz với ID: " + quizId));
-                
+
         List<Question> questions = questionRepository.getQuestionsWithAnswersByQuiz(quizId);
 
         // Tạo response
@@ -374,10 +377,26 @@ public class QuizService {
     }
 
     public QuizDetailResponse getQuizDetailById(Long quizId) {
-        if(quizId == null) {
+        if (quizId == null) {
             throw new RuntimeException("Quiz id is null");
         }
         QuizDetailResponse response = quizRepository.findQuizDetailById(quizId);
         return response;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ListQuizzesResponse> getQuizzesByCreator(Long userId, int page) {
+        if (userId == null) {
+            log.error("User ID is null when fetching quizzes");
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
+        try {
+            Pageable pageable = PageRequest.of(page, 10);
+            log.info("Retrieving quizzes for user ID: {}, page: {}", userId, page);
+            return quizRepository.findQuizzesByCreatorId(userId, pageable);
+        } catch (DataAccessException e) {
+            log.error("Error retrieving quizzes for user ID: {}", userId, e);
+            throw new RuntimeException("Error retrieving user's quizzes: " + e.getMessage());
+        }
     }
 }
