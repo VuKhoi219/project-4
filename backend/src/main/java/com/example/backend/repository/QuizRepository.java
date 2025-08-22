@@ -31,4 +31,8 @@ QuizRepository extends JpaRepository<Quiz, Integer> {
             "WHERE q.id = :id and q.creator is not null " +
             "GROUP BY q.id, q.title, q.description, q.summary")
     QuizDetailResponse findQuizDetailById(@Param("id") Long id);
+    
+    @Query("SELECT new com.example.backend.dto.response.ListQuizzesResponse(q.id, q.title, q.description) " +
+            "FROM Quiz q WHERE q.creator.id = :creatorId")
+    Page<ListQuizzesResponse> findQuizzesByCreatorId(@Param("creatorId") Long creatorId, Pageable pageable);
 }

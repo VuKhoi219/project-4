@@ -24,11 +24,10 @@ import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import java.util.List;
 
-
 @RestController
 @RequestMapping("/api/quizzes")
 @RequiredArgsConstructor
-@Slf4j  // Lombok annotation
+@Slf4j // Lombok annotation
 public class QuizController {
     private final QuizService quizService;
     private final QuizRepository quizRepository;
@@ -41,7 +40,8 @@ public class QuizController {
             @AuthenticationPrincipal User user) {
         try {
             log.info("Generating quiz content for title: {} by user {} , number question {}, difficulty {}",
-                    request.getContent(), user != null ? user.getId() : "anonymous", request.getNumberOfQuestions(), request.getDifficulty());
+                    request.getContent(), user != null ? user.getId() : "anonymous", request.getNumberOfQuestions(),
+                    request.getDifficulty());
 
             GeneratedQuizResponse generatedContent = quizService.generateQuizContent(request);
 
@@ -61,7 +61,7 @@ public class QuizController {
             @AuthenticationPrincipal User user) {
         try {
             log.info("Saving generated quiz: {} by user {}",
-                     generatedQuiz.getTitle(), user != null ? user.getId() : "anonymous");
+                    generatedQuiz.getTitle(), user != null ? user.getId() : "anonymous");
             Quiz savedQuiz = quizService.saveGeneratedQuiz(generatedQuiz, user);
             QuizResponse response = QuizResponse.fromEntity(savedQuiz);
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -103,6 +103,7 @@ public class QuizController {
                     .body(ApiResponse.error("Failed to create quiz: " + e.getMessage()));
         }
     }
+
     @GetMapping("/{quizId}/questions")
     public ResponseEntity<ApiResponse<List<QuestionWithAnswersDTO>>> getQuestionsWithAnswersByQuiz(
             @PathVariable @Min(1) long quizId) {
@@ -111,13 +112,11 @@ public class QuizController {
 
             if (questionList.isEmpty()) {
                 return ResponseEntity.ok(
-                        ApiResponse.success(questionList, "Không có câu hỏi nào")
-                );
+                        ApiResponse.success(questionList, "Không có câu hỏi nào"));
             }
 
             return ResponseEntity.ok(
-                    ApiResponse.success(questionList, "Lấy danh sách câu hỏi thành công")
-            );
+                    ApiResponse.success(questionList, "Lấy danh sách câu hỏi thành công"));
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
@@ -133,7 +132,7 @@ public class QuizController {
             @PathVariable @Min(1) Long id) {
         try {
             log.info("Getting generated quiz content by id: {}", id);
-            
+
             GeneratedQuizResponse response = quizService.getGeneratedQuizById(id);
             return ResponseEntity.ok()
                     .body(ApiResponse.success(response, "Lấy nội dung Quiz thành công"));
@@ -148,17 +147,15 @@ public class QuizController {
     @GetMapping()
     public ResponseEntity<ApiResponse<Page<ListQuizzesResponse>>> getQuizAll(
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be >= 0") int page) {
-        try{
+        try {
             Page<ListQuizzesResponse> quizzesPage = quizService.getAllQuizzes(page);
 
             if (!quizzesPage.hasContent()) {
                 return ResponseEntity.ok(
-                        ApiResponse.success(quizzesPage, "Không có quiz nào")
-                );
+                        ApiResponse.success(quizzesPage, "Không có quiz nào"));
             }
             return ResponseEntity.ok(
-                    ApiResponse.success(quizzesPage, "Lấy danh sách quiz thành công")
-            );
+                    ApiResponse.success(quizzesPage, "Lấy danh sách quiz thành công"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Dữ liệu đầu vào không hợp lệ", e.getMessage()));
@@ -167,6 +164,7 @@ public class QuizController {
                     .body(ApiResponse.error("Có lỗi xảy ra khi lấy danh sách quiz", e.getMessage()));
         }
     }
+
     @GetMapping("/quizzes-hot")
     public ResponseEntity<ApiResponse<List<ResponseQuizHot>>> getQuizzesByQuiz() {
         try {
@@ -182,11 +180,11 @@ public class QuizController {
                     .body(ApiResponse.error("Lỗi khi lấy danh sách quiz hot", e.getMessage()));
         }
     }
+
     @GetMapping("/save-creator")
     public ResponseEntity<ApiResponse<String>> saveCreator(
             @RequestParam Long quizId,
-            @RequestParam Long userId
-    ) {
+            @RequestParam Long userId) {
         try {
             // Lấy quiz theo id
             Quiz quiz = quizRepository.findById(quizId)
@@ -203,23 +201,57 @@ public class QuizController {
             quizRepository.save(quiz);
 
             return ResponseEntity.ok(ApiResponse.success(
-                    "Đã gán creator cho quiz thành công"
-            ));
+                    "Đã gán creator cho quiz thành công"));
         } catch (Exception e) {
             return ResponseEntity
                     .internalServerError()
                     .body(ApiResponse.error("Lỗi khi lưu creator vào quiz", e.getMessage()));
         }
     }
+
     @GetMapping("/detail-quiz/{id}")
-    public ResponseEntity<ApiResponse<QuizDetailResponse>> getDetailQuizById(@PathVariable  Long id) {
+    public ResponseEntity<ApiResponse<QuizDetailResponse>> getDetailQuizById(@PathVariable Long id) {
         try {
             QuizDetailResponse response = quizService.getQuizDetailById(id);
             return ResponseEntity.ok(ApiResponse.success(response, "Chi tiết quiz"));
         } catch (Exception e) {
             return ResponseEntity
                     .internalServerError()
-                    .body(ApiResponse.error("Lỗi khi lấy quiz detail", e.getMessage()));        }
+                    .body(ApiResponse.error("Lỗi khi lấy quiz detail", e.getMessage()));
+        }
 
     }
+
+    @GetMapping("/my-quizzes")
+    public ResponseEntity<ApiResponse<Page<ListQuizzesResponse>>> getMyQuizzes(
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be >= 0") int page,
+            @AuthenticationPrincipal User user) {
+        if (user == null) {
+            log.warn("Unauthorized access attempt to /my-quizzes");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("Bạn cần đăng nhập để xem quiz của mình"));
+        }
+
+        try {
+            log.info("Fetching quizzes for user ID: {}, page: {}", user.getId(), page);
+            Page<ListQuizzesResponse> quizzesPage = quizService.getQuizzesByCreator(user.getId(), page);
+
+            if (!quizzesPage.hasContent()) {
+                log.info("No quizzes found for user ID: {}", user.getId());
+                return ResponseEntity.ok(
+                        ApiResponse.success(quizzesPage, "Bạn chưa tạo quiz nào"));
+            }
+            return ResponseEntity.ok(
+                    ApiResponse.success(quizzesPage, "Lấy danh sách quiz của bạn thành công"));
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid input for /my-quizzes: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Dữ liệu đầu vào không hợp lệ: " + e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error fetching quizzes for user ID: {}", user.getId(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Có lỗi xảy ra khi lấy danh sách quiz của bạn: " + e.getMessage()));
+        }
+    }
+
 }

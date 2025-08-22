@@ -616,6 +616,37 @@
   border-radius: 0.5rem;
   margin: 1rem;
 }
+/* Header Actions (góc bên phải) */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.75rem 1rem;
+  transition: all 0.3s ease;
+}
+
+/* Nút đăng nhập */
+.sign-in-btn {
+  background: linear-gradient(135deg, #a3e4d7, #d2f4a3); /* Gradient mượt mà */
+  border: 3px solid #1a202c;
+  border-radius: 30px; /* Bo góc mềm mại hơn */
+  padding: 0.9rem 2.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); /* Bóng đổ mượt mà */
+  font-size: 1.15rem;
+  color: #1a202c;
+  transition: all 0.4s ease;
+  letter-spacing: 0.5px; /* Chữ cách đều hơn */
+}
+
+.sign-in-btn:hover {
+  transform: translateY(5px); /* Hiệu ứng nhấn xuống mượt */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #8ed8c7, #c1e68a); /* Gradient khi hover */
+}
+
+/* Menu người dùng */
 .user-menu {
   position: relative;
   display: inline-block;
@@ -625,42 +656,115 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #f3f4f6; /* xám nhạt */
-  border: 2px solid #e5e7eb;
+  background: linear-gradient(339deg, #ff5c5c, #ffdfdf); /* Gradient xám tinh tế */
+  border: 2px solid #4b5563;
   border-radius: 25px;
-  padding: 10px 20px;
-  font-size: 1rem; /* chữ lớn hơn */
+  padding: 8px 16px; /* Thu nhỏ padding */
+  font-size: 0.9rem; /* Thu nhỏ font */
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
+  transition: all 0.4s ease-in-out;
+  color: #ffffff; /* Màu chữ trắng nổi bật */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 180px; /* Định kích thước cố định */
+  justify-content: center;
+  overflow: hidden;
 }
 
 .user-btn:hover {
-  background: #e0e7ff; /* xanh nhạt khi hover */
-  border-color: #6366f1; /* xanh indigo */
   transform: scale(1.05);
+  background: linear-gradient(135deg, #ffffff,#F8B4B4);
+  color: #1a202c; /* Màu chữ đậm hơn khi hover */
+}
+
+.user-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease, height 0.6s ease;
+}
+
+.user-btn:hover::after {
+  width: 200px;
+  height: 200px;
 }
 
 .user-icon {
-  font-size: 1.2rem;
+  font-size: 1.2rem; /* Thu nhỏ icon */
+  background: #ffffff;
+  border-radius: 50%;
+  padding: 2px;
 }
 
+/* Dropdown menu */
 .dropdown {
   position: absolute;
   right: 0;
-  top: 100%;
+  top: 110%;
   margin-top: 8px;
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #ffffff, #f3f4f6); /* Gradient nền sáng */
+  border: 2px solid #e5e7eb;
+  border-radius: 25px; /* Bo góc giống nút Xin chào */
+  padding: 8px 0; /* Padding gọn gàng */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  min-width: 180px; /* Kích thước bằng nút Xin chào */
+  animation: popUp 0.3s ease-out; /* Hiệu ứng bật lên */
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
+
 .dropdown button {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 6px 12px;
+  padding: 8px 16px; /* Kích thước khớp với nút Xin chào */
   width: 100%;
   text-align: left;
+  font-size: 0.9rem; /* Font khớp với nút Xin chào */
+  color: #1a202c;
+  border-radius: 25px; /* Bo góc giống nút */
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.dropdown button:hover {
+  background: linear-gradient(90deg, #e0e7ff, #d1e0ff);
+  color: #1d4ed8; /* Màu xanh đậm */
+  transform: translateX(5px);
+  box-shadow: inset 0 0 10px rgba(29, 78, 216, 0.1);
+}
+
+/* Hiệu ứng bật lên cho dropdown */
+@keyframes popUp {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Phản hồi màn hình nhỏ */
+@media (max-width: 768px) {
+  .user-btn {
+    width: 150px; /* Thu nhỏ trên màn hình nhỏ */
+    font-size: 0.85rem;
+  }
+
+  .dropdown {
+    right: 0;
+    left: 0;
+    width: 150px;
+    margin-top: 6px;
+  }
 }
