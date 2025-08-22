@@ -1,0 +1,394 @@
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #a7f3d0 0%, #e0f2fe 100%);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 2.8rem 1rem;
+  color: #1e293b;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+  overflow-x: hidden;
+}
+
+.trophy {
+  font-size: 5.6rem;
+  color: #ffd700;
+  filter: drop-shadow(0 0 17.5px rgba(255, 215, 0, 0.7));
+  will-change: transform, opacity;
+  animation: pulse 2.5s infinite ease-in-out;
+  position: absolute;
+  top: 2.3rem; /* Đặt cúp sát đỉnh thẻ Top 1 */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.15); }
+}
+
+.podium {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr;
+  gap: 2.1rem;
+  max-width: 910px;
+  width: 100%;
+  margin: 9rem auto 3.5rem; /* Tăng margin-top từ 7rem lên 9rem để dịch xuống */
+  padding: 0 1.4rem;
+  position: relative;
+  justify-items: center;
+  align-items: flex-end;
+  transform: translateY(2rem); /* Dịch Podium xuống dưới 2rem */
+}
+
+.playerFirst {
+  grid-column: 2 / 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(323deg, #fff9a8, #ffdb4d);
+  border-radius: 19.6px;
+  padding: 2.1rem 1.75rem;
+  box-shadow: 0 8.4px 22.4px rgba(0, 0, 0, 0.15), 0 2.8px 8.4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  position: relative;
+  text-align: center;
+  min-height: 280px;
+  width: 240px;
+  border: 4.2px solid #ffd700;
+  transform: translateY(-4.2rem);
+}
+
+.playerSecond {
+  grid-column: 1 / 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  border-radius: 16.8px;
+  padding: 1.75rem 1.4rem;
+  box-shadow: 0 7px 19.6px rgba(0, 0, 0, 0.12), 0 2.1px 7px rgba(0, 0, 0, 0.08);
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  position: relative;
+  text-align: center;
+  min-height: 238px;
+  width: 220px;
+  border: 3.5px solid #d4d4d8;
+}
+
+.playerThird {
+  grid-column: 3 / 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #ffedd5, #ffc107);
+  border-radius: 16.8px;
+  padding: 1.75rem 1.4rem;
+  box-shadow: 0 7px 19.6px rgba(0, 0, 0, 0.12), 0 2.1px 7px rgba(0, 0, 0, 0.08);
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  position: relative;
+  text-align: center;
+  min-height: 238px;
+  width: 220px;
+  border: 3.5px solid #b45309;
+}
+
+.playerFirst:hover, .playerSecond:hover, .playerThird:hover {
+  transform: translateY(-4.9rem) scale(1.05);
+  box-shadow: 0 11.2px 28px rgba(0, 0, 0, 0.18), 0 4.2px 11.2px rgba(0, 0, 0, 0.12);
+}
+
+/* .playerFirst::before, .playerSecond::before, .playerThird::before {
+  content: '';
+  position: absolute;
+  top: -9.8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 56px;
+  height: 9.8px;
+  border-radius: 4.9px;
+  background: rgba(0, 0, 0, 0.12);
+} */
+
+.playerFirst::after {
+  position: absolute;
+  top: -2.45rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #1e40af;
+  text-shadow: 0 2.1px 4.2px rgba(0, 0, 0, 0.15);
+}
+
+.playerSecond::after {
+  content: '🥈';
+  position: absolute;
+  top: -4.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 5rem;
+  font-weight: 800;
+  color: #1e40af;
+  text-shadow: 0 2.1px 4.2px rgba(0, 0, 0, 0.15);
+}
+
+.playerThird::after {
+  content: '🥉';
+  position: absolute;
+  top: -4.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 5rem;
+  font-weight: 800;
+  color: #1e40af;
+  text-shadow: 0 2.1px 4.2px rgba(0, 0, 0, 0.15);
+}
+
+.avatarWrapper {
+  margin-bottom: 1.4rem;
+  position: relative;
+  will-change: transform;
+}
+
+.avatar {
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4.2px solid transparent;
+  transition: transform 0.4s ease, border-color 0.4s ease;
+  filter: drop-shadow(0 4.2px 7px rgba(0, 0, 0, 0.2));
+}
+
+.playerFirst .avatar {
+  width: 126px;
+  height: 126px;
+  border-color: #ffd700;
+}
+
+.playerSecond .avatar {
+  width: 105px;
+  height: 105px;
+  border-color: #d4d4d8;
+}
+
+.playerThird .avatar {
+  width: 91px;
+  height: 91px;
+  border-color: #b45309;
+}
+
+.scoreBox {
+  background: #ffffff;
+  padding: 1.225rem 2.45rem;
+  border-radius: 11.2px;
+  text-align: center;
+  font-weight: 700;
+  box-shadow: 0 4.2px 11.2px rgba(0, 0, 0, 0.12);
+  border: 2.1px solid transparent;
+}
+
+.playerFirst .scoreBox {
+  border-color: #ffd700;
+  background: linear-gradient(145deg, #fff9a8, #ffdb4d);
+}
+
+.playerSecond .scoreBox {
+  border-color: #d4d4d8;
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+}
+
+.playerThird .scoreBox {
+  border-color: #b45309;
+  background: linear-gradient(145deg, #ffedd5, #ffc107);
+}
+
+.rankNumber {
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: #00d5ff;
+  margin-right: 0.7rem;
+}
+
+.playerName {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #1e293b;
+}
+
+.score {
+  font-size: 1.12rem;
+  color: #475569;
+}
+
+.leaderboard {
+  width: 100%;
+  max-width: 560px;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 1.75rem;
+  margin-bottom: 2.8rem;
+  box-shadow: 0 5.6px 16.8px rgba(0, 0, 0, 0.12);
+}
+
+.leaderboardTitle {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #00bbff;
+  margin-bottom: 1.4rem;
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.rankList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.rankItem {
+  display: grid;
+  grid-template-columns: 42px 49px 1fr 98px;
+  align-items: center;
+  padding: 0.875rem 1.4rem;
+  background: #f8fafc;
+  border-radius: 8.4px;
+  box-shadow: 0 2.8px 7px rgba(0, 0, 0, 0.08);
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.rankItem:hover {
+  background: #e0e7ff;
+  transform: translateY(-2.1px);
+}
+
+.rankAvatar {
+  width: 39.2px;
+  height: 39.2px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2.1px solid #e0e7ff;
+}
+
+.rankName {
+  font-weight: 700;
+  color: #1e293b;
+  text-align: left;
+}
+
+.rankScore {
+  font-weight: 700;
+  color: #475569;
+  text-align: right;
+}
+
+.noPlayers {
+  color: #64748b;
+  padding: 1.4rem;
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+.homeButton {
+  background: #4f46e5;
+  color: #ffffff;
+  border: none;
+  padding: 0.875rem 2.8rem;
+  border-radius: 9.8px;
+  font-size: 0.98rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.homeButton:hover {
+  background: #4338ca;
+  transform: translateY(-2.1px);
+}
+
+.loading {
+  text-align: center;
+  font-size: 1.05rem;
+  margin-top: 2.8rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 2.1rem 0.875rem;
+  }
+
+  .podium {
+    grid-template-columns: 1fr;
+    gap: 1.4rem;
+    transform: translateY(2rem); /* Dịch xuống dưới trên mobile */
+  }
+
+  .playerFirst {
+    grid-column: auto;
+    transform: translateY(-2.8rem);
+    min-height: 266px;
+    width: 224px;
+  }
+
+  .playerSecond, .playerThird {
+    grid-column: auto;
+    min-height: 224px;
+    width: 192px;
+  }
+
+  .trophy {
+    top: 1rem; /* Giữ nguyên top: 0.5rem trên mobile */
+    font-size: 4.9rem;
+  }
+
+  .playerFirst::after, .playerSecond::after, .playerThird::after {
+    top: -2.1rem;
+    font-size: 1.26rem;
+  }
+
+  .leaderboard {
+    width: 100%;
+    padding: 1.4rem;
+  }
+
+  .rankItem {
+    grid-template-columns: 35px 42px 1fr 70px;
+    padding: 0.7rem 1.05rem;
+  }
+
+  .leaderboardTitle {
+    font-size: 1.4rem;
+  }
+
+  .homeButton {
+    padding: 0.7rem 2.1rem;
+    font-size: 0.91rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .trophy {
+    font-size: 4.2rem;
+    margin: 1.4rem 0;
+  }
+
+  .scoreBox {
+    padding: 0.875rem 1.4rem;
+  }
+
+  .playerName {
+    font-size: 1.26rem;
+  }
+
+  .score {
+    font-size: 1.05rem;
+  }
+}

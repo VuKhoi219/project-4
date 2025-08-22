@@ -1,19 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ref, onValue, db } from "../config/firebase";
-import {
-  Box,
-  Typography,
-  Paper,
-  List,
-  ListItem,
-  ListItemText,
-  Button,
-  Avatar
-} from "@mui/material";
-import { motion, Variants } from "framer-motion";
 import confetti from "canvas-confetti";
+import { motion, Variants,Transition } from "framer-motion";
 import apiService from "../services/api";
+import styles from '../styles/FinalResults.module.css';
 
 interface Player {
   displayName: string;
@@ -25,70 +16,57 @@ const FinalResults: React.FC = () => {
   const { quizId, roomId } = useParams<{ quizId: string; roomId: string }>();
   const navigate = useNavigate();
   const [players, setPlayers] = useState<Player[]>([]);
+  const [saved, setSaved] = useState(false);
+  const [showTop3, setShowTop3] = useState(false);
+  const [showTop2, setShowTop2] = useState(false);
+  const [showTop1, setShowTop1] = useState(false);
 
   useEffect(() => {
     const participantsRef = ref(db, `quizzes/${quizId}/rooms/${roomId}/participants`);
-    onValue(participantsRef, (snapshot) => {
+    const unsubscribe = onValue(participantsRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = Object.values(snapshot.val()) as Player[];
         const sorted = data.sort((a, b) => b.score - a.score);
         setPlayers(sorted);
+
+        // Sequential animations with optimized timing
+        setTimeout(() => {
+          setShowTop3(true);
+          confetti({
+            particleCount: 50, // Giảm số lượng hạt để tối ưu hiệu suất
+            spread: 60,
+            origin: { y: 0.2 },
+          });
+        }, 1200);
+
+        setTimeout(() => {
+          setShowTop2(true);
+          confetti({
+            particleCount: 60, // Giảm số lượng hạt
+            spread: 80,
+            origin: { x: 0.3 },
+          });
+        }, 2800);
+
+        setTimeout(() => {
+          setShowTop1(true);
+          confetti({
+            particleCount: 80, // Giảm số lượng hạt
+            spread: 100,
+            origin: { x: 0.5, y: 0.3 },
+          });
+        }, 4500);
       }
     });
+
+    return () => unsubscribe();
   }, [quizId, roomId]);
-
-  // 🎯 Hiệu ứng podium
-  const podiumVariants: Variants = {
-    hidden: { opacity: 0, y: 100 },
-    visible: (i: number = 0) => ({
-      opacity: 1,
-      y: 0,
-      transition: {
-        delay: i * 0.3,
-        type: 'spring' as const,
-        stiffness: 100,
-        damping: 8
-      }
-    })
-  };
-
-  // 🎯 Hiệu ứng cúp rơi
-  const trophyVariants: Variants = {
-    hidden: { y: -300, opacity: 0, rotate: -20 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      rotate: 0,
-      transition: {
-        type: "spring",
-        stiffness: 120,
-        damping: 8,
-        bounce: 0.5
-      }
-    }
-  };
-
-  // 🎯 Bật confetti khi load trang
-  useEffect(() => {
-    if (players.length > 0) {
-      setTimeout(() => {
-        confetti({
-          particleCount: 150,
-          spread: 80,
-          origin: { y: 0.2 }
-        });
-      }, 800);
-    }
-  }, [players]);
-  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (players.length > 0 && !saved) {
-      setSaved(true); // ✅ chặn gọi nhiều lần
-
+      setSaved(true);
       const token = localStorage.getItem("token");
       const userName = localStorage.getItem("userName");
-
       const currentPlayer = players.find(p => p.displayName === userName);
 
       if (currentPlayer) {
@@ -103,222 +81,243 @@ const FinalResults: React.FC = () => {
           Number(quizId),
           players[0].score,
           "chưa login"
-        );
+        ).catch(err => console.error("Lỗi lưu kết quả:", err));
       }
     }
   }, [players, quizId, saved]);
 
-
-  // 🎯 Avatar bounce
-  const bounceAnimation = {
-    animate: {
-      y: [0, -10, 0],
+  const podiumVariants: Variants = {
+    hidden: { opacity: 0, y: 120 },
+    visible: {
+      opacity: 1,
+      y: 0,
       transition: {
-        repeat: Infinity,
-        repeatType: "loop" as const,
-        duration: 1.5
-      }
-    }
+        type: 'spring',
+        stiffness: 100, // Giảm stiffness để chuyển động mềm mại hơn
+        damping: 15, // Tăng damping để giảm dao động
+        mass: 0.8, // Thêm mass để làm chậm chuyển động
+      },
+    },
   };
 
-  if (!players.length) return <Typography>Đang tải kết quả...</Typography>;
+  const trophyVariants: Variants = {
+    hidden: { y: -250, opacity: 0, rotate: -15 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      rotate: 0,
+      transition: {
+        type: "spring",
+        stiffness: 120, // Giảm stiffness cho cúp
+        damping: 18, // Tăng damping để giảm dao động
+        mass: 0.7, // Thêm mass để làm chậm chuyển động
+      },
+    },
+  };
 
-  const top3 = players.slice(0, 3);
-  const others = players.slice(3);
+  const bounceAnimation = {
+  animate: {
+    y: [0, -8, 0],
+    transition: {
+      repeat: Infinity,
+      repeatType: "loop" as const,
+      duration: 2,
+      ease: "easeInOut" as const, // Explicitly use a valid easing value
+    } as Transition, // Explicitly type as Transition
+  },
+};
 
-  const renderAvatar = (player: Player, size: number, color: string) => (
-    <motion.div {...bounceAnimation}>
-      <Avatar
-        src={player.avatar || undefined}
-        sx={{
-          width: size,
-          height: size,
-          fontSize: size / 2,
-          border: `3px solid ${color}`,
-          boxShadow: `0 0 20px ${color}, 0 0 40px ${color}`
-        }}
-      >
-        {!player.avatar && player.displayName.charAt(0).toUpperCase()}
-      </Avatar>
-    </motion.div>
-  );
+  // Sử dụng useMemo để tối ưu hóa render top3 và otherPlayers
+  const top3 = useMemo(() => players.slice(0, 3), [players]);
+  const otherPlayers = useMemo(() => players.slice(3), [players]);
+
+  if (!players.length) return <div className={styles.loading}>Đang tải kết quả...</div>;
 
   return (
-    <Box
-      sx={{
-        textAlign: "center",
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #2ffff1, #25e8eb)",
-        backgroundSize: "400% 400%",
-        animation: "gradientBG 10s ease infinite",
-        color: "#fff",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        p: 4,
-        pt: 2,
-        "@keyframes gradientBG": {
-          "0%": { backgroundPosition: "0% 50%" },
-          "50%": { backgroundPosition: "100% 50%" },
-          "100%": { backgroundPosition: "0% 50%" }
-        }
-      }}
-    >
-      {/* Trophy icon */}
-      <motion.div
-        variants={trophyVariants}
-        initial="hidden"
-        animate="visible"
-        style={{
-          fontSize: "5rem",
-          marginBottom: "20px",
-          textShadow: "0 0 25px gold, 0 0 50px gold"
-        }}
-      >
-        🏆
-      </motion.div>
-
-      {/* Podium */}
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, mb: 8 }}>
-        {top3[1] && (
-          <motion.div custom={0} variants={podiumVariants} initial="hidden" animate="visible">
-            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-              {renderAvatar(top3[1], 90, "#C0C0C0")}
-              <Paper sx={{ mt: 2, background: "#C0C0C0", p: 2, borderRadius: "10px" }}>
-                <Typography variant="h6">🥈 {top3[1].displayName}</Typography>
-                <Typography>{top3[1].score} điểm</Typography>
-              </Paper>
-            </Box>
-          </motion.div>
-        )}
-
-        {top3[0] && (
-          <motion.div custom={1} variants={podiumVariants} initial="hidden" animate="visible">
-            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-              {renderAvatar(top3[0], 110, "#FFD700")}
-              <Paper sx={{
-                mt: 2,
-                background: "#FFD700",
-                p: 2,
-                borderRadius: "10px",
-                boxShadow: "0 0 25px gold, 0 0 50px gold"
-              }}>
-                <Typography variant="h5" fontWeight="bold">🥇 {top3[0].displayName}</Typography>
-                <Typography>{top3[0].score} điểm</Typography>
-              </Paper>
-            </Box>
-          </motion.div>
-        )}
-
-        {top3[2] && (
-          <motion.div custom={2} variants={podiumVariants} initial="hidden" animate="visible">
-            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-              {renderAvatar(top3[2], 80, "#CD7F32")}
-              <Paper sx={{ mt: 2, background: "#CD7F32", p: 2, borderRadius: "10px" }}>
-                <Typography variant="h6">🥉 {top3[2].displayName}</Typography>
-                <Typography>{top3[2].score} điểm</Typography>
-              </Paper>
-            </Box>
-          </motion.div>
-        )}
-      </Box>
-
-      {/* Ranking table */}
-      <Paper
-        sx={{
-          maxWidth: 800, // 👈 Tăng từ 500 lên 800
-          width: "90%",  // 👈 Để khi nhỏ hơn vẫn responsive
-          mx: "auto",
-          p: 2,
-          background: "rgba(255, 255, 255, 0.1)",
-          backdropFilter: "blur(8px)",
-          borderRadius: "12px",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.4)"
-        }}
-      >
-        <Typography
-          variant="h6"
-          gutterBottom
-          sx={{ textAlign: "center", fontWeight: "bold", color: "#fff", mb: 2 }}
+    <div className={styles.container}>
+      {showTop1 && (
+        <motion.div
+          variants={trophyVariants}
+          initial="hidden"
+          animate="visible"
+          className={styles.trophy}
         >
-          📜 Bảng xếp hạng
-        </Typography>
-        <List>
-          {others.map((player, index) => {
-            const colors = ["#4cafef", "#ff9800", "#9c27b0", "#00e676", "#ff1744"];
-            const color = colors[index % colors.length];
+          🏆
+        </motion.div>
+      )}
 
-            return (
-              <ListItem
-                key={index}
-                sx={{
-                  background: "rgba(255,255,255,0.05)",
-                  borderRadius: "8px",
-                  mb: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  px: 2
-                }}
-              >
-                <Typography
-                  sx={{
-                    color: "#ffcc00",
-                    fontWeight: "bold",
-                    width: "30px",
-                    textAlign: "center"
-                  }}
-                >
-                  {index + 4}
-                </Typography>
-
-                <Avatar
-                  src={player.avatar || undefined}
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    fontSize: 18,
-                    mr: 2,
-                    border: `2px solid ${color}`,
-                    boxShadow: `0 0 8px ${color}`
-                  }}
-                >
-                  {!player.avatar && player.displayName.charAt(0).toUpperCase()}
-                </Avatar>
-
-                <ListItemText
-                  primary={
-                    <Typography sx={{ fontWeight: "bold", color: "#fff" }}>
-                      {player.displayName}
-                    </Typography>
-                  }
-                  secondary={
-                    <Typography sx={{ color: "#ccc" }}>
-                      {player.score} điểm
-                    </Typography>
-                  }
+      <div className={styles.podium}>
+        <div className={styles.playerSecond}>
+          {showTop2 && top3[1] ? (
+            <motion.div variants={podiumVariants} initial="hidden" animate="visible">
+              <motion.div {...bounceAnimation} className={styles.avatarWrapper}>
+                <img
+                  src={top3[1].avatar || `https://via.placeholder.com/90?text=${top3[1].displayName.charAt(0)}`}
+                  alt={top3[1].displayName}
+                  className={styles.avatar}
                 />
-              </ListItem>
-            );
-          })}
-        </List>
-      </Paper>
+              </motion.div>
+              <div className={styles.scoreBox}>
+                <span className={styles.rankNumber}>Top 2:</span>
+                <span className={styles.playerName}>{top3[1].displayName}</span>
+                <br />
+                <span className={styles.score}>{top3[1].score} điểm</span>
+              </div>
+            </motion.div>
+          ) : (
+            <div style={{ visibility: 'hidden' }}>
+              <div className={styles.avatarWrapper}>
+                <img
+                  src="https://via.placeholder.com/90"
+                  alt="placeholder"
+                  className={styles.avatar}
+                />
+              </div>
+              <div className={styles.scoreBox}>
+                <span className={styles.rankNumber}>Top 2:</span>
+                <span className={styles.playerName}>Placeholder</span>
+                <br />
+                <span className={styles.score}>0 điểm</span>
+              </div>
+            </div>
+          )}
+        </div>
 
-      <Button
-        variant="contained"
-        sx={{
-          mt: 4,
-          background: "linear-gradient(90deg, #ff512f, #dd2476)",
-          "&:hover": { background: "linear-gradient(90deg, #dd2476, #ff512f)" },
-          fontWeight: "bold",
-          px: 4,
-          py: 1.2,
-          fontSize: "1rem"
-        }}
-        onClick={() => navigate("/")}
-      >
+        <div className={styles.playerFirst}>
+          {showTop1 && top3[0] ? (
+            <motion.div variants={podiumVariants} initial="hidden" animate="visible">
+              <motion.div {...bounceAnimation} className={styles.avatarWrapper}>
+                <img
+                  src={top3[0].avatar || `https://via.placeholder.com/110?text=${top3[0].displayName.charAt(0)}`}
+                  alt={top3[0].displayName}
+                  className={styles.avatar}
+                />
+              </motion.div>
+              <div className={styles.scoreBox}>
+                <span className={styles.rankNumber}>Top 1:</span>
+                <span className={styles.playerName}>{top3[0].displayName}</span>
+                <br />
+                <span className={styles.score}>{top3[0].score} điểm</span>
+              </div>
+            </motion.div>
+          ) : (
+            <div style={{ visibility: 'hidden' }}>
+              <div className={styles.avatarWrapper}>
+                <img
+                  src="https://via.placeholder.com/110"
+                  alt="placeholder"
+                  className={styles.avatar}
+                />
+              </div>
+              <div className={styles.scoreBox}>
+                <span className={styles.rankNumber}>Top 1:</span>
+                <span className={styles.playerName}>Placeholder</span>
+                <br />
+                <span className={styles.score}>0 điểm</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className={styles.playerThird}>
+          {showTop3 && top3[2] ? (
+            <motion.div variants={podiumVariants} initial="hidden" animate="visible">
+              <motion.div {...bounceAnimation} className={styles.avatarWrapper}>
+                <img
+                  src={top3[2].avatar || `https://via.placeholder.com/80?text=${top3[2].displayName.charAt(0)}`}
+                  alt={top3[2].displayName}
+                  className={styles.avatar}
+                />
+              </motion.div>
+              <div className={styles.scoreBox}>
+                <span className={styles.rankNumber}>Top 3:</span>
+                <span className={styles.playerName}>{top3[2].displayName}</span>
+                <br />
+                <span className={styles.score}>{top3[2].score} điểm</span>
+              </div>
+            </motion.div>
+          ) : (
+            <div style={{ visibility: 'hidden' }}>
+              <div className={styles.avatarWrapper}>
+                <img
+                  src="https://via.placeholder.com/80"
+                  alt="placeholder"
+                  className={styles.avatar}
+                />
+              </div>
+              <div className={styles.scoreBox}>
+                <span className={styles.rankNumber}>Top 3:</span>
+                <span className={styles.playerName}>Placeholder</span>
+                <br />
+                <span className={styles.score}>0 điểm</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className={styles.leaderboard}>
+        <h2 className={styles.leaderboardTitle}>📜 Bảng xếp hạng</h2>
+        {players.length === 0 ? (
+          <p className={styles.noPlayers}>Không có người chơi</p>
+        ) : (
+          <div className={styles.rankList}>
+            {showTop1 && top3[0] && (
+              <div className={styles.rankItem}>
+                <span className={styles.rankNumber}>1</span>
+                <img
+                  src={top3[0].avatar || `https://via.placeholder.com/40?text=${top3[0].displayName.charAt(0)}`}
+                  alt={top3[0].displayName}
+                  className={styles.rankAvatar}
+                />
+                <span className={styles.rankName}>{top3[0].displayName}</span>
+                <span className={styles.rankScore}>{top3[0].score} điểm</span>
+              </div>
+            )}
+            {showTop2 && top3[1] && (
+              <div className={styles.rankItem}>
+                <span className={styles.rankNumber}>2</span>
+                <img
+                  src={top3[1].avatar || `https://via.placeholder.com/40?text=${top3[1].displayName.charAt(0)}`}
+                  alt={top3[1].displayName}
+                  className={styles.rankAvatar}
+                />
+                <span className={styles.rankName}>{top3[1].displayName}</span>
+                <span className={styles.rankScore}>{top3[1].score} điểm</span>
+              </div>
+            )}
+            {showTop3 && top3[2] && (
+              <div className={styles.rankItem}>
+                <span className={styles.rankNumber}>3</span>
+                <img
+                  src={top3[2].avatar || `https://via.placeholder.com/40?text=${top3[2].displayName.charAt(0)}`}
+                  alt={top3[2].displayName}
+                  className={styles.rankAvatar}
+                />
+                <span className={styles.rankName}>{top3[2].displayName}</span>
+                <span className={styles.rankScore}>{top3[2].score} điểm</span>
+              </div>
+            )}
+            {otherPlayers.map((player, index) => (
+              <div key={index + 3} className={styles.rankItem}>
+                <span className={styles.rankNumber}>{index + 4}</span>
+                <img
+                  src={player.avatar || `https://via.placeholder.com/40?text=${player.displayName.charAt(0)}`}
+                  alt={player.displayName}
+                  className={styles.rankAvatar}
+                />
+                <span className={styles.rankName}>{player.displayName}</span>
+                <span className={styles.rankScore}>{player.score} điểm</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <button className={styles.homeButton} onClick={() => navigate("/")}>
         Về trang chủ
-      </Button>
-    </Box>
+      </button>
+    </div>
   );
 };
 

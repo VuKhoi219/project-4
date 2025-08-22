@@ -33,6 +33,10 @@ const apiService = {
     const res = await publicApi.get(`/quizzes/${quizId}/questions`);
     return res.data;
   },
+  fetchMyQuizzes: async (page: number): Promise<ApiResponse> => {
+    const res = await privateApi.get(`/quizzes/my-quizzes?page=${page}`);
+    return res.data;
+  },
 
   checkAnswer: async (questionId: number, answers: { answerText: string }[]): Promise<any> => {
     const res = await publicApi.post(`/answer/compare/${questionId}`, answers,  { withCredentials: true });
@@ -41,6 +45,10 @@ const apiService = {
   fetchQuizzes: async (page: number): Promise<ApiResponse> => {
     const res = await publicApi.get(`/quizzes?page${page}`);
     return res.data
+  },
+  getQuizzesByQuiz: async (): Promise<ApiResponse> => {
+    const res = await publicApi.get(`/quizzes/quizzes-hot`);
+    return res.data;
   },
 
   createFinalResults: async (quizId: number, points: number, namePlayer: string, token?: string): Promise<any> => {
