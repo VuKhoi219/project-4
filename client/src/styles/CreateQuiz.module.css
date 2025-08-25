@@ -1,0 +1,297 @@
+/* --- Biến màu dựa trên màu chủ đạo #1E5D61 --- */
+:root {
+  --bg-darkest: #163e41; /* Nền tối nhất cho page */
+  --bg-dark: #1E5D61;    /* Màu chủ đạo cho các panel chính */
+  --bg-surface: #264a4d; /* Nền cho input, các bề mặt phụ */
+  --text-light: #e0f7fa; /* Màu text chính, trắng ngả xanh */
+  --text-muted: #b0bec5; /* Màu text phụ, placeholder */
+  --accent-primary: #a3e4b7; /* Xanh lá mint sáng cho nút, tab active */
+  --accent-secondary: #00e1ff; /* Xanh cyan neon cho label, focus */
+  --color-error: #ff6f61; /* Đỏ cam cho lỗi */
+}
+
+/* --- Layout chung --- */
+.pageContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  background-color: var(--bg-darkest);
+  color: var(--text-light);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  overflow: hidden;
+}
+
+/* --- Header --- */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24px;
+  background-color: var(--bg-dark);
+  border-bottom: 1px solid var(--bg-surface);
+  flex-shrink: 0;
+  height: 64px;
+}
+
+.headerTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-light);
+}
+
+/* --- Wrapper chính (Sidebar + Content) --- */
+.editorWrapper {
+  flex-grow: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* --- Sidebar (Thông tin Quiz) --- */
+.sidebar {
+  flex: 0 0 40%;
+  flex-basis: 320px;
+  flex-shrink: 0;
+  padding: 24px;
+  background-color: var(--bg-dark);
+  border-right: 1px solid var(--bg-surface);
+  overflow-y: auto;
+}
+
+/* --- Main Content Panel (Trình chỉnh sửa câu hỏi) --- */
+.mainPanel {
+  flex-grow: 1;
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.questionEditor {
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.mediaPlaceholder {
+  border: 2px dashed var(--bg-surface);
+  border-radius: 8px;
+  padding: 40px;
+  text-align: center;
+  color: var(--text-muted);
+  background-color: var(--bg-surface);
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+.mediaPlaceholder:hover {
+  background-color: #2f6a6d; /* Tối hơn một chút khi hover */
+  border-color: var(--accent-primary);
+}
+.mediaPlaceholder span {
+  font-size: 2.5rem;
+}
+.mediaPlaceholder p {
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+
+/* --- Form Elements (inputs, labels, etc.) --- */
+.formGroup {
+  margin-bottom: 20px;
+  width: 100%;           /* đảm bảo div chiếm toàn bộ chiều ngang cha */
+  display: flex;
+  flex-direction: column;
+}
+
+.formGroup label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 8px;
+  color: var(--accent-secondary);
+}
+
+.input, .textarea, .select {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 1rem;
+  border: 1px solid var(--bg-surface);
+  border-radius: 6px;
+  background-color: var(--bg-surface);
+  color: var(--text-light);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.input::placeholder, .textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.input:focus, .textarea:focus, .select:focus {
+  outline: none;
+  border-color: var(--accent-secondary);
+  box-shadow: 0 0 0 3px rgba(0, 225, 255, 0.2);
+}
+
+.textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.answersList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.answerRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.correctnessToggle {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--bg-surface);
+  border-radius: 6px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: var(--bg-surface);
+  color: var(--text-muted);
+}
+.correctnessToggle:hover {
+  border-color: var(--accent-primary);
+}
+.correctnessToggle.correct {
+  background-color: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: var(--bg-darkest);
+}
+.correctnessToggle.incorrect {
+  background-color: var(--color-error);
+  border-color: var(--color-error);
+  color: white;
+}
+
+
+/* --- Footer (Question Tabs) --- */
+.footer {
+  flex-shrink: 0;
+  background-color: var(--bg-dark);
+  border-top: 1px solid var(--bg-surface);
+  padding: 8px 24px;
+  overflow-x: auto;
+}
+
+.questionTabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tabContainer {
+  position: relative;
+}
+
+.tab {
+  background-color: #2f6a6d;
+  color: var(--text-light);
+  border: 1px solid var(--bg-surface);
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.tab:hover {
+  background-color: var(--bg-surface);
+  border-color: var(--accent-secondary);
+}
+.tab.active {
+  background-color: var(--accent-primary);
+  color: var(--bg-darkest);
+  border-color: var(--accent-primary);
+}
+
+.deleteTabButton {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: var(--color-error);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 14px;
+    line-height: 20px;
+    text-align: center;
+    cursor: pointer;
+    z-index: 10;
+}
+.tabContainer:hover .deleteTabButton {
+    display: block;
+}
+
+.addButton {
+  background-color: #2f6a6d;
+  color: var(--text-light);
+  border: 1px dashed var(--bg-surface);
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.5rem;
+  font-weight: 300;
+  transition: all 0.2s;
+}
+.addButton:hover {
+    background-color: var(--bg-surface);
+    border-color: var(--accent-primary);
+    border-style: solid;
+}
+
+/* --- Buttons --- */
+.buttonPrimary {
+  background-color: var(--accent-primary);
+  color: var(--bg-darkest);
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.buttonPrimary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+.buttonPrimary:disabled {
+  background-color: var(--bg-surface);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* --- Error Banner --- */
+.errorBanner {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color-error);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 500;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+}

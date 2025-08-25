@@ -341,7 +341,7 @@ const GenQuiz: React.FC = () => {
     <div className={`${styles.container} ${styles.matrixBackground}`}>
       <div className={styles.initialContent}>
         {/* AI Title */}
-        <h1 className={styles.aiTitle}>A.I.</h1>
+        <h1 className={styles.aiTitle}>Quiz.AI</h1>
         <p className={styles.aiSubtitle}>Nhập chủ đề tạo bài kiểm tra</p>
         
         {/* Main content input */}
@@ -363,7 +363,7 @@ const GenQuiz: React.FC = () => {
               onChange={(e) => setNumberOfQuestions(e.target.value)}
               disabled={loading}
             >
-              <option value="">8 câu</option>
+              
               <option value="5">5 câu</option>
               <option value="8">8 câu</option>
               <option value="10">10 câu</option>
@@ -426,7 +426,7 @@ const GenQuiz: React.FC = () => {
             <button className={`${styles.headerButton} ${styles.doneButton}`} onClick={handleSaveQuiz} disabled={loading}>
               {loading ? 'Saving...' : 'Done'}
             </button>
-            <button className={styles.headerButton}>👁️ Preview</button>
+            
           </div>
           <span className={styles.lastEdit}>Last edit was saved seconds ago</span>
         </header>
@@ -438,13 +438,7 @@ const GenQuiz: React.FC = () => {
         </div>
 
         <main className={styles.editorMain}>
-          <div className={styles.mediaPane}>
-            <div className={styles.mediaBox}>
-              <button>Add media</button>
-              <span>⚡ Generate with AI</span>
-            </div>
-          </div>
-
+          
           <div className={styles.questionPane}>
             <div className={styles.formSection}>
               <label>Question</label>
