@@ -2,7 +2,6 @@ package com.example.backend.dto.request;
 
 import lombok.Data;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Positive;
 
 import java.util.List;
 import com.example.backend.dto.generated.GeneratedQuestionDTO;

@@ -1,6 +1,5 @@
 package com.example.backend.dto.request;
 
-import com.example.backend.entity.Quiz;
 import com.example.backend.entity.SourceType;
 import lombok.Data;
 
