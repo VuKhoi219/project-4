@@ -13,40 +13,66 @@ use Filament\Tables\Table;
 class AnswerResource extends Resource
 {
     protected static ?string $model = Answer::class;
-    protected static ?string $navigationIcon = 'heroicon-o-check-circle';
+
+    // Sửa tên icon từ 'heroicon-s:document-text' thành 'heroicon-o-document-text'
+    protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
     public static function form(Form $form): Form
     {
-        return $form->schema([
-            Forms\Components\Select::make('question_id')
-                ->relationship('question', 'content')
-                ->required()
-                ->label('Question'),
-            Forms\Components\TextInput::make('content')
-                ->required()
-                ->label('Answer Content'),
-            Forms\Components\Toggle::make('is_correct')
-                ->label('Is Correct?'),
-        ]);
+        return $form
+            ->schema([
+                Forms\Components\Select::make('question_id')
+                    ->label('Question')
+                    ->relationship('question', 'question_text')
+                    ->required(),
+                Forms\Components\Textarea::make('answer_text')
+                    ->label('Answer Text')
+                    ->required(),
+                Forms\Components\Toggle::make('is_correct')
+                    ->label('Is Correct'),
+                Forms\Components\TextInput::make('order_index')
+                    ->numeric()
+                    ->required()
+                    ->label('Order Index'),
+            ]);
     }
 
     public static function table(Table $table): Table
     {
-        return $table->columns([
-            Tables\Columns\TextColumn::make('question.content')->label('Question'),
-            Tables\Columns\TextColumn::make('content')->searchable(),
-            Tables\Columns\IconColumn::make('is_correct')->boolean(),
-        ])
-        ->filters([
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('id')->sortable(),
+                Tables\Columns\TextColumn::make('question.question_text')
+                    ->label('Question')
+                    ->limit(50)
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('answer_text')
+                    ->label('Answer')
+                    ->limit(50)
+                    ->sortable()
+                    ->searchable(),
+                Tables\Columns\IconColumn::make('is_correct')
+                    ->boolean()
+                    ->label('Correct'),
+                Tables\Columns\TextColumn::make('order_index')->sortable(),
+                Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
+            ])
+            ->filters([
+                //
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\DeleteBulkAction::make(),
+            ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
             //
-        ])
-        ->actions([
-            Tables\Actions\EditAction::make(),
-            Tables\Actions\DeleteAction::make(),
-        ])
-        ->bulkActions([
-            Tables\Actions\DeleteBulkAction::make(),
-        ]);
+        ];
     }
 
     public static function getPages(): array
