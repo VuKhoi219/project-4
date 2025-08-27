@@ -392,26 +392,10 @@ const GenQuiz: React.FC = () => {
         >
           {loading ? '🔄 Generating...' : '⚡ Generate AI quiz'}
         </button>
-
-        {/* Recently generated */}
-        <div className={styles.recentlyGenerated}>
-          <div className={styles.recentlyTitle}>Recently generated:</div>
-          <div className={styles.recentlyList}>
-            <span className={styles.recentlyItem}>lệt computing</span>
-            <span className={styles.recentlyItem}>Đồ vui</span>
-            <span className={styles.recentlyItem}>Math grade 5</span>
-            <span className={styles.recentlyItem}>Fundamentos de la nutrición</span>
-          </div>
-        </div>
-        
         {error && <div className={styles.error}>{error}</div>}
       </div>
     </div>
   );
-
-
-
-
 
 
   // Render giao diện chỉnh sửa (Hình 2)

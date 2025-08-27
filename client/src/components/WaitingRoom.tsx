@@ -5,10 +5,11 @@ import { Participant } from "../types";
 import {
   Box, Button, Card, CardContent, Typography, Alert, TextField, InputAdornment, IconButton,
   Avatar, CircularProgress, Stack, Paper, Backdrop, Dialog, DialogTitle,
-  DialogContent, DialogActions, Container, useTheme, useMediaQuery, List, ListItem, ListItemAvatar, ListItemText
+  DialogContent, DialogActions, Container, useTheme, useMediaQuery, List, ListItem, ListItemAvatar, ListItemText, Grid
 } from '@mui/material';
 import { styled, keyframes } from '@mui/material/styles';
 import { Casino as CasinoIcon, Share as ShareIcon, PlayArrow as PlayArrowIcon, QrCode as QrCodeIcon } from '@mui/icons-material';
+import { Center } from "@react-three/drei";
 
 const GradientBox = styled(Box)(({ theme }) => ({
   background: 'linear-gradient(135deg, #e8f5e8 0%, #e3f2fd 100%)',
@@ -75,7 +76,7 @@ const WaitingRoom: React.FC = () => {
   const [isQuizStarted, setIsQuizStarted] = useState<boolean>(false);
   const [countdown, setCountdown] = useState<number>(0);
   const [isHost, setIsHost] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [userName, setUserName] = useState<string>("");
   const [hasJoinedRoom, setHasJoinedRoom] = useState<boolean>(false);
   const [joinLoading, setJoinLoading] = useState<boolean>(false);
@@ -269,13 +270,6 @@ const WaitingRoom: React.FC = () => {
     navigator.clipboard.writeText(roomLink).then(() => alert("Đã copy link phòng!"));
   };
 
-  const showQRCode = () => {
-    const roomLink = window.location.href.replace('/waiting', '');
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(roomLink)}`;
-    setQrCodeUrl(qrUrl);
-    setShowQRDialog(true);
-  };
-
   if (loading) {
     return (
       <Backdrop open={loading} sx={{ color: '#fff' }}>
@@ -374,45 +368,79 @@ const WaitingRoom: React.FC = () => {
                 Người tham gia ({participants.length})
               </Typography>
               <Stack direction="row" spacing={1}>
-                <ActionButton variant="outlined" startIcon={<ShareIcon  />} onClick={copyRoomLink}>
+                <ActionButton variant="outlined" startIcon={<ShareIcon />} onClick={copyRoomLink}>
                   Chia sẻ
                 </ActionButton>
-                <ActionButton variant="outlined" startIcon={<QrCodeIcon />} onClick={showQRCode}>
+                {/* Nếu vẫn muốn có nút QR thì giữ lại */}
+                {/* <ActionButton variant="outlined" startIcon={<QrCodeIcon />} onClick={showQRCode}>
                   QR
-                </ActionButton>
+                </ActionButton> */}
               </Stack>
             </Stack>
-
-            <List>
-              {participants.map(([name, player]) => {
-                const isCurrentUser = name === userName;
-                return (
-                  <ParticipantItem 
-                    key={name} 
-                    isCurrentUser={isCurrentUser}
+            <Grid container spacing={2} alignItems="flex-start">
+              {/* Cột QR Code */}
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Box display="flex" justifyContent="center" p={2}>
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
+                      window.location.href.replace('/waiting', '')
+                    )}`}
+                    alt="QR Code"
                     style={{
-                      backgroundColor: player.background || getRandomLightColor(),
+                      border: "1px solid #ddd",
+                      borderRadius: "12px",
+                      padding: "8px",
+                      backgroundColor: "#fff",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                     }}
-                  >
-                    <ListItemAvatar>
-                      <Avatar src={player.avatar} />
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={player.displayName}
-                      secondary={player.score !== undefined ? `${player.score} điểm` : null}
-                    />
-                    {isCurrentUser && (
-                      <Button size="small" variant="outlined" onClick={() => setShowAvatarDialog(true)}>
-                        Đổi Avatar
-                      </Button>
-                    )}
-                  </ParticipantItem>
-                );
-              })}
-            </List>
+                  />
+                </Box>
+              </Grid>
+
+              {/* Cột danh sách người tham gia */}
+              <Grid size={{ xs: 12, md: 6 }}>
+                <List>
+                  {participants.map(([name, player]) => {
+                    const isCurrentUser = name === userName;
+                    return (
+                      <ParticipantItem
+                        key={name}
+                        isCurrentUser={isCurrentUser}
+                        style={{
+                          backgroundColor: player.background || getRandomLightColor(),
+                          padding: 10,
+                          display: "flex",
+                          marginBottom: 8, // thêm khoảng cách giữa các item
+                        }}
+                      >
+                        <ListItemAvatar>
+                          <Avatar src={player.avatar} />
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={player.displayName}
+                          secondary={player.score !== undefined ? `${player.score} điểm` : null}
+                        />
+                        {isCurrentUser && (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => setShowAvatarDialog(true)}
+                          >
+                            Đổi Avatar
+                          </Button>
+                        )}
+                      </ParticipantItem>
+                    );
+                  })}
+                </List>
+              </Grid>
+            </Grid>
+
+
 
           </CardContent>
         </MainCard>
+
 
         {isHost && (
           <ActionButton
