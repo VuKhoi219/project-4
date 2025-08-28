@@ -18,11 +18,22 @@ import {
 } from '../../styles/QuizPlay.styles';
 import { ExtendedQuestion, QuestionType } from '../../types';
 
-// Animation cho hiệu ứng phát sáng
-const glow = keyframes`
-  0% { box-shadow: 0 0 5px rgba(236, 72, 153, 0.5), 0 0 20px rgba(236, 72, 153, 0.3); }
-  50% { box-shadow: 0 0 20px rgba(236, 72, 153, 0.8), 0 0 30px rgba(236, 72, 153, 0.5); }
-  100% { box-shadow: 0 0 5px rgba(236, 72, 153, 0.5), 0 0 20px rgba(236, 72, 153, 0.3); }
+// Animation cho hiệu ứng nhẹ nhàng
+const floatAnimation = keyframes`
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+  100% { transform: translateY(0px); }
+`;
+
+const shimmer = keyframes`
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+`;
+
+const pulseGlow = keyframes`
+  0% { box-shadow: 0 4px 20px rgba(79, 172, 254, 0.2); }
+  50% { box-shadow: 0 8px 30px rgba(79, 172, 254, 0.4); }
+  100% { box-shadow: 0 4px 20px rgba(79, 172, 254, 0.2); }
 `;
 
 interface ShowAnswerStateProps {
@@ -46,7 +57,7 @@ export const ShowAnswerState: React.FC<ShowAnswerStateProps> = ({
 }) => {
   return (
     <ShowAnswerBox sx={{ 
-      background: 'linear-gradient(135deg, #1e3a8a 0%, #a855f7 50%, #ec4899 100%)',
+      background: 'linear-gradient(135deg, #fdfeff 0%, #e0f2fe 30%, #f0f9ff 70%, #ffffff 100%)',
       minHeight: '100vh',
       py: 6,
       overflow: 'hidden',
@@ -58,7 +69,7 @@ export const ShowAnswerState: React.FC<ShowAnswerStateProps> = ({
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%)',
+        background: 'radial-gradient(circle at 30% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 60%), radial-gradient(circle at 70% 80%, rgba(147, 197, 253, 0.06) 0%, transparent 60%)',
         pointerEvents: 'none'
       }
     }}>
@@ -66,14 +77,18 @@ export const ShowAnswerState: React.FC<ShowAnswerStateProps> = ({
         <Fade in={true} timeout={1200}>
           <Typography 
             variant="h2" 
-            fontWeight="bold" 
-            mb={8}
+            fontWeight="700" 
+            mb={6}
             sx={{ 
-              color: '#fff',
-              fontFamily: '"Orbitron", sans-serif',
-              letterSpacing: '2px',
-              textShadow: '0 0 10px rgba(59, 130, 246, 0.8), 0 0 20px rgba(236, 72, 153, 0.8)',
-              animation: `${glow} 2s ease-in-out infinite`
+              color: '#0f172a',
+              fontFamily: '"Inter", sans-serif',
+              letterSpacing: '-0.5px',
+              background: 'linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #06b6d4 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              animation: `${floatAnimation} 3s ease-in-out infinite`,
+              textShadow: 'none'
             }}
           >
             Kết quả câu trả lời
@@ -81,24 +96,29 @@ export const ShowAnswerState: React.FC<ShowAnswerStateProps> = ({
         </Fade>
         
         <GlassCard sx={{ 
-          mb: 6, 
+          mb: 4, 
           width: '100%',
-          background: 'rgba(255,255,255,0.05)',
-          backdropFilter: 'blur(12px)',
-          border: '2px solid transparent',
-          borderImage: 'linear-gradient(45deg, #3b82f6, #ec4899) 1',
-          borderRadius: 4,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.3), 0 0 15px rgba(59,130,246,0.5)',
-          animation: `${glow} 3s ease-in-out infinite`
+          background: 'rgba(255, 255, 255, 0.9)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(59, 130, 246, 0.1)',
+          borderRadius: '20px',
+          boxShadow: '0 10px 40px rgba(59, 130, 246, 0.08), 0 4px 16px rgba(0, 0, 0, 0.03)',
+          animation: `${pulseGlow} 4s ease-in-out infinite`,
+          transition: 'all 0.3s ease',
+          '&:hover': {
+            transform: 'translateY(-3px)',
+            boxShadow: '0 15px 50px rgba(59, 130, 246, 0.12), 0 6px 20px rgba(0, 0, 0, 0.05)'
+          }
         }}>
-          <CardContent sx={{ p: 4 }}>
+          <CardContent sx={{ p: 5 }}>
             <Typography 
               variant="h5" 
               mb={4}
               sx={{ 
-                color: '#e0f2fe',
-                fontFamily: '"Poppins", sans-serif',
-                textShadow: '0 0 5px rgba(0,0,0,0.5)'
+                color: '#334155',
+                fontFamily: '"Inter", sans-serif',
+                fontWeight: '600',
+                lineHeight: 1.4
               }}
             >
               {currentQ.text}
@@ -106,27 +126,54 @@ export const ShowAnswerState: React.FC<ShowAnswerStateProps> = ({
             
             <Box 
               sx={{ 
-                background: 'linear-gradient(45deg, #22c55e, #86efac)',
-                p: 3, 
-                borderRadius: 3,
+                background: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
+                p: 4, 
+                borderRadius: '16px',
                 mb: 3,
-                boxShadow: '0 0 15px rgba(34,197,94,0.6)',
-                transition: 'transform 0.4s ease',
-                '&:hover': { transform: 'scale(1.02)' }
+                position: 'relative',
+                overflow: 'hidden',
+                '&:before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: '-200px',
+                  width: '200px',
+                  height: '100%',
+                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
+                  animation: `${shimmer} 2s infinite`
+                }
               }}
             >
-              <Typography 
-                variant="h6" 
-                fontWeight="bold" 
-                mb={1}
-                sx={{ color: '#fff', fontFamily: '"Roboto", sans-serif' }}
-              >
-                ✅ Đáp án đúng
-              </Typography>
+              <Stack direction="row" alignItems="center" justifyContent="center" spacing={2} mb={2}>
+                <Box 
+                  sx={{ 
+                    width: 32, 
+                    height: 32, 
+                    borderRadius: '50%', 
+                    background: 'rgba(255,255,255,0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <Typography sx={{ fontSize: '18px' }}>✓</Typography>
+                </Box>
+                <Typography 
+                  variant="h6" 
+                  fontWeight="600"
+                  sx={{ color: '#fff', fontFamily: '"Inter", sans-serif' }}
+                >
+                  Đáp án đúng
+                </Typography>
+              </Stack>
               <Typography 
                 variant="h5" 
-                fontWeight="bold"
-                sx={{ color: '#fff', fontFamily: '"Poppins", sans-serif' }}
+                fontWeight="700"
+                sx={{ 
+                  color: '#fff', 
+                  fontFamily: '"Inter", sans-serif',
+                  textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
               >
                 {answerResult?.correctAnswerText || 
                  (currentQ.type === QuestionType.MULTIPLE_SELECT ? currentQ.correctAnswers?.join(", ") : currentQ.correctAnswer)}
@@ -135,29 +182,46 @@ export const ShowAnswerState: React.FC<ShowAnswerStateProps> = ({
 
             {hasAnswered && answerResult && !answerResult.correct && (
               <>
-                <Divider sx={{ my: 3, bgcolor: 'rgba(255, 255, 255, 0.2)' }} />
+                <Divider sx={{ my: 4, bgcolor: 'rgba(148, 163, 184, 0.3)', height: '1px' }} />
                 <Box 
                   sx={{ 
-                    background: 'linear-gradient(45deg, #ef4444, #f87171)',
-                    p: 3, 
-                    borderRadius: 3,
-                    boxShadow: '0 0 15px rgba(239,68,68,0.6)',
-                    transition: 'transform 0.4s ease',
-                    '&:hover': { transform: 'scale(1.02)' }
+                    background: 'linear-gradient(135deg, #f87171 0%, #f67272 100%)',
+                    p: 4, 
+                    borderRadius: '16px',
+                    position: 'relative',
+                    overflow: 'hidden'
                   }}
                 >
-                  <Typography 
-                    variant="h6" 
-                    fontWeight="bold" 
-                    mb={1}
-                    sx={{ color: '#fff', fontFamily: '"Roboto", sans-serif' }}
-                  >
-                    ❌ Câu trả lời của bạn
-                  </Typography>
+                  <Stack direction="row" alignItems="center" justifyContent="center" spacing={2} mb={2}>
+                    <Box 
+                      sx={{ 
+                        width: 32, 
+                        height: 32, 
+                        borderRadius: '50%', 
+                        background: 'rgba(255,255,255,0.3)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <Typography sx={{ fontSize: '18px' }}>✗</Typography>
+                    </Box>
+                    <Typography 
+                      variant="h6" 
+                      fontWeight="600"
+                      sx={{ color: '#fff', fontFamily: '"Inter", sans-serif' }}
+                    >
+                      Câu trả lời của bạn
+                    </Typography>
+                  </Stack>
                   <Typography 
                     variant="h5" 
-                    fontWeight="bold"
-                    sx={{ color: '#fff', fontFamily: '"Poppins", sans-serif' }}
+                    fontWeight="700"
+                    sx={{ 
+                      color: '#fff', 
+                      fontFamily: '"Inter", sans-serif',
+                      textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}
                   >
                     {answerResult.userAnswers.length > 0 
                       ? answerResult.userAnswers.map(answer => answer.answerText).join(", ")
@@ -169,17 +233,25 @@ export const ShowAnswerState: React.FC<ShowAnswerStateProps> = ({
             )}
 
             {currentQ.type === QuestionType.SHORT_ANSWER && (currentQ.acceptedAnswers ?? []).length > 0 && (
-              <Typography 
-                variant="body1" 
-                mt={3} 
+              <Box 
                 sx={{ 
-                  color: '#bfdbfe',
-                  fontFamily: '"Roboto", sans-serif',
-                  textShadow: '0 0 5px rgba(0,0,0,0.3)'
+                  mt: 4,
+                  p: 3,
+                  background: 'linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%)',
+                  borderRadius: '12px'
                 }}
               >
-                Các đáp án được chấp nhận: {(currentQ.acceptedAnswers ?? []).join(", ")}
-              </Typography>
+                <Typography 
+                  variant="body1"
+                  sx={{ 
+                    color: '#fff',
+                    fontFamily: '"Inter", sans-serif',
+                    fontWeight: '500'
+                  }}
+                >
+                  Các đáp án được chấp nhận: {(currentQ.acceptedAnswers ?? []).join(", ")}
+                </Typography>
+              </Box>
             )}
           </CardContent>
         </GlassCard>
@@ -190,44 +262,47 @@ export const ShowAnswerState: React.FC<ShowAnswerStateProps> = ({
               isCorrect={isCorrect}
               sx={{ 
                 background: isCorrect 
-                  ? 'linear-gradient(45deg, #22c55e, #86efac)' 
-                  : 'linear-gradient(45deg, #ef4444, #f87171)',
-                borderRadius: 4,
-                border: '2px solid transparent',
-                borderImage: isCorrect 
-                  ? 'linear-gradient(45deg, #22c55e, #86efac) 1' 
-                  : 'linear-gradient(45deg, #ef4444, #f87171) 1',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.3), 0 0 15px rgba(236,72,153,0.5)',
-                transition: 'all 0.4s ease',
+                  ? 'linear-gradient(135deg, #10b981 0%, #34d399 100%)' 
+                  : 'linear-gradient(135deg, #f87171 0%, #e75b5b 100%)',
+                borderRadius: '20px',
+                border: 'none',
+                boxShadow: isCorrect
+                  ? '0 8px 32px rgba(16, 185, 129, 0.3), 0 2px 8px rgba(0, 0, 0, 0.05)'
+                  : '0 8px 32px rgba(248, 113, 113, 0.3), 0 2px 8px rgba(0, 0, 0, 0.05)',
+                transition: 'all 0.3s ease',
                 '&:hover': { 
-                  transform: 'translateY(-6px)',
-                  boxShadow: '0 12px 32px rgba(0,0,0,0.4), 0 0 20px rgba(236,72,153,0.6)'
+                  transform: 'translateY(-4px)',
+                  boxShadow: isCorrect
+                    ? '0 12px 40px rgba(16, 185, 129, 0.4), 0 4px 12px rgba(0, 0, 0, 0.08)'
+                    : '0 12px 40px rgba(248, 113, 113, 0.4), 0 4px 12px rgba(0, 0, 0, 0.08)'
                 }
               }}
             >
-              <CardContent>
+              <CardContent sx={{ py: 4 }}>
                 <Stack direction="row" alignItems="center" justifyContent="center" spacing={3}>
                   <Typography 
-                    variant="h5" 
-                    fontWeight="bold"
+                    variant="h4" 
+                    fontWeight="700"
                     sx={{ 
                       color: '#fff',
-                      fontFamily: '"Poppins", sans-serif',
-                      textShadow: '0 0 5px rgba(0,0,0,0.5)'
+                      fontFamily: '"Inter", sans-serif',
+                      textShadow: '0 2px 4px rgba(0,0,0,0.1)'
                     }}
                   >
-                    {isCorrect ? '🎉 Chính xác!' : '😟 Sai rồi!'}
+                    {isCorrect ? '🎉 Chính xác!' : '😞 Sai rồi!'}
                   </Typography>
                   {isCorrect && (
                     <Chip 
                       label={`+${earnedPoints} điểm`} 
                       sx={{ 
-                        background: '#fff',
-                        color: '#166534',
-                        fontWeight: 'bold', 
-                        fontSize: '1.2rem',
-                        boxShadow: '0 0 10px rgba(34,197,94,0.6)',
-                        fontFamily: '"Roboto", sans-serif'
+                        background: 'rgba(255, 255, 255, 0.9)',
+                        color: '#059669',
+                        fontWeight: '700', 
+                        fontSize: '1.1rem',
+                        height: '40px',
+                        borderRadius: '20px',
+                        fontFamily: '"Inter", sans-serif',
+                        boxShadow: '0 4px 12px rgba(255, 255, 255, 0.3)'
                       }}
                     />
                   )}
@@ -242,14 +317,17 @@ export const ShowAnswerState: React.FC<ShowAnswerStateProps> = ({
             <Alert 
               severity="info" 
               sx={{ 
-                color: '#fff', 
-                bgcolor: 'rgba(59,130,246,0.3)',
-                backdropFilter: 'blur(10px)',
-                borderRadius: 4,
-                border: '2px solid transparent',
-                borderImage: 'linear-gradient(45deg, #3b82f6, #60a5fa) 1',
-                boxShadow: '0 0 15px rgba(59,130,246,0.5)',
-                fontFamily: '"Roboto", sans-serif'
+                background: 'linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%)',
+                color: '#fff',
+                borderRadius: '16px',
+                border: 'none',
+                boxShadow: '0 8px 32px rgba(96, 165, 250, 0.3), 0 2px 8px rgba(0, 0, 0, 0.05)',
+                fontFamily: '"Inter", sans-serif',
+                fontWeight: '500',
+                fontSize: '1.1rem',
+                '& .MuiAlert-icon': {
+                  color: '#fff'
+                }
               }}
             >
               Bạn chưa trả lời câu hỏi này
