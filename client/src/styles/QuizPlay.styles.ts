@@ -22,8 +22,8 @@ export const GetReadyBox = styled(BaseBox)`
   background: linear-gradient(135deg, #55b5f5 0%, #7c3aed 100%);
 `;
 
-export const ShowAnswerBox = styled(BaseBox)`
-  background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);
+export const ShowAnswerBox = styled(BaseBox)`   
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 25%, #e2e8f0 50%, #f8fafc 100%);
 `;
 
 export const LeaderboardBox = styled(BaseBox)`
