@@ -23,17 +23,39 @@ export const GetReadyBox = styled(BaseBox)`
 `;
 
 export const ShowAnswerBox = styled(BaseBox)`   
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 25%, #e2e8f0 50%, #f8fafc 100%);
+  background: 
+    linear-gradient(135deg, rgba(248,250,252,0.8) 0%, rgba(241,245,249,0.7) 25%, rgba(226,232,240,0.7) 50%, rgba(248,250,252,0.8) 100%),
+    url("/img/check.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 `;
+
 
 export const LeaderboardBox = styled(BaseBox)`
-  background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
+  background: 
+    linear-gradient(135deg, rgba(124, 58, 237, 0.7) 0%, rgba(37, 99, 235, 0.7) 100%),
+    url("/img/backgrounddep4k.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 `;
 
-export const PlayingBox = styled(BaseBox)`
-  background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
-  color: #1f2937;
-`;
+
+
+export const PlayingBox = styled(BaseBox)(() => ({
+  minHeight: '100vh',
+  width: '100%',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'flex-start',
+  padding: '2rem 0',
+  backgroundImage: 'url("/img/backgroundQuiz.png")',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  backgroundRepeat: 'no-repeat',
+}));
+
 
 export const WaitingForHostBox = styled(BaseBox)`
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);

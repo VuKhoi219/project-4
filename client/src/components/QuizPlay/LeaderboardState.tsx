@@ -53,7 +53,10 @@ export const LeaderboardState: React.FC<LeaderboardStateProps> = ({
 }) => {
   return (
     <LeaderboardBox sx={{ 
-      background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 30%, #e2e8f0 70%, #f8fafc 100%) !important',
+    backgroundImage: `linear-gradient(135deg, rgba(124,58,237,0.7), rgba(37,99,235,0.7)), url("/img/backgrounddep4k.jpg")`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
       minHeight: '100vh',
       py: 6,
       overflow: 'hidden',
