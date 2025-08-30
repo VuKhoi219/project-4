@@ -13,4 +13,8 @@ class Category extends Model
         'name',
         'description',
     ];
+    public function quizzes()
+    {
+        return $this->hasMany(Quiz::class);
+    }
 }
