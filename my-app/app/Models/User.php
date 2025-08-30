@@ -18,6 +18,7 @@ class User extends Authenticatable
         'password_hash',
         'full_name',
         'is_active',
+        'role',
         'created_at',
         'updated_at',
     ];
@@ -31,6 +32,22 @@ class User extends Authenticatable
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    /**
+     * Quizzes created by this user
+     */
+    public function createdQuizzes()
+    {
+        return $this->hasMany(Quiz::class, 'creator_id');
+    }
+
+    /**
+     * Quiz results for this user
+     */
+    public function finalResults()
+    {
+        return $this->hasMany(FinalResult::class);
+    }
 
     /**
      * Laravel Auth: dùng cột password_hash thay cho password
