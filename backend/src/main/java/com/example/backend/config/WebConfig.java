@@ -2,6 +2,7 @@ package com.example.backend.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -18,6 +19,13 @@ public class WebConfig implements WebMvcConfigurer {
                 .maxAge(3600);
     }
     @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/img/**")
+                .addResourceLocations("classpath:/static/img/");
+        registry.addResourceHandler("/**")
+                .addResourceLocations("classpath:/static/");
+    }
+    @Override
     public void addViewControllers(ViewControllerRegistry registry) {
         // Forward tất cả SPA route (không chứa dấu chấm) về index.html
         registry.addViewController("/{spring:[^\\.]*}")
@@ -25,6 +33,8 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addViewController("/{spring:[^\\.]*}/{spring2:[^\\.]*}")
                 .setViewName("forward:/index.html");
         registry.addViewController("/{spring:[^\\.]*}/{spring2:[^\\.]*}/{spring3:[^\\.]*}")
+                .setViewName("forward:/index.html");
+        registry.addViewController("/**/{path:[^\\.]*}")
                 .setViewName("forward:/index.html");
     }
 }

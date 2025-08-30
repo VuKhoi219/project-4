@@ -134,7 +134,12 @@ const FinalResults: React.FC = () => {
   if (!players.length) return <div className={styles.loading}>Đang tải kết quả...</div>;
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container}      style={{
+       backgroundImage: "linear-gradient(135deg, rgba(167,243,208,0.7), rgba(224,242,254,0.7)), url('/img/mau-background-dep-46.jpg')",
+       backgroundSize: "cover",
+       backgroundPosition: "center",
+       backgroundRepeat: "no-repeat"
+     }}>
       {showTop1 && (
         <motion.div
           variants={trophyVariants}

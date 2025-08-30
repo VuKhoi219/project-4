@@ -54,7 +54,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("http://localhost:3000","http://localhost:8080")); // 👈 dùng pattern thay vì origin
+        config.setAllowedOriginPatterns(List.of("http://localhost:3000","http://localhost:8080","https://7f17f7de0437.ngrok-free.app")); // 👈 dùng pattern thay vì origin
         config.setAllowCredentials(true);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
