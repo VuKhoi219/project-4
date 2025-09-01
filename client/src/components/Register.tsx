@@ -50,7 +50,7 @@ const Register: React.FC = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <div className="logo-placeholder">Your logo</div>
+        <div className="logo-placeholder">QUIZ .AI</div>
         <h1>Create Account</h1>
         
         <form onSubmit={handleSubmit}>

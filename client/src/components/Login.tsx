@@ -66,7 +66,7 @@ const Login = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <div className="logo-placeholder">Your logo</div>
+        <div className="logo-placeholder">QUIZ .AI</div>
         <h1>Login</h1>
         
         {/* Hiển thị thông báo về quiz pending nếu có */}
