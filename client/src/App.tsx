@@ -1,25 +1,51 @@
-import React from 'react';
-import logo from './logo.svg';
+
 import './App.css';
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import JoinQuiz from "./components/JoinQuiz";
+import WaitingRoom from "./components/WaitingRoom";
+import QuizPlay from "./components/QuizPlay";
+import Leaderboard from "./components/Leaderboard";
+import QuizController from "./components/QuizController";
+import FinalResults from "./components/FinalResults"
+import Home from "./components/Home"
+import Login from "./components/Login";
+import Register from "./components/Register";
+import CreateQuiz from "./components/CreateQuiz";
+import GenQuiz from './components/GenQuiz';
+import Notfound from './components/NotFoundPage';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      <Router>
+        <div className="min-h-screen bg-gray-100">
+          <Routes>
+            <Route path="/" element={<Home/>} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/quiz/:quizId" element={<Navigate to="join" />} />
+            <Route path="/quiz/:quizId/join" element={<JoinQuiz />} />
+            <Route path="/quiz/new" element={<CreateQuiz />} />
+            <Route path="/quiz/generate" element={<GenQuiz />} />
+            {/* 
+              Các route cho một phòng chơi cụ thể.
+              Tất cả các trang liên quan đến một game đang diễn ra đều cần cả quizId và roomId.
+            */}
+            <Route path="/quiz/:quizId/room/:roomId" element={<QuizController />} />
+            <Route path="/quiz/:quizId/room/:roomId/waiting" element={<WaitingRoom />} />
+            <Route path="/quiz/:quizId/room/:roomId/play" element={<QuizPlay />} />
+            <Route path="/quiz/:quizId/room/:roomId/leaderboard" element={<Leaderboard />} />
+            <Route path='/quiz/:quizId/room/:roomId/final-results' element={<FinalResults />} />
+
+            {/* Trang 404 */}
+            <Route path='/404' element={<Notfound/> } />
+            {/* Fallback route */}
+            <Route path="*" element={<Navigate to="/404" />} />
+          </Routes>
+        </div>
+      </Router>
+    </>
+
   );
 }
 

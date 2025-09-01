@@ -1,5 +1,6 @@
 package com.example.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -12,7 +13,6 @@ import java.util.List;
         indexes = {
                 @Index(name = "idx_quizzes_creator", columnList = "creator_id"),
                 @Index(name = "idx_quizzes_category", columnList = "category_id"),
-                @Index(name = "idx_quizzes_share_link", columnList = "share_link"),
         }
 )
 public class Quiz {
@@ -21,7 +21,7 @@ public class Quiz {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "creator_id", nullable = false)
+    @JoinColumn(name = "creator_id", nullable = true)
     private User creator;
 
     @ManyToOne
@@ -42,18 +42,16 @@ public class Quiz {
     private SourceType source_type = SourceType.TEXT;
 
     @ManyToOne
-    @JoinColumn(name = "file_id")
+    @JoinColumn(name = "file_id", nullable = true)
     private UploadedFile  file;
-
-    @Column
-    private boolean show_correct_answers = true;
-
-    @Column
-    private boolean shuffle_answers = true;
-
-    @Column(name = "share_link", length = 100, unique = true) // Mapping tới database column share_link
-    private String shareLink; // Java field name là shareLink
 
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Question> questions;
+
+    @Column(name = "avatar")
+    private String avatar;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<FinalResult> finalResults;
 }
