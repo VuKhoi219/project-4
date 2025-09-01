@@ -1,0 +1,366 @@
+/* --- General Resets and Font --- */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #fff;
+}
+
+/* --- Main Authentication Container --- */
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+  box-sizing: border-box;
+  background: #0d1a3c; /* Fallback color */
+  background: linear-gradient(135deg, #0f1c3a, #0b2e5a, #0f1c3a);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 
+  Lưu ý: Các hình khối 3D trừu tượng trên nền rất phức tạp.
+  Để có kết quả chính xác nhất, bạn nên sử dụng file SVG hoặc ảnh.
+  Dưới đây là một ví dụ đơn giản sử dụng CSS để tạo hiệu ứng tương tự.
+*/
+.auth-container::before,
+.auth-container::after {
+  content: "";
+  position: absolute;
+  filter: blur(50px);
+  opacity: 0.3;
+  border-radius: 50%;
+}
+
+.auth-container::before {
+  width: 350px;
+  height: 350px;
+  background: #3b82f6;
+  top: -100px;
+  left: -150px;
+}
+
+.auth-container::after {
+  width: 300px;
+  height: 300px;
+  background: #6d28d9;
+  bottom: -120px;
+  right: -140px;
+}
+
+/* --- Frosted Glass Authentication Card --- */
+.auth-card {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 35px 40px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  z-index: 1;
+}
+
+.logo-placeholder {
+  font-size: 22px;
+  font-weight: bold;
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.auth-card h1 {
+  text-align: left;
+  margin: 0 0 25px 0;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+/* --- Form Elements --- */
+.auth-card form {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-card label {
+  text-align: left;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #d1d5db; /* Light gray */
+}
+
+.auth-card input {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 12px 15px;
+  color: #fff;
+  font-size: 16px;
+  margin-bottom: 15px;
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.auth-card input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+}
+
+.auth-card input::placeholder {
+  color: #9ca3af;
+}
+
+.password-wrapper {
+  position: relative;
+}
+
+.forgot-password {
+  align-self: flex-end;
+  font-size: 13px;
+  color: #d1d5db;
+  text-decoration: none;
+  margin-top: -5px;
+  margin-bottom: 20px;
+  transition: color 0.3s;
+}
+
+.forgot-password:hover {
+  color: #fff;
+}
+
+.btn-primary {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-bottom: 10px;
+}
+
+.btn-primary:hover {
+  background: #2563eb;
+}
+
+.btn-primary:disabled {
+  background: #555;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.error-message {
+  color: #fca5a5;
+  font-size: 14px;
+  text-align: center;
+  margin: 5px 0 0 0;
+}
+
+/* --- Separator and Social Login --- */
+.separator {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: #9ca3af;
+  margin: 25px 0;
+  font-size: 13px;
+}
+
+.separator::before,
+.separator::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.separator:not(:empty)::before {
+  margin-right: 0.5em;
+}
+
+.separator:not(:empty)::after {
+  margin-left: 0.5em;
+}
+
+.social-login {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.btn-social {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+.btn-social:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.btn-social img {
+  width: 24px;
+  height: 24px;
+}
+
+/* --- Registration Link --- */
+.register-link {
+  text-align: center;
+  font-size: 14px;
+  color: #d1d5db;
+}
+
+.register-link a {
+  color: #3b82f6;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.register-link a:hover {
+  text-decoration: underline;
+}
+/* Thêm vào file Auth.css hiện có */
+
+.pending-quiz-message {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  animation: slideInDown 0.5s ease-out;
+}
+
+.pending-quiz-message .quiz-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.pending-quiz-message p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Cập nhật button khi có pending quiz */
+.btn-primary:has-text("Sign in to continue") {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  font-weight: 600;
+}
+
+/* Styles cho modal success trong GenQuiz */
+.shareSuccess {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  text-align: center;
+  animation: fadeInScale 0.3s ease-out;
+}
+
+.loginButton {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  margin-left: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.loginButton:hover {
+  background-color: #0056b3;
+}
+
+.viewQuizButton {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.viewQuizButton:hover {
+  background-color: #218838;
+}
+
+.shareButton {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: transform 0.2s;
+}
+
+.shareButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.shareButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.exitButton {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.exitButton:hover {
+  background-color: #545b62;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

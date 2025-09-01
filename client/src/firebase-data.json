@@ -1,0 +1,84 @@
+{
+    "quizzes": {
+        "quiz123": {
+            "info": {
+                "title": "General Knowledge Quiz",
+                "questions": [
+                    {
+                        "id": 1,
+                        "text": "What is the capital of France?",
+                        "options": [
+                            "Paris",
+                            "London",
+                            "Berlin",
+                            "Madrid"
+                        ],
+                        "correctAnswer": "Paris",
+                        "timeLimit": 30
+                    },
+                    {
+                        "id": 2,
+                        "text": "Which planet is known as the Red Planet?",
+                        "options": [
+                            "Mars",
+                            "Jupiter",
+                            "Venus",
+                            "Mercury"
+                        ],
+                        "correctAnswer": "Mars",
+                        "timeLimit": 30
+                    }
+                ]
+            },
+            "status": {
+                "isStarted": false,
+                "startedAt": null,
+                "startedBy": null,
+                "isCompleted": false,
+                "completedAt": null
+            },
+            "participants": {
+                "alice": {
+                    "joinedAt": 1698765432100,
+                    "score": 0,
+                    "bestScore": 0,
+                    "isActive": true
+                },
+                "bob": {
+                    "joinedAt": 1698765432200,
+                    "score": 0,
+                    "bestScore": 0,
+                    "isActive": true
+                }
+            },
+            "leaderboard": {
+                "alice": {
+                    "rank": 0,
+                    "bestScore": 0,
+                    "averageScore": 0,
+                    "lastPlayed": 0
+                },
+                "bob": {
+                    "rank": 0,
+                    "bestScore": 0,
+                    "averageScore": 0,
+                    "lastPlayed": 0
+                }
+            },
+            "playHistory": {
+                "alice": {
+                    "attempts": {
+                        "-M1234567890": {
+                            "playedAt": 1698765432300,
+                            "score": 10,
+                            "questionId": 1
+                        }
+                    }
+                },
+                "bob": {
+                    "attempts": {}
+                }
+            }
+        }
+    }
+}

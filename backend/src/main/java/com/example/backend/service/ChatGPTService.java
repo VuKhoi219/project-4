@@ -41,7 +41,7 @@ public class ChatGPTService {
             ChatRequest request = ChatRequest.builder()
                     .model("gpt-4o-mini")
                     .messages(Arrays.asList(
-                            new ChatMessage("system", "Bạn là một chuyên gia tạo câu hỏi trắc nghiệm. Trả lời theo định dạng JSON chính xác."),
+                            new ChatMessage("system", "Bạn là một chuyên gia tạo câu hỏi trắc nghiệm và tự luận. Trả lời theo định dạng JSON chính xác."),
                             new ChatMessage("user", prompt)
                     ))
                     .build();
@@ -60,8 +60,14 @@ public class ChatGPTService {
     private String buildPrompt(String content, int numberOfQuestions, String difficulty) {
         return String.format(
                 """
-                Dựa vào nội dung sau, hãy tạo ra %d câu hỏi với độ khó %s, có thể bao gồm các loại sau đây:
-        
+                Dựa vào nội dung sau, hãy tạo ra một bài kiểm tra (quiz) hoàn chỉnh bao gồm %d câu hỏi với độ khó %s.
+
+                === Yêu cầu về cấu trúc tổng thể ===
+                - `title`: Tiêu đề của bài kiểm tra (ngắn gọn, hấp dẫn).
+                - `description`: Mô tả chi tiết hơn về nội dung và mục tiêu của bài kiểm tra.
+                - `summary`: Tóm tắt ngắn gọn nội dung chi tiết chính.
+                - `questions`: Mảng chứa các câu hỏi.
+
                 === Các loại câu hỏi hợp lệ (questionType) ===
                 1. MULTIPLE_CHOICE:
                    - Chọn duy nhất 1 đáp án đúng từ 4 đáp án.
@@ -74,14 +80,6 @@ public class ChatGPTService {
                 3. TRUE_FALSE:
                    - Câu hỏi chỉ có 2 đáp án: "Đúng" và "Sai".
                    - Một trong 2 sẽ là `"isCorrect": true`.
-        
-                4. SHORT_ANSWER:
-                    - Chỉ có 1 đáp án đúng.
-                    - Người dùng cần tự điền câu trả lời ngắn (1–2 câu).
-                    - Chỉ có 1 đáp án đúng.
-                    - Người dùng cần tự điền câu trả lời ngắn (1–2 câu).
-                    - Vẫn trả về trường `answers`, với 1 phần tử duy nhất.
-        
                 === Nội dung dùng để tạo câu hỏi ===
                 %s
         
@@ -89,22 +87,23 @@ public class ChatGPTService {
                 - `questionText`: nội dung câu hỏi
                 - `questionType`: đúng như mô tả ở trên
                 - `explanation`: giải thích tại sao đúng (cho các loại trắc nghiệm) hoặc mô tả ngắn gợi ý cho câu trả lời tự luận
-                - `points`: mặc định là 1
+                - `points`: mặc định là 1000
                 - `orderIndex`: số thứ tự câu hỏi (1 đến %d)
-                - `isRequired`: luôn là true
-                - `timeLimit`: thời gian giới hạn (tùy loại câu hỏi, gợi ý: 30–90 giây)
-                - `answers`: chỉ dùng cho MULTIPLE_CHOICE, MULTIPLE_SELECT, TRUE_FALSE, SHORT_ANSWER
+                - `timeLimit`: thời gian giới hạn (tùy loại câu hỏi, gợi ý: 10-15 giây)
+                - `answers`: chỉ dùng cho MULTIPLE_CHOICE, MULTIPLE_SELECT, TRUE_FALSE
         
                 === Cấu trúc JSON mong muốn ===
                 {
+                  "title": "Ví dụ: Bài kiểm tra về Lịch sử Việt Nam",
+                  "description": "Đây là bài kiểm tra nhằm đánh giá kiến thức của bạn về các triều đại phong kiến Việt Nam.",
+                  "summary": "Bài kiểm tra bao gồm các câu hỏi về nhà Lý, Trần, Lê.",
                   "questions": [
                     {
                       "questionText": "Ví dụ: Trái đất quay quanh Mặt trời là đúng hay sai?",
                       "questionType": "TRUE_FALSE",
                       "explanation": "Trái đất quay quanh Mặt trời là kiến thức thiên văn cơ bản.",
-                      "points": 1,
+                      "points": 1000,
                       "orderIndex": 1,
-                      "isRequired": true,
                       "timeLimit": 20,
                       "answers": [
                         {
@@ -118,23 +117,7 @@ public class ChatGPTService {
                           "orderIndex": 2
                         }
                       ]
-                    },
-                    {
-                      "questionText": "Ai là tác giả của Truyện Kiều?",
-                      "questionType": "SHORT_ANSWER",
-                      "explanation": "Người học cần trả lời: Nguyễn Du.",
-                      "points": 1,
-                      "orderIndex": 2,
-                      "isRequired": true,
-                      "timeLimit": 30,
-                      "answers": [
-                        {
-                          "answerText": "Nguyễn Du",
-                          "isCorrect": true,
-                          "orderIndex": 1
-                        }
-                      ]
-                    },
+                    }
                   ]
                 }
         
