@@ -10,6 +10,9 @@ import com.example.backend.exception.ResourceNotFoundException;
 import com.example.backend.repository.FinalResultRepository;
 import com.example.backend.repository.QuizRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -67,5 +70,10 @@ public class FinalResultService {
         }
 
         return responseQuizHots;
+    }
+    
+    public Page<ResponseQuizHot> findHotQuizzesPaginated(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return finalResultRepository.findHotQuizzesPaginated(pageable);
     }
 }
