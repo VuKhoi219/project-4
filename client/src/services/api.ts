@@ -50,6 +50,15 @@ const apiService = {
     const res = await publicApi.get(`/quizzes/quizzes-hot`);
     return res.data;
   },
+  
+  getQuizAvatar: async (quizId: number): Promise<any> => {
+    try {
+      const res = await publicApi.get(`/quizzes/${quizId}/avatar`);
+      return res.data;
+    } catch (error) {
+      return null; // Trả về null nếu không tìm thấy avatar
+    }
+  },
 
   createFinalResults: async (quizId: number, points: number, namePlayer: string, token?: string): Promise<any> => {
     const headers: any = {};

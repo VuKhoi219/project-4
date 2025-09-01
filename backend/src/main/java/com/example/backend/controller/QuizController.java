@@ -166,18 +166,20 @@ public class QuizController {
     }
 
     @GetMapping("/quizzes-hot")
-    public ResponseEntity<ApiResponse<List<ResponseQuizHot>>> getQuizzesByQuiz() {
+    public ResponseEntity<ApiResponse<Page<ResponseQuizHot>>> getQuizzesHot(
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be >= 0") int page,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be >= 1") int size) {
         try {
-            List<ResponseQuizHot> hotQuizzes = finalResultService.findTop10QuizzesHot();
+            Page<ResponseQuizHot> hotQuizzes = finalResultService.findHotQuizzesPaginated(page, size);
 
-            if (hotQuizzes.isEmpty()) {
-                return ResponseEntity.ok(ApiResponse.error("Không có quiz nào hot"));
+            if (!hotQuizzes.hasContent()) {
+                return ResponseEntity.ok(ApiResponse.success(hotQuizzes, "Không có quiz nổi bật nào"));
             }
-            return ResponseEntity.ok(ApiResponse.success(hotQuizzes, "Top 10 quizzes hot"));
+            return ResponseEntity.ok(ApiResponse.success(hotQuizzes, "Lấy danh sách quiz nổi bật thành công"));
         } catch (Exception e) {
             return ResponseEntity
                     .internalServerError()
-                    .body(ApiResponse.error("Lỗi khi lấy danh sách quiz hot", e.getMessage()));
+                    .body(ApiResponse.error("Lỗi khi lấy danh sách quiz nổi bật", e.getMessage()));
         }
     }
 
