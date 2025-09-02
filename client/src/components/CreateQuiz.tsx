@@ -42,6 +42,7 @@ const CreateQuiz: React.FC = () => {
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
 
   // --- TOÀN BỘ LOGIC BÊN DƯỚI ĐƯỢC GIỮ NGUYÊN ---
+  const baseApi = process.env.REACT_APP_API_BACKEND || "http://api.quizai.edu.vn"
 
   const handleSubmit = async () => {
     const token = localStorage.getItem("token");
@@ -66,12 +67,12 @@ const CreateQuiz: React.FC = () => {
         shuffleAnswers: false,
       };
       const headers: any = { Authorization: `Bearer ${token}` };
-      const quizRes = await axios.post("http://localhost:8080/api/quizzes", body, {
+      const quizRes = await axios.post(`${baseApi}/api/quizzes`, body, {
         headers,
       });
       const quizId = quizRes.data.data.id;
       for (const q of questions) {
-        await axios.post(`http://localhost:8080/api/questions/quizzes/${quizId}`, q, {
+        await axios.post(`${baseApi}/api/questions/quizzes/${quizId}`, q, {
           headers,
         });
       }

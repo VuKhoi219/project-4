@@ -113,6 +113,8 @@ const Home = () => {
   const aboutRef = useRef<HTMLDivElement>(null);
   const quizzesHotRef = useRef<HTMLDivElement>(null);
   const myQuizzesRef = useRef<HTMLDivElement>(null);
+  const baseApi = process.env.REACT_APP_API_BACKEND || "http://api.quizai.edu.vn"
+
 
   // Navigation items
   const navItems = [
@@ -142,24 +144,22 @@ const Home = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+ const userMenuRef = useRef<HTMLDivElement>(null);
+
   // Close user menu when clicking outside
-  const userMenuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowUserMenu(false);
+      }
+    };
 
-// Close user menu when clicking outside
-useEffect(() => {
-  const handleClickOutside = (event: MouseEvent) => {
-    if (
-      userMenuRef.current &&
-      !userMenuRef.current.contains(event.target as Node)
-    ) {
-      setShowUserMenu(false);
-    }
-  };
-
-  document.addEventListener("click", handleClickOutside);
-  return () => document.removeEventListener("click", handleClickOutside);
-}, []);
-
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
 
   // Fetch my quizzes
   const fetchMyQuizzes = async (page: number) => {
@@ -167,7 +167,7 @@ useEffect(() => {
     try {
       const token = localStorage.getItem('token'); // Assuming token is stored in localStorage
       const response = await axios.get<ApiResponse<MyQuiz>>(
-        "http://localhost:8080/api/quizzes/my-quizzes",
+        `${baseApi}/api/quizzes/my-quizzes`,
         {
           params: { page, size: 6 },
           headers: {
@@ -217,7 +217,7 @@ const fetchHotQuizzes = async (page: number) => {
   setLoadingQuizzes(true);
   try {
     const response = await axios.get<ApiResponse<QuizHot>>(
-      "http://localhost:8080/api/quizzes/quizzes-hot",
+      `${baseApi}/api/quizzes/quizzes-hot`,
       {
         params: { page, size: 6 },
       }
@@ -269,7 +269,7 @@ const fetchAllQuizzes = async (page: number) => {
   setLoadingAllQuizzes(true);
   try {
     const response = await axios.get<ApiResponse<QuizAll>>(
-      "http://localhost:8080/api/quizzes",
+      `${baseApi}/api/quizzes`,
       {
         params: { page, size: 6 },
       }
@@ -438,72 +438,16 @@ useEffect(() => {
 
   const handleQuizClick = async (quizId: number) => {
     try {
-      // Kiểm tra quizId có tồn tại không
       if (typeof quizId !== 'number' || quizId <= 0) { // Kiểm tra chặt chẽ hơn
         console.error("ID quiz không hợp lệ:", quizId);
         return;
     }
-      
-      // Hiển thị loading nếu cần
-      // setLoadingQuizzes(true);
-      
-      // Tạo roomId mới
-      const roomId = `room_${Date.now()}`;
-      const roomPath = `quizzes/${quizId}/rooms/${roomId}`;
-      const roomRef = ref(db, roomPath);
-      
-      // Lấy thông tin quiz từ API service
-      const response = await apiService.findDetailQuiz(quizId);
-      const quizInfo = response.data;
-      
-      if (!quizInfo) {
-        console.error("Không thể lấy thông tin quiz");
-        // Nếu không lấy được thông tin, chuyển hướng đến trang join quiz
-        navigate(`/quiz/${quizId}/join`);
-        return;
-      }
-      
-      // Tạo dữ liệu phòng
-    const roomData = {
-      info: {
-        roomName: `Phòng chơi lúc ${new Date().toLocaleTimeString('vi-VN')}`,
-        createdBy: "system",
-        createdAt: Date.now(),
-        maxParticipants: 20,
-        hostControlEnabled: false,
-        hostName: localStorage.getItem('username') || "system",
-        quizTitle: quizInfo.title,
-        quizDescription: quizInfo.description,
-        totalQuestions: quizInfo.totalQuestions,
-      },
-      status: {
-        isStarted: false,
-        startedAt: null,
-        startedBy: null,
-        isCompleted: false,
-        completedAt: null,
-      },
-      currentState: {
-        phase: 'waiting',
-        questionIndex: 0,
-        timeLeft: 30,
-        waitingForHost: false,
-      },
-      participants: {},
-      leaderboard: {},
-      playHistory: {}
-    };
-    
-    // Lưu phòng vào Firebase
-    await set(roomRef, roomData);
-    
-    // Lưu thông tin vào localStorage
+
+    navigate(`/quiz/${quizId}/join`);
+
     localStorage.removeItem("userName");
     localStorage.setItem("quizId", quizId.toString());
-    localStorage.setItem("roomId", roomId);
-      
-      // Chuyển hướng đến phòng chờ
-    navigate(`/quiz/${quizId}/room/${roomId}/waiting`);
+
   } catch (error) {
     console.error("Lỗi khi tạo phòng:", error);
     navigate(`/quiz/${quizId}/join`);
@@ -546,22 +490,23 @@ useEffect(() => {
           <div className={styles["header-actions"]}>
             {/* Conditional rendering based on login status */}
             {currentUser ? (
-  <div ref={userMenuRef} className={styles["user-menu-container"]}>
-  <button className={styles["user-btn"]} onClick={toggleUserMenu}>
-    <User className="w-4 h-4" />
-    <span>Xin chào, {currentUser}</span>
-  </button>
+                <div ref={userMenuRef} className={styles["user-menu-container"]}>
+                <button className={styles["user-btn"]} onClick={toggleUserMenu}>
+                  <User className="w-4 h-4" />
+                  <span>Xin chào, {currentUser}</span>
+                </button>
 
-  {showUserMenu && (
-    <div className={styles["user-dropdown"]}>
-      <button onClick={handleLogout}>
-        <LogOut className="w-4 h-4" />
-        <span>Đăng xuất</span>
-      </button>
-    </div>
-  )}
-</div>
-) : (
+                {showUserMenu && (
+                  <div className={styles["user-dropdown"]}>
+                    <button onClick={handleLogout}>
+                      <LogOut className="w-4 h-4" />
+                      <span>Đăng xuất</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+
               <button
                 className={styles["sign-in-btn"]}
                 onClick={() => navigate("/login")}

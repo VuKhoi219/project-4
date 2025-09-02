@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Container, 
@@ -178,7 +179,11 @@ export const LeaderboardState: React.FC<LeaderboardStateProps> = ({
                   }}
                 >
                   <CardContent sx={{ p: 4, pt: 5 }}>
-                    <Stack direction="row" alignItems="center" spacing={4}>
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      alignItems={{ xs: "flex-start", sm: "center" }}
+                      spacing={{ xs: 2, sm: 4 }}
+                                        >
                       <Box sx={{ position: 'relative' }}>
                         <Avatar
                           src={p.avatar || undefined}
