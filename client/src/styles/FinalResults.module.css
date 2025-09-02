@@ -1,285 +1,270 @@
 .container {
   min-height: 100vh;
-  /* background: linear-gradient(135deg, #a7f3d0 0%, #e0f2fe 100%); */
-
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 2.8rem 1rem;
+  padding: 1rem 0.25rem;
   color: #1e293b;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    sans-serif;
   overflow-x: hidden;
+  background: linear-gradient(
+    135deg,
+    rgba(167, 243, 208, 0.7),
+    rgba(224, 242, 254, 0.7)
+  );
+  position: relative;
 }
 
 .trophy {
-  font-size: 5.6rem;
+  font-size: 2.5rem;
   color: #ffd700;
-  filter: drop-shadow(0 0 17.5px rgba(255, 215, 0, 0.7));
+  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.7));
   will-change: transform, opacity;
-  animation: pulse 2.5s infinite ease-in-out;
+  animation: pulse 2s infinite ease-in-out;
   position: absolute;
-  top: 2.3rem; /* Đặt cúp sát đỉnh thẻ Top 1 */
+  top: 1rem; /* Di chuyển trophy lên trên khối .playerFirst */
   left: 50%;
   transform: translateX(-50%);
   z-index: 15;
 }
 
 @keyframes pulse {
-  0%, 100% { transform: translateX(-50%) scale(1); }
-  50% { transform: translateX(-50%) scale(1.15); }
+  0%,
+  100% {
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.1);
+  }
 }
 
 .podium {
   display: grid;
   grid-template-columns: 1fr 1.2fr 1fr;
-  gap: 2.1rem;
-  max-width: 910px;
+  gap: 0.5rem;
+  max-width: 100%;
   width: 100%;
-  margin: 9rem auto 3.5rem; /* Tăng margin-top từ 7rem lên 9rem để dịch xuống */
-  padding: 0 1.4rem;
+  margin: 3.5rem auto 1rem;
+  padding: 0 0.1rem;
   position: relative;
   justify-items: center;
   align-items: flex-end;
-  transform: translateY(2rem); /* Dịch Podium xuống dưới 2rem */
+  transform: translateY(0.5rem);
 }
 
 .playerFirst {
-  grid-column: 2 / 3;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   background: linear-gradient(323deg, #fff9a8, #ffdb4d);
-  border-radius: 19.6px;
-  padding: 2.1rem 1.75rem;
-  box-shadow: 0 8.4px 22.4px rgba(0, 0, 0, 0.15), 0 2.8px 8.4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  border-radius: 8px;
+  padding: 0.6rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease;
   position: relative;
   text-align: center;
-  min-height: 280px;
-  width: 240px;
-  border: 4.2px solid #ffd700;
-  transform: translateY(-4.2rem);
+  min-height: 140px;
+  width: 100px;
+  border: 2px solid #ffd700;
+  transform: translateY(-1rem);
+}
+
+.playerFirst .trophy {
+  position: absolute;
+  top: -3rem; /* Đặt trophy ngay trên .playerFirst */
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .playerSecond {
-  grid-column: 1 / 2;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   background: linear-gradient(145deg, #ffffff, #f0f0f0);
-  border-radius: 16.8px;
-  padding: 1.75rem 1.4rem;
-  box-shadow: 0 7px 19.6px rgba(0, 0, 0, 0.12), 0 2.1px 7px rgba(0, 0, 0, 0.08);
-  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  border-radius: 6px;
+  padding: 0.4rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  transition: transform 0.3s ease;
   position: relative;
   text-align: center;
-  min-height: 238px;
-  width: 220px;
-  border: 3.5px solid #d4d4d8;
+  min-height: 120px;
+  width: 90px;
+  border: 2px solid #d4d4d8;
 }
 
 .playerThird {
-  grid-column: 3 / 4;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   background: linear-gradient(145deg, #ffedd5, #ffc107);
-  border-radius: 16.8px;
-  padding: 1.75rem 1.4rem;
-  box-shadow: 0 7px 19.6px rgba(0, 0, 0, 0.12), 0 2.1px 7px rgba(0, 0, 0, 0.08);
-  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  border-radius: 6px;
+  padding: 0.4rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  transition: transform 0.3s ease;
   position: relative;
   text-align: center;
-  min-height: 238px;
-  width: 220px;
-  border: 3.5px solid #b45309;
+  min-height: 120px;
+  width: 90px;
+  border: 2px solid #b45309;
 }
 
-.playerFirst:hover, .playerSecond:hover, .playerThird:hover {
-  transform: translateY(-4.9rem) scale(1.05);
-  box-shadow: 0 11.2px 28px rgba(0, 0, 0, 0.18), 0 4.2px 11.2px rgba(0, 0, 0, 0.12);
-}
-
-/* .playerFirst::before, .playerSecond::before, .playerThird::before {
-  content: '';
-  position: absolute;
-  top: -9.8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 56px;
-  height: 9.8px;
-  border-radius: 4.9px;
-  background: rgba(0, 0, 0, 0.12);
-} */
-
-.playerFirst::after {
-  position: absolute;
-  top: -2.45rem;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: #1e40af;
-  text-shadow: 0 2.1px 4.2px rgba(0, 0, 0, 0.15);
+.playerFirst:hover,
+.playerSecond:hover,
+.playerThird:hover {
+  transform: translateY(-1.5rem) scale(1.02);
 }
 
 .playerSecond::after {
-  content: '🥈';
+  content: "🥈";
   position: absolute;
-  top: -4.5rem;
+  top: -1.5rem;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 5rem;
+  font-size: 1.8rem;
   font-weight: 800;
   color: #1e40af;
-  text-shadow: 0 2.1px 4.2px rgba(0, 0, 0, 0.15);
+  text-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.15);
 }
 
 .playerThird::after {
-  content: '🥉';
+  content: "🥉";
   position: absolute;
-  top: -4.5rem;
+  top: -1.5rem;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 5rem;
+  font-size: 1.8rem;
   font-weight: 800;
   color: #1e40af;
-  text-shadow: 0 2.1px 4.2px rgba(0, 0, 0, 0.15);
+  text-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.15);
 }
 
 .avatarWrapper {
-  margin-bottom: 1.4rem;
+  margin-bottom: 0.4rem;
   position: relative;
-  will-change: transform;
 }
 
 .avatar {
   border-radius: 50%;
   object-fit: cover;
-  border: 4.2px solid transparent;
-  transition: transform 0.4s ease, border-color 0.4s ease;
-  filter: drop-shadow(0 4.2px 7px rgba(0, 0, 0, 0.2));
+  border: 2px solid transparent;
+  transition: transform 0.3s ease;
 }
 
 .playerFirst .avatar {
-  width: 126px;
-  height: 126px;
+  width: 50px;
+  height: 50px;
   border-color: #ffd700;
 }
 
 .playerSecond .avatar {
-  width: 105px;
-  height: 105px;
+  width: 45px;
+  height: 45px;
   border-color: #d4d4d8;
 }
 
 .playerThird .avatar {
-  width: 91px;
-  height: 91px;
+  width: 45px;
+  height: 45px;
   border-color: #b45309;
 }
 
 .scoreBox {
   background: #ffffff;
-  padding: 1.225rem 2.45rem;
-  border-radius: 11.2px;
+  padding: 0.3rem 0.5rem;
+  border-radius: 5px;
   text-align: center;
   font-weight: 700;
-  box-shadow: 0 4.2px 11.2px rgba(0, 0, 0, 0.12);
-  border: 2.1px solid transparent;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
 .playerFirst .scoreBox {
-  border-color: #ffd700;
+  border: 1px solid #ffd700;
   background: linear-gradient(145deg, #fff9a8, #ffdb4d);
 }
 
 .playerSecond .scoreBox {
-  border-color: #d4d4d8;
+  border: 1px solid #d4d4d8;
   background: linear-gradient(145deg, #ffffff, #f0f0f0);
 }
 
 .playerThird .scoreBox {
-  border-color: #b45309;
+  border: 1px solid #b45309;
   background: linear-gradient(145deg, #ffedd5, #ffc107);
 }
 
 .rankNumber {
-  font-size: 1.12rem;
+  font-size: 0.7rem;
   font-weight: 800;
   color: #00d5ff;
-  margin-right: 0.7rem;
+  margin-right: 0.2rem;
 }
 
 .playerName {
-  font-size: 1.4rem;
+  font-size: 0.8rem;
   font-weight: 800;
-  letter-spacing: 0.03em;
   color: #1e293b;
 }
 
 .score {
-  font-size: 1.12rem;
+  font-size: 0.7rem;
   color: #475569;
 }
 
 .leaderboard {
-  width: 100%;
-  max-width: 560px;
+  width: 90%;
+  max-width: 300px;
   background: #ffffff;
-  border-radius: 14px;
-  padding: 1.75rem;
-  margin-bottom: 2.8rem;
-  box-shadow: 0 5.6px 16.8px rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  padding: 0.6rem;
+  margin: 0.8rem 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
 }
 
 .leaderboardTitle {
-  font-size: 1.75rem;
+  font-size: 0.9rem;
   font-weight: 800;
   color: #00bbff;
-  margin-bottom: 1.4rem;
-  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
   text-align: center;
 }
 
 .rankList {
   display: flex;
   flex-direction: column;
-  gap: 0.875rem;
+  gap: 0.4rem;
 }
 
 .rankItem {
   display: grid;
-  grid-template-columns: 42px 49px 1fr 98px;
+  grid-template-columns: 20px 25px 1fr 50px;
   align-items: center;
-  padding: 0.875rem 1.4rem;
+  padding: 0.3rem;
   background: #f8fafc;
-  border-radius: 8.4px;
-  box-shadow: 0 2.8px 7px rgba(0, 0, 0, 0.08);
-  transition: background 0.3s ease, transform 0.3s ease;
+  border-radius: 4px;
+  box-shadow: 0 0.5px 2px rgba(0, 0, 0, 0.08);
 }
 
 .rankItem:hover {
   background: #e0e7ff;
-  transform: translateY(-2.1px);
+  transform: translateY(-0.5px);
 }
 
 .rankAvatar {
-  width: 39.2px;
-  height: 39.2px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2.1px solid #e0e7ff;
+  border: 1px solid #e0e7ff;
 }
 
 .rankName {
   font-weight: 700;
   color: #1e293b;
-  text-align: left;
 }
 
 .rankScore {
@@ -290,105 +275,175 @@
 
 .noPlayers {
   color: #64748b;
-  padding: 1.4rem;
-  font-size: 0.98rem;
-  font-weight: 600;
+  padding: 0.5rem;
+  font-size: 0.7rem;
 }
 
 .homeButton {
   background: #4f46e5;
   color: #ffffff;
   border: none;
-  padding: 0.875rem 2.8rem;
-  border-radius: 9.8px;
-  font-size: 0.98rem;
+  padding: 0.4rem 1rem;
+  border-radius: 5px;
+  font-size: 0.7rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.3s ease, transform 0.2s ease;
 }
 
 .homeButton:hover {
   background: #4338ca;
-  transform: translateY(-2.1px);
+  transform: translateY(-0.5px);
 }
 
 .loading {
   text-align: center;
-  font-size: 1.05rem;
-  margin-top: 2.8rem;
+  font-size: 0.8rem;
+  margin-top: 0.8rem;
   color: #64748b;
-  font-weight: 600;
 }
 
-@media (max-width: 768px) {
+@media (min-width: 481px) {
   .container {
-    padding: 2.1rem 0.875rem;
+    padding: 2rem 1rem;
   }
 
   .podium {
-    grid-template-columns: 1fr;
-    gap: 1.4rem;
-    transform: translateY(2rem); /* Dịch xuống dưới trên mobile */
+    gap: 1rem;
+    max-width: 600px;
+    margin: 6rem auto 2rem;
   }
 
   .playerFirst {
-    grid-column: auto;
-    transform: translateY(-2.8rem);
-    min-height: 266px;
-    width: 224px;
+    min-height: 220px;
+    width: 180px;
+    transform: translateY(-2rem);
   }
 
-  .playerSecond, .playerThird {
-    grid-column: auto;
-    min-height: 224px;
-    width: 192px;
+  .playerSecond,
+  .playerThird {
+    min-height: 200px;
+    width: 160px;
   }
 
   .trophy {
-    top: 1rem; /* Giữ nguyên top: 0.5rem trên mobile */
-    font-size: 4.9rem;
+    font-size: 4.5rem;
+    top: 1rem;
   }
 
-  .playerFirst::after, .playerSecond::after, .playerThird::after {
-    top: -2.1rem;
-    font-size: 1.26rem;
+  .playerSecond::after,
+  .playerThird::after {
+    font-size: 3rem;
+    top: -2.5rem;
   }
 
-  .leaderboard {
-    width: 100%;
-    padding: 1.4rem;
+  .playerFirst .avatar {
+    width: 90px;
+    height: 90px;
   }
 
-  .rankItem {
-    grid-template-columns: 35px 42px 1fr 70px;
-    padding: 0.7rem 1.05rem;
+  .playerSecond .avatar {
+    width: 80px;
+    height: 80px;
   }
 
-  .leaderboardTitle {
-    font-size: 1.4rem;
-  }
-
-  .homeButton {
-    padding: 0.7rem 2.1rem;
-    font-size: 0.91rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .trophy {
-    font-size: 4.2rem;
-    margin: 1.4rem 0;
+  .playerThird .avatar {
+    width: 80px;
+    height: 80px;
   }
 
   .scoreBox {
-    padding: 0.875rem 1.4rem;
+    padding: 0.6rem 1rem;
   }
 
-  .playerName {
-    font-size: 1.26rem;
+  .leaderboard {
+    max-width: 450px;
+    padding: 1rem;
   }
 
-  .score {
-    font-size: 1.05rem;
+  .leaderboardTitle {
+    font-size: 1.2rem;
+  }
+
+  .rankItem {
+    grid-template-columns: 30px 35px 1fr 70px;
+    padding: 0.5rem;
+  }
+
+  .homeButton {
+    padding: 0.6rem 1.5rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (min-width: 769px) {
+  .container {
+    padding: 2.5rem 1.5rem;
+  }
+
+  .podium {
+    gap: 1.2rem;
+    max-width: 800px;
+    margin: 8rem auto 3rem;
+  }
+
+  .playerFirst {
+    min-height: 260px;
+    width: 220px;
+    transform: translateY(-3rem);
+  }
+
+  .playerSecond,
+  .playerThird {
+    min-height: 220px;
+    width: 200px;
+  }
+
+  .trophy {
+    font-size: 5rem;
+    top: 1rem;
+  }
+
+  .playerSecond::after,
+  .playerThird::after {
+    font-size: 4rem;
+    top: -3.5rem;
+  }
+
+  .playerFirst .avatar {
+    width: 110px;
+    height: 110px;
+  }
+
+  .playerSecond .avatar {
+    width: 90px;
+    height: 90px;
+  }
+
+  .playerThird .avatar {
+    width: 90px;
+    height: 90px;
+  }
+
+  .scoreBox {
+    padding: 0.8rem 1.2rem;
+  }
+
+  .leaderboard {
+    max-width: 500px;
+    padding: 1.2rem;
+  }
+
+  .leaderboardTitle {
+    font-size: 1.5rem;
+  }
+
+  .rankItem {
+    grid-template-columns: 35px 40px 1fr 80px;
+    padding: 0.6rem;
+  }
+
+  .homeButton {
+    padding: 0.75rem 2rem;
+    font-size: 0.9rem;
   }
 }

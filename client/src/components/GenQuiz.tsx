@@ -44,6 +44,8 @@ const GenQuiz: React.FC = () => {
   // Cũng cần cập nhật state initialization để tránh lỗi:
   const [numberOfQuestions, setNumberOfQuestions] = useState('8'); // Thay đổi từ 5 thành ''
   const [difficulty, setDifficulty] = useState('Dễ'); // Thay đổi từ 'EASY' thành ''
+  const baseApi = process.env.REACT_APP_API_BACKEND || "http://api.quizai.edu.vn"
+
   // --- Utility Functions ---
   const isUserLoggedIn = () => {
     return !!localStorage.getItem('token');
@@ -114,7 +116,7 @@ const GenQuiz: React.FC = () => {
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
     
     try {
-      const response = await axios.post('http://localhost:8080/api/quizzes/generate-ai', 
+      const response = await axios.post(`${baseApi}/api/quizzes/generate-ai`, 
         { 
           content: content.trim(), 
           numberOfQuestions: numberOfQuestions ? parseInt(numberOfQuestions) : 8, 
@@ -161,7 +163,7 @@ const GenQuiz: React.FC = () => {
         }))
       };
       const response = await axios.post(
-        'http://localhost:8080/api/quizzes/save-generated', 
+        `${baseApi}/api/quizzes/save-generated`, 
         quizToSave,
         { headers }
       );
@@ -201,7 +203,7 @@ const GenQuiz: React.FC = () => {
 
       // Gọi API để lưu creator vào quiz
       const response = await axios.get(
-        `http://localhost:8080/api/quizzes/save-creator?quizId=${savedQuizId}&userId=${userId}`,
+        `${baseApi}/api/quizzes/save-creator?quizId=${savedQuizId}&userId=${userId}`,
         { 
           headers: { 
             Authorization: `Bearer ${localStorage.getItem('token')}` 
@@ -269,7 +271,7 @@ const GenQuiz: React.FC = () => {
   const loadQuizForShare = async (quizId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:8080/api/quizzes/${quizId}`, {
+      const response = await axios.get(`${baseApi}/api/quizzes/${quizId}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       

@@ -36,25 +36,27 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/quizzes").permitAll()
                         .requestMatchers("/api/quizzes/*/questions").permitAll()
                         .requestMatchers("/api/answer/compare/**").permitAll()
-                        .requestMatchers( "/api/final-result").permitAll()
-                        .requestMatchers("/api/quizzes/quizzes-hot").permitAll()
+                        .requestMatchers("/api/final-result").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/quizzes/quizzes-hot", "/api/quizzes/quizzes-hot/**")
+                        .permitAll()
                         .requestMatchers("/api/quizzes/save-generated").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/quizzes/generate-ai").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/quizzes/detail-quiz/**").permitAll()
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("http://localhost:3000","http://localhost:8080","https://7f17f7de0437.ngrok-free.app")); // 👈 dùng pattern thay vì origin
+        config.setAllowedOriginPatterns(
+                List.of("http://localhost:3000", "http://localhost:8080", "http://quizai.edu.vn")); // 👈 dùng pattern
+                                                                                                    // thay vì origin
         config.setAllowCredentials(true);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
