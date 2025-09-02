@@ -143,16 +143,23 @@ const Home = () => {
   }, []);
 
   // Close user menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = () => {
-      if (showUserMenu ) {
-        setShowUserMenu(false);
-      }
-    };
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [showUserMenu]);
+// Close user menu when clicking outside
+useEffect(() => {
+  const handleClickOutside = (event: MouseEvent) => {
+    if (
+      userMenuRef.current &&
+      !userMenuRef.current.contains(event.target as Node)
+    ) {
+      setShowUserMenu(false);
+    }
+  };
+
+  document.addEventListener("click", handleClickOutside);
+  return () => document.removeEventListener("click", handleClickOutside);
+}, []);
+
 
   // Fetch my quizzes
   const fetchMyQuizzes = async (page: number) => {
@@ -539,31 +546,22 @@ useEffect(() => {
           <div className={styles["header-actions"]}>
             {/* Conditional rendering based on login status */}
             {currentUser ? (
-              <div className="user-menu-container relative">
-                <button
-                  className={`${styles["user-btn"]} flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors`}
-                  onClick={toggleUserMenu}
-                >
-                  <User className="w-4 h-4" />
-                  <span>Xin chào, {currentUser}</span>
-                </button>
+  <div ref={userMenuRef} className={styles["user-menu-container"]}>
+  <button className={styles["user-btn"]} onClick={toggleUserMenu}>
+    <User className="w-4 h-4" />
+    <span>Xin chào, {currentUser}</span>
+  </button>
 
-                {/* User dropdown menu */}
-                {showUserMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border z-50">
-                    <div className="p-2">
-                      <button
-                        className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-100 rounded-lg text-red-600 hover:text-red-700 transition-colors"
-                        onClick={handleLogout}
-                      >
-                        <LogOut className="w-4 h-4" />
-                        <span>Đăng xuất</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
+  {showUserMenu && (
+    <div className={styles["user-dropdown"]}>
+      <button onClick={handleLogout}>
+        <LogOut className="w-4 h-4" />
+        <span>Đăng xuất</span>
+      </button>
+    </div>
+  )}
+</div>
+) : (
               <button
                 className={styles["sign-in-btn"]}
                 onClick={() => navigate("/login")}
