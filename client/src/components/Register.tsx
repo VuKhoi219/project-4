@@ -37,6 +37,7 @@ interface LeaderboardPlayer {
   isCurrentPlayer: boolean;
 }
 
+
 interface LeaderboardStateProps {
   displayLeaderboard: LeaderboardPlayer[];
   hostControlEnabled: boolean;
