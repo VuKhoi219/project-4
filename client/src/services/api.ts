@@ -1,15 +1,17 @@
 import axios from 'axios';
 import { ApiResponse, ApiResponseDetail, QuizDetailData } from '../types';
 
+const baseApi = process.env.REACT_APP_API_BACKEND || "http://api.quizai.edu.vn"
+
 // 🔹 Public instance (không cần token)
 const publicApi = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  baseURL: `${baseApi}/api`,
   
 });
 
 // 🔐 Private instance (có token)
 const privateApi = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  baseURL: `${baseApi}/api`,
 });
 
 // Gắn token tự động vào header

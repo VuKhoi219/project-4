@@ -9,6 +9,7 @@ const Login = () => {
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const baseApi = process.env.REACT_APP_API_BACKEND || "http://api.quizai.edu.vn"
 
   // Kiểm tra xem có quiz pending để share không
   const [pendingQuizMessage, setPendingQuizMessage] = useState('');
@@ -35,7 +36,15 @@ const Login = () => {
     setError(''); // Xóa lỗi cũ khi submit
     
     try {
-      const res = await axios.post('http://localhost:8080/api/auth/login', formData);
+      const res = await axios.post(
+        `${baseApi}/api/auth/login`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json"
+          }
+        }
+      );
       const { data } = res.data;
       localStorage.setItem('token', data.token);
       localStorage.setItem('username', data.username); 
