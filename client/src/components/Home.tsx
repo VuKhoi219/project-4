@@ -506,6 +506,7 @@ useEffect(() => {
                 )}
               </div>
             ) : (
+
               <button
                 className={styles["sign-in-btn"]}
                 onClick={() => navigate("/login")}

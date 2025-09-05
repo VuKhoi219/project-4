@@ -228,6 +228,30 @@ body {
   height: 24px;
 }
 
+.auth-card input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+.logo-placeholder {
+  font-size: 32px;
+  font-weight: 800;
+  background: linear-gradient(90deg, #3b82f6, #9333ea); /* xanh -> tím */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+
+.password-wrapper {
+  width: 100%; /* đảm bảo ô password bằng email */
+}
+
 /* --- Registration Link --- */
 .register-link {
   text-align: center;
