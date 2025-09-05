@@ -1,7 +1,7 @@
 package com.example.backend.controller;
 
 
-import com.example.backend.dto.helper.compareAnswer;
+import com.example.backend.dto.helper.CompareAnswer;
 import com.example.backend.dto.response.ApiResponse;
 import com.example.backend.dto.response.CheckAnswerResponse;
 import com.example.backend.service.AnswerService;
@@ -23,7 +23,7 @@ public class AnswersController {
     @PostMapping("/compare/{questionId}")
     public ResponseEntity<ApiResponse<CheckAnswerResponse>> compareAnswers(
             @PathVariable("questionId") Long questionId,
-            @RequestBody List<compareAnswer> answers) {
+            @RequestBody List<CompareAnswer> answers) {
 
         try {
             if (questionId == null || questionId <= 0) {

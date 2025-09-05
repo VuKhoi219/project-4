@@ -42,7 +42,7 @@ const CreateQuiz: React.FC = () => {
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
 
   // --- TOÀN BỘ LOGIC BÊN DƯỚI ĐƯỢC GIỮ NGUYÊN ---
-  const baseApi = process.env.REACT_APP_API_BACKEND || "http://api.quizai.edu.vn"
+  const baseApi = process.env.REACT_APP_API_BACKEND || "http://localhost:8080"
 
   const handleSubmit = async () => {
     const token = localStorage.getItem("token");

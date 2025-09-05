@@ -44,7 +44,7 @@ const GenQuiz: React.FC = () => {
   // Cũng cần cập nhật state initialization để tránh lỗi:
   const [numberOfQuestions, setNumberOfQuestions] = useState('8'); // Thay đổi từ 5 thành ''
   const [difficulty, setDifficulty] = useState('Dễ'); // Thay đổi từ 'EASY' thành ''
-  const baseApi = process.env.REACT_APP_API_BACKEND || "http://api.quizai.edu.vn"
+  const baseApi = process.env.REACT_APP_API_BACKEND || "http://localhost:8080"
 
   // --- Utility Functions ---
   const isUserLoggedIn = () => {

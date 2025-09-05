@@ -113,7 +113,7 @@ const Home = () => {
   const aboutRef = useRef<HTMLDivElement>(null);
   const quizzesHotRef = useRef<HTMLDivElement>(null);
   const myQuizzesRef = useRef<HTMLDivElement>(null);
-  const baseApi = process.env.REACT_APP_API_BACKEND || "http://api.quizai.edu.vn"
+  const baseApi = process.env.REACT_APP_API_BACKEND || "http://localhost:8080"
 
 
   // Navigation items

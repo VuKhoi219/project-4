@@ -267,7 +267,20 @@ const WaitingRoom: React.FC = () => {
 
   const copyRoomLink = () => {
     const roomLink = window.location.href.replace('/waiting', '');
-    navigator.clipboard.writeText(roomLink).then(() => alert("Đã copy link phòng!"));
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(roomLink)
+        .then(() => alert("Đã copy link phòng!"))
+        .catch(err => console.error("Lỗi copy: ", err));
+    } else {
+      // fallback cho HTTP
+      const tempInput = document.createElement("input");
+      tempInput.value = roomLink;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand("copy");
+      document.body.removeChild(tempInput);
+      alert("Đã copy link phòng!");
+    }
   };
 
   if (loading) {
