@@ -9,7 +9,7 @@ const Login = () => {
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const baseApi = process.env.REACT_APP_API_BACKEND || "http://api.quizai.edu.vn"
+  const baseApi = process.env.REACT_APP_API_BACKEND || "http://localhost:8080"
 
   // Kiểm tra xem có quiz pending để share không
   const [pendingQuizMessage, setPendingQuizMessage] = useState('');

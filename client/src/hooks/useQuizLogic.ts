@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ref, onValue, set, get, update, db } from "../config/firebase";
 import apiService from "../services/api";
-import { ApiQuestion, QuestionType, ExtendedQuestion } from "../types";
+import { ApiQuestion, QuestionType, ExtendedQuestion, ApiAnswer, AnswerOption, UserAnswerPayload } from "../types"; // Import AnswerOption và UserAnswerPayload
 import { calculateScore } from "../utils/quizUtils";
 
 export const useQuizLogic = () => {
@@ -14,7 +14,7 @@ export const useQuizLogic = () => {
   const [loading, setLoading] = useState(true);
   const [totalScore, setTotalScore] = useState<number>(0);
   const [hasAnswered, setHasAnswered] = useState<boolean>(false);
-  const [selectedAnswer, setSelectedAnswer] = useState<string[]>([]);
+  const [selectedAnswer, setSelectedAnswer] = useState<AnswerOption[]>([]); // Thay đổi kiểu dữ liệu ở đây
   const [isCorrect, setIsCorrect] = useState<boolean>(false);
   const [earnedPoints, setEarnedPoints] = useState<number>(0);
   const [shortAnswer, setShortAnswer] = useState<string>("");
@@ -26,7 +26,7 @@ export const useQuizLogic = () => {
   const [answerResult, setAnswerResult] = useState<{
     correct: boolean;
     correctAnswerText: string;
-    userAnswers: { answerText: string }[];
+    userAnswers: { answerText: string }[]; // Cái này có thể cần được cập nhật nếu backend trả về cả ID
   } | null>(null);
 
   const prevQuestionIndexRef = useRef<number>(-1);
@@ -63,25 +63,50 @@ export const useQuizLogic = () => {
       .sort((a, b) => b.score - a.score);
   }, [participants, userName]);
 
-  // Load questions for the current page
+  // Load questions for the current page - FIXED VERSION
   const loadQuestions = async (page: number) => {
     try {
       const response = await apiService.fetchQuestions(quizId!, page);
+      console.log('API Response:', response);
+      
       if (response.success) {
-        const questionsFromPage = response.data;
+        const questionsFromPage = response.data; // Array of questions
+        console.log('Questions from page:', questionsFromPage);
+        console.log('Questions length:', questionsFromPage.length);
+        
         const mappedQuestions: ExtendedQuestion[] = questionsFromPage.map((q: ApiQuestion) => ({
           id: q.questionId,
           text: q.questionText,
-          options: q.answers?.map(a => a.answerText) || [],
+          options: q.answers?.map(a => ({ id: a.id, answerText: a.answerText })) || [],
           correctAnswer: q.correctAnswers?.[0]?.answerText || q.answers?.find(a => a.isCorrect)?.answerText || "",
-          correctAnswers: q.correctAnswers?.map(a => a.answerText) || [],
+          correctAnswers: q.correctAnswers?.map(a => ({ id: a.id, answerText: a.answerText })) || [],
           acceptedAnswers: q.acceptedAnswers || [],
           timeLimit: q.timeLimit || 15,
           type: q.questionType as QuestionType,
         }));
+        
         setQuestions(prev => [...prev, ...mappedQuestions]);
-        setPageSize(response.data.length || 10);
-        setTotalQuestions(response.data.length || 0);
+        
+        // ✅ FIX: Sử dụng length của data thay vì totalElements
+        const currentTotalQuestions = page === 0 
+          ? questionsFromPage.length  // Trang đầu tiên, set total = length
+          : totalQuestions; // Trang sau, giữ nguyên total đã có
+        
+        // ✅ Chỉ update totalQuestions khi tải trang đầu tiên
+        if (page === 0) {
+          console.log('Setting totalQuestions to:', questionsFromPage.length);
+          setTotalQuestions(questionsFromPage.length);
+        }
+        
+        // ✅ Update pageSize (có thể cần cho logic phân trang sau này)
+        setPageSize(questionsFromPage.length);
+        
+        console.log('Updated state:', {
+          questionsLength: questionsFromPage.length,
+          totalQuestions: currentTotalQuestions,
+          pageSize: questionsFromPage.length
+        });
+        
         setError(null);
         return true;
       } else {
@@ -93,9 +118,8 @@ export const useQuizLogic = () => {
       return false;
     }
   };
-
   // Handle answer submission
-  const handleAnswer = async (answer: string | string[], pointsOverride?: number) => {
+  const handleAnswer = async (answer: AnswerOption | AnswerOption[] | string, pointsOverride?: number) => { // Cập nhật kiểu đầu vào
     if (lockRef.current || hasAnswered || gameState !== 'playing' || !quizId || !roomId) return;
     lockRef.current = true;
 
@@ -104,11 +128,17 @@ export const useQuizLogic = () => {
     let points = 0;
 
     try {
-      const answers = Array.isArray(answer)
-        ? answer.map(a => ({ answerText: a }))
-        : [{ answerText: answer }];
+      let answersToSend: UserAnswerPayload[];
 
-      const response = await apiService.checkAnswer(currentQ.id, answers);
+      if (typeof answer === 'string') { // Xử lý Short Answer
+        answersToSend = [{ answerId: 0, answerText: answer }]; // ID 0 hoặc ID placeholder cho short answer
+      } else if (Array.isArray(answer)) { // Xử lý Multiple Select
+        answersToSend = answer.map(a => ({ answerId: a.id, answerText: a.answerText }));
+      } else { // Xử lý Multiple Choice / True False
+        answersToSend = [{ answerId: answer.id, answerText: answer.answerText }];
+      }
+
+      const response = await apiService.checkAnswer(currentQ.id, answersToSend);
 
       if (response.success) {
         isCorrect = response.data.correct;
@@ -120,7 +150,7 @@ export const useQuizLogic = () => {
         setAnswerResult({
           correct: response.data.correct,
           correctAnswerText: response.data.correctAnswerText,
-          userAnswers: response.data.answers
+          userAnswers: response.data.userAnswers // Giả định backend trả về format này
         });
       } else {
         throw new Error(response.error || 'Lỗi khi kiểm tra câu trả lời');
@@ -128,7 +158,15 @@ export const useQuizLogic = () => {
 
       const newTotal = totalScore + points;
       setHasAnswered(true);
-      setSelectedAnswer(Array.isArray(answer) ? answer : [answer]);
+      // Cập nhật selectedAnswer để lưu trữ AnswerOption[]
+      if (typeof answer === 'string') {
+        setSelectedAnswer([{ id: 0, answerText: answer }]);
+      } else if (Array.isArray(answer)) {
+        setSelectedAnswer(answer);
+      } else {
+        setSelectedAnswer([answer]);
+      }
+      
       setIsCorrect(isCorrect);
       setEarnedPoints(points);
 
@@ -141,7 +179,7 @@ export const useQuizLogic = () => {
       const attemptRef = ref(db, `quizzes/${quizId}/rooms/${roomId}/playHistory/${userName}/attempts/${currentQ.id}`);
       await set(attemptRef, { 
         questionId: currentQ.id, 
-        answer: JSON.stringify(answer), 
+        answer: JSON.stringify(answersToSend), // Lưu đáp án đã gửi
         isCorrect, 
         score: points, 
         timeLeft, 
@@ -157,9 +195,11 @@ export const useQuizLogic = () => {
 
 
   // Handle multiple select
-  const handleMultipleSelect = (option: string) => {
+  const handleMultipleSelect = (option: AnswerOption) => { // Cập nhật kiểu đầu vào
     setSelectedAnswer(prev =>
-      prev.includes(option) ? prev.filter(a => a !== option) : [...prev, option]
+      prev.some(a => a.id === option.id) // Kiểm tra bằng ID
+        ? prev.filter(a => a.id !== option.id) 
+        : [...prev, option]
     );
   };
 
@@ -170,7 +210,7 @@ export const useQuizLogic = () => {
 
   const submitShortAnswer = () => {
     if (shortAnswer.trim()) {
-      handleAnswer(shortAnswer);
+      handleAnswer(shortAnswer); // Vẫn truyền string, logic sẽ xử lý
     }
   };
 
@@ -235,6 +275,8 @@ export const useQuizLogic = () => {
       if (state) {
         if (state.questionIndex !== prevQuestionIndexRef.current) {
           console.log('Question changed from', prevQuestionIndexRef.current, 'to', state.questionIndex);
+          
+          // Reset state cho câu hỏi mới
           setHasAnswered(false);
           setSelectedAnswer([]);
           setIsCorrect(false);
@@ -243,8 +285,22 @@ export const useQuizLogic = () => {
           setAnswerResult(null);
           prevQuestionIndexRef.current = state.questionIndex;
           
+          // ✅ Kiểm tra và tải câu hỏi nếu cần
           const requiredPage = Math.floor(state.questionIndex / pageSize);
-          if (requiredPage >= currentPage && state.questionIndex < totalQuestions) {
+          const currentPageFromQuestions = Math.floor((questions.length - 1) / pageSize);
+          
+          console.log('Page check:', {
+            questionIndex: state.questionIndex,
+            requiredPage,
+            currentPageFromQuestions,
+            questionsLength: questions.length,
+            pageSize,
+            totalQuestions
+          });
+          
+          // Chỉ tải trang mới khi thực sự cần
+          if (requiredPage > currentPageFromQuestions && state.questionIndex < totalQuestions) {
+            console.log('Loading new page:', requiredPage);
             setCurrentPage(requiredPage);
           }
         }
@@ -253,22 +309,34 @@ export const useQuizLogic = () => {
       setLoading(false);
     });
 
+    // Tải trang đầu tiên
     loadQuestions(0);
+    
     return () => {
       unsubRoomInfo();
       unsubStatus();
       unsubParticipants();
       unsubCurrentState();
     };
-  }, [quizId, roomId, userName, navigate]);
+  }, [quizId, roomId, userName, navigate]); // ✅ Bỏ pageSize và totalQuestions khỏi dependency
 
   // Timer logic for host
   useEffect(() => {
     if (!isHost || !quizId || !roomId) return;
     if (timerRef.current) clearInterval(timerRef.current);
+    
     const currentStatePath = `quizzes/${quizId}/rooms/${roomId}/currentState`;
     const updatePhase = (phase: string, additionalData?: any) => 
       update(ref(db, currentStatePath), { phase, ...additionalData });
+
+    console.log('Timer effect triggered:', {
+      gameState,
+      currentQuestionIndex,
+      totalQuestions,
+      questionsLength: questions.length,
+      hostControlEnabled,
+      waitingForHost
+    });
 
     if (gameState === 'get-ready') {
       timerRef.current = setTimeout(
@@ -293,13 +361,27 @@ export const useQuizLogic = () => {
     } else if (gameState === 'leaderboard' && !hostControlEnabled) {
       timerRef.current = setTimeout(() => {
         const nextQuestionIndex = currentQuestionIndex + 1;
-        if (nextQuestionIndex < totalQuestions) {
+        
+        console.log('Auto next question check:', {
+          currentIndex: currentQuestionIndex,
+          nextIndex: nextQuestionIndex,
+          totalQuestions,
+          questionsLength: questions.length
+        });
+        
+        // ✅ Kiểm tra cả totalQuestions và questions array
+        if (nextQuestionIndex < totalQuestions && questions[nextQuestionIndex]) {
+          console.log('Moving to next question automatically');
           update(ref(db, currentStatePath), { 
             questionIndex: nextQuestionIndex, 
             phase: 'get-ready',
             waitingForHost: false
           });
+        } else if (nextQuestionIndex < totalQuestions && !questions[nextQuestionIndex]) {
+          console.log('Next question not loaded yet, waiting...');
+          // Không làm gì, để listener tải câu hỏi mới
         } else {
+          console.log('Quiz completed - no more questions');
           update(ref(db, `quizzes/${quizId}/rooms/${roomId}/status`), { 
             isCompleted: true, 
             completedAt: Date.now() 
@@ -329,7 +411,7 @@ export const useQuizLogic = () => {
         const data = snapshot.val();
         setHasAnswered(true);
         const parsedAnswer = typeof data.answer === "string" ? JSON.parse(data.answer) : data.answer;
-        setSelectedAnswer(Array.isArray(parsedAnswer) ? parsedAnswer : [parsedAnswer]);
+        setSelectedAnswer(Array.isArray(parsedAnswer) ? parsedAnswer : [{ id: 0, answerText: parsedAnswer as string }]);
         setIsCorrect(data.isCorrect);
         setEarnedPoints(data.score);
         setAnswerResult(data.answerResult || null);
@@ -345,6 +427,7 @@ export const useQuizLogic = () => {
 
   useEffect(() => {
     if (currentPage > 0) {
+      console.log('Loading questions for page:', currentPage);
       loadQuestions(currentPage);
     }
   }, [currentPage]);
@@ -352,16 +435,18 @@ export const useQuizLogic = () => {
   useEffect(() => {
     if (gameState === 'playing' && timeLeft === 0 && !hasAnswered && questions[currentQuestionIndex]) {
       const currentQ = questions[currentQuestionIndex];
+      console.log('Auto-submit triggered for question type:', currentQ.type);
+      
       if (currentQ.type === QuestionType.SHORT_ANSWER && shortAnswer.trim()) {
         console.log('Auto-submitting short answer due to timeout:', shortAnswer);
         handleAnswer(shortAnswer);
       } else if (currentQ.type === QuestionType.MULTIPLE_SELECT && selectedAnswer.length > 0) {
         console.log('Auto-submitting multiple select due to timeout:', selectedAnswer);
         handleAnswer(selectedAnswer);
-      }
-      else if (currentQ.type === QuestionType.MULTIPLE_CHOICE || currentQ.type === QuestionType.TRUE_FALSE) {
+      } else {
         console.log('Auto-submitting empty answer due to timeout');
-        handleAnswer("");
+        // Gửi đáp án trống với format phù hợp
+        handleAnswer({ id: 0, answerText: "" });
       }
     }
   }, [timeLeft, gameState, hasAnswered, shortAnswer, selectedAnswer, currentQuestionIndex, questions]);
@@ -380,7 +465,7 @@ export const useQuizLogic = () => {
     loading,
     totalScore,
     hasAnswered,
-    selectedAnswer,
+    selectedAnswer, // Vẫn là AnswerOption[]
     isCorrect,
     earnedPoints,
     shortAnswer,

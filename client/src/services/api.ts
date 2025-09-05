@@ -1,7 +1,7 @@
 import axios from 'axios';
-import { ApiResponse, ApiResponseDetail, QuizDetailData } from '../types';
+import { ApiResponse, ApiResponseDetail, QuizDetailData,UserAnswerPayload } from '../types';
 
-const baseApi = process.env.REACT_APP_API_BACKEND || "http://api.quizai.edu.vn"
+const baseApi = process.env.REACT_APP_API_BACKEND || "http://localhost:8080"
 
 // 🔹 Public instance (không cần token)
 const publicApi = axios.create({
@@ -33,14 +33,15 @@ const apiService = {
   // Lấy câu hỏi của quiz (KHÔNG cần token)
   fetchQuestions: async (quizId: string, page: number): Promise<ApiResponse> => {
     const res = await publicApi.get(`/quizzes/${quizId}/questions`);
+    console.log("API fetchQuestions response:", res.data);
+
     return res.data;
   },
   fetchMyQuizzes: async (page: number): Promise<ApiResponse> => {
     const res = await privateApi.get(`/quizzes/my-quizzes?page=${page}`);
     return res.data;
   },
-
-  checkAnswer: async (questionId: number, answers: { answerText: string }[]): Promise<any> => {
+  checkAnswer: async (questionId: number, answers: UserAnswerPayload[]): Promise<any> => {
     const res = await publicApi.post(`/answer/compare/${questionId}`, answers,  { withCredentials: true });
     return res.data;
   },

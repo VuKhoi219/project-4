@@ -1,10 +1,11 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.helper.compareAnswer;
+import com.example.backend.dto.helper.CompareAnswer;
 import com.example.backend.dto.response.CheckAnswerResponse;
 import com.example.backend.repository.AnswerRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -18,38 +19,36 @@ public class AnswerService {
         this.answerRepository = answerRepository;
     }
 
-    public CheckAnswerResponse compareAnswers(List<compareAnswer> answers, Long questionId) {
-        // Không có đáp án gửi lên
-        if (answers == null || answers.isEmpty()) {
-            List<compareAnswer> correctAnswers = answerRepository.ListAnswerTextByQuestionId(questionId);
+    public CheckAnswerResponse compareAnswers(List<CompareAnswer> submittedAnswers, Long questionId) {
+        // Lấy đáp án đúng từ DB
+        List<CompareAnswer> correctAnswers = answerRepository.findCorrectAnswersByQuestionId(questionId);
+        System.out.println(submittedAnswers);
+        System.out.println(correctAnswers);
+        if (submittedAnswers == null || submittedAnswers.isEmpty()) {
             String correctText = correctAnswers.stream()
-                    .map(compareAnswer::getAnswerText)
+                    .map(CompareAnswer::getAnswerText)
                     .collect(Collectors.joining(", "));
-            return new CheckAnswerResponse(false, correctText, answers);
+
+            return new CheckAnswerResponse(false, correctText, new ArrayList<>());
         }
 
-        List<compareAnswer> correctAnswers = answerRepository.ListAnswerTextByQuestionId(questionId);
-
-        if (correctAnswers == null || correctAnswers.isEmpty()) {
-            return new CheckAnswerResponse(false, "", answers);
-        }
-
-        // So sánh danh sách đáp án (chuyển về Set cho dễ so sánh)
-        Set<String> submittedSet = answers.stream()
-                .map(ans -> ans.getAnswerText().trim().toLowerCase())
+        // So sánh theo ID
+        Set<Long> submittedSet = submittedAnswers.stream()
+                .map(CompareAnswer::getAnswerId)
                 .collect(Collectors.toSet());
 
-        Set<String> correctSet = correctAnswers.stream()
-                .map(ans -> ans.getAnswerText().trim().toLowerCase())
+        Set<Long> correctSet = correctAnswers.stream()
+                .map(CompareAnswer::getAnswerId)
                 .collect(Collectors.toSet());
 
         boolean isCorrect = submittedSet.equals(correctSet);
 
+        // Text đáp án đúng
         String correctText = correctAnswers.stream()
-                .map(compareAnswer::getAnswerText)
+                .map(CompareAnswer::getAnswerText)
                 .collect(Collectors.joining(", "));
 
-        return new CheckAnswerResponse(isCorrect, correctText, answers);
+        // Trả về cả text của đáp án mà user đã chọn (FE cần hiển thị)
+        return new CheckAnswerResponse(isCorrect, correctText, submittedAnswers);
     }
-
 }
