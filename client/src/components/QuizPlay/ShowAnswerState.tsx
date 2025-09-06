@@ -223,10 +223,10 @@ export const ShowAnswerState: React.FC<ShowAnswerStateProps> = ({
                       textShadow: '0 2px 4px rgba(0,0,0,0.1)'
                     }}
                   >
-                    {answerResult.userAnswers.length > 0 
-                      ? answerResult.userAnswers.map(answer => answer.answerText).join(", ")
-                      : "Không có câu trả lời"
-                    }
+                  {answerResult?.userAnswers?.length
+                    ? answerResult.userAnswers.map(a => a.answerText).join(", ")
+                    : "Không có câu trả lời"
+                  }
                   </Typography>
                 </Box>
               </>
