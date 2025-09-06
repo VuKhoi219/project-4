@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
+import "./index.css"; // phải import để Tailwind hoạt động
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 

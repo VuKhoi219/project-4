@@ -13,11 +13,15 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.Random;
+
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService {
 
     private final UserRepository userRepository;
+    private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
@@ -36,11 +40,25 @@ public class AuthenticationService {
                 passwordEncoder.encode(request.getPassword()),
                 request.getFullName()
         );
-        User savedUser = userRepository.save(user);
-        savedUser.setPasswordHash(null);
 
+        // Sinh OTP ngẫu nhiên
+        String otp = String.format("%06d", new Random().nextInt(999999));
+        user.setOtpCode(otp);
+        user.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
+        user.setIsVerified(false);
+
+        User savedUser = userRepository.save(user);
+
+        // Gửi email
+        emailService.sendOtpEmail(savedUser.getEmail(), otp);
+
+        savedUser.setOtpCode(null);
+        savedUser.setOtpExpiry(null);
+        savedUser.setIsVerified(null);
+        savedUser.setPasswordHash(null);
         return savedUser;
     }
+
 
     public AuthenticationResponse login(LoginRequest request) {
         try {
@@ -54,7 +72,7 @@ public class AuthenticationService {
             throw new IllegalArgumentException("Invalid username or password");
         }
 
-        var user = userRepository.findByEmail(request.getUsername())
+        var user = userRepository.findByEmailAndIsVerifiedTrue(request.getUsername())
                 .or(() -> userRepository.findByUsername(request.getUsername()))
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 

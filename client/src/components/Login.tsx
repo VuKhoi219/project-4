@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useLocation } from "react-router-dom";
+
 import axios from 'axios';
 // Hãy đảm bảo bạn đã tạo file Auth.css mới này trong cùng thư mục styles
 import '../styles/Auth.css';
@@ -9,6 +11,8 @@ const Login = () => {
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const location = useLocation();
+
   const baseApi = process.env.REACT_APP_API_BACKEND || "http://localhost:8080"
 
   // Kiểm tra xem có quiz pending để share không
@@ -33,36 +37,35 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(''); // Xóa lỗi cũ khi submit
-    
+    setError('');
+
     try {
       const res = await axios.post(
         `${baseApi}/api/auth/login`,
         formData,
-        {
-          headers: {
-            "Content-Type": "application/json"
-          }
-        }
+        { headers: { "Content-Type": "application/json" } }
       );
       const { data } = res.data;
       localStorage.setItem('token', data.token);
-      localStorage.setItem('username', data.username); 
-      // Kiểm tra xem có cần redirect về quiz không
+      localStorage.setItem('username', data.username);
+
+      // ✅ Ưu tiên redirect về route trước đó (nếu bị ProtectedRoute chặn)
+      const redirectPath = localStorage.getItem("redirectAfterLogin");
+
+
+      // ✅ Sau đó mới tới logic quiz pending/share
       const pendingQuizId = localStorage.getItem('pendingShareQuizId');
       const shouldReturnToQuiz = localStorage.getItem('returnToQuizAfterLogin');
       const lastSavedQuizId = localStorage.getItem('lastSavedQuizId');
-      console.log("Pending Quiz ID:", pendingQuizId);
-      console.log("Should Return to Quiz:", shouldReturnToQuiz);
-      console.log("Last Saved Quiz ID:", lastSavedQuizId);
-      if (pendingQuizId && shouldReturnToQuiz === 'true') {
-        // Có quiz pending, redirect về trang GenQuiz để tiếp tục share
+
+      if (redirectPath) {
+        localStorage.removeItem("redirectAfterLogin");
+        navigate(redirectPath, { replace: true });
+      } else if (pendingQuizId && shouldReturnToQuiz === 'true') {
         navigate('/quiz/generate');
       } else if (lastSavedQuizId) {
-        // Có quiz đã lưu, redirect về quiz detail
         navigate(`/quiz/${lastSavedQuizId}`);
       } else {
-        // Không có quiz pending, về trang chủ
         navigate('/');
       }
     } catch (err: any) {
@@ -71,6 +74,7 @@ const Login = () => {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="auth-container">

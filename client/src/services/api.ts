@@ -1,5 +1,7 @@
 import axios from 'axios';
 import { ApiResponse, ApiResponseDetail, QuizDetailData,UserAnswerPayload } from '../types';
+import { verify } from 'crypto';
+import { Token } from '@mui/icons-material';
 
 const baseApi = process.env.REACT_APP_API_BACKEND || "http://localhost:8080"
 
@@ -79,6 +81,30 @@ const apiService = {
   findDetailQuiz: async (quizId: number): Promise<ApiResponseDetail<QuizDetailData>> => {
     const res = await publicApi.get(`/quizzes/detail-quiz/${quizId}`);
     return res.data;
+  },
+  verifyOtp: async (otp: string): Promise<any> => {
+    try {
+      const email = localStorage.getItem('registerEmail');
+      const res = await publicApi.post(
+        '/auth/verify-otp',
+        null, // body rỗng
+        { params: { email, otp } } // 👈 truyền query param đúng cách
+      );
+      return res.data;
+    } catch (error) {
+      return null;
+    }
+  },
+
+  resresendOtp :async (): Promise<any> => {
+    try {
+      const email = localStorage.getItem('registerEmail'); // key trùng với lúc bạn set
+      const res = await publicApi.post(`/auth/resend-otp?email=${email}`,);
+      return res.data;  
+    }
+    catch (error) {
+      return null;
+    }
   }
 };
 

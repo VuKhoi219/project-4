@@ -150,7 +150,9 @@ export const useQuizLogic = () => {
         setAnswerResult({
           correct: response.data.correct,
           correctAnswerText: response.data.correctAnswerText,
-          userAnswers: response.data.userAnswers // Giả định backend trả về format này
+          userAnswers: response.data.answers?.map((a: any) => ({
+            answerText: a.answerText
+          })) ?? []
         });
       } else {
         throw new Error(response.error || 'Lỗi khi kiểm tra câu trả lời');

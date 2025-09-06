@@ -12,6 +12,8 @@ import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import HomeIcon from '@mui/icons-material/Home';
 import SettingsIcon from '@mui/icons-material/Settings';
+import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Avatar } from "@mui/material";
+
 
 // Interface cho dữ liệu quiz detail
 interface QuizDetailData {
@@ -74,6 +76,12 @@ const JoinQuiz: React.FC = () => {
   const [error, setError] = useState<string>("");
   const [quizInfo, setQuizInfo] = useState<QuizDetailData | null>(null);
   const [hostControlEnabled, setHostControlEnabled] = useState(false);
+
+  const [openJoinDialog, setOpenJoinDialog] = useState(false);
+  const [playerName, setPlayerName] = useState("");
+  const [avatarList, setAvatarList] = useState<string[]>([]);
+  const [selectedAvatar, setSelectedAvatar] = useState("");
+  const [showAvatarList, setShowAvatarList] = useState(false);
 
   const { quizId } = useParams<{ quizId: string }>();
   const navigate = useNavigate();
@@ -148,7 +156,62 @@ const JoinQuiz: React.FC = () => {
 
     fetchQuizInfo();
   }, [quizId, navigate]);
+  const handleCreateAndPlay = async () => {
+    if (!quizId || !quizInfo) return;
 
+    setIsCreating(true);
+    setError("");
+
+    try {
+      const roomId = `room_${Date.now()}`;
+      const roomPath = `quizzes/${quizId}/rooms/${roomId}`;
+      const roomRef = ref(db, roomPath);
+
+      const roomData = {
+        info: {
+          roomName: `Phòng chơi lúc ${new Date().toLocaleTimeString('vi-VN')}`,
+          createdBy: "system",
+          createdAt: Date.now(),
+          maxParticipants: 20,
+          hostControlEnabled: hostControlEnabled,
+          hostName: "system",
+          quizTitle: quizInfo.title,
+          quizDescription: quizInfo.description,
+          totalQuestions: quizInfo.totalQuestions,
+        },
+        status: {
+          isStarted: true,  // ✅ cho trạng thái đã bắt đầu luôn
+          startedAt: Date.now(),
+          startedBy: "system",
+          isCompleted: false,
+          completedAt: null,
+        },
+        currentState: {
+          phase: 'playing', // ✅ trạng thái đang chơi
+          questionIndex: 0,
+          timeLeft: 30,
+          waitingForHost: false,
+        },
+        participants: {},
+        leaderboard: {},
+        playHistory: {}
+      };
+      
+      await set(roomRef, roomData);
+
+      localStorage.removeItem("userName");
+      localStorage.setItem("quizId", quizId);
+      localStorage.setItem("roomId", roomId);
+
+      // ✅ Chuyển thẳng vào trang chơi luôn
+      navigate(`/quiz/${quizId}/room/${roomId}/play`);
+
+    } catch (error) {
+      console.error("Lỗi khi tạo phòng:", error);
+      setError("Đã có lỗi xảy ra khi tạo phòng! Vui lòng thử lại.");
+      setIsCreating(false);
+    }
+  };
   const handleCreateRoom = async () => {
     if (!quizId || !quizInfo) return;
 
@@ -203,6 +266,101 @@ const JoinQuiz: React.FC = () => {
       console.error("Lỗi khi tạo phòng:", error);
       setError("Đã có lỗi xảy ra khi tạo phòng! Vui lòng thử lại.");
       setIsCreating(false);
+    }
+  };
+  const handleOpenJoinDialog = async () => {
+    try {
+      const res = await fetch("/img/listImage.json");
+      const list = await res.json();
+      setAvatarList(list);
+
+      // chọn avatar random mặc định
+      const randomAvatar = list[Math.floor(Math.random() * list.length)];
+      setSelectedAvatar(randomAvatar);
+
+      // tạo tên random mặc định
+      const adjectives = ["Cool", "Smart", "Fast", "Happy"];
+      const nouns = ["Player", "Hero", "Cat", "Dude"];
+      const randomName = `${adjectives[Math.floor(Math.random() * adjectives.length)]}${
+        nouns[Math.floor(Math.random() * nouns.length)]
+      }${Math.floor(Math.random() * 100)}`;
+      setPlayerName(randomName);
+
+      setOpenJoinDialog(true);
+    } catch (err) {
+      console.error("Lỗi load avatar:", err);
+    }
+  };
+  const handleStartSoloGame = async () => {
+    if (!quizId || !quizInfo || !playerName) return;
+
+    setIsCreating(true);
+    setError("");
+
+    try {
+      const roomId = `room_${Date.now()}`;
+      const roomPath = `quizzes/${quizId}/rooms/${roomId}`;
+      const roomRef = ref(db, roomPath);
+
+      const roomData = {
+        info: {
+          roomName: `Phòng solo - ${playerName}`,
+          createdBy: playerName,
+          createdAt: Date.now(),
+          maxParticipants: 1,
+          hostControlEnabled: false,
+          hostName: playerName,
+          quizTitle: quizInfo.title,
+          quizDescription: quizInfo.description,
+          totalQuestions: quizInfo.totalQuestions,
+        },
+        status: {
+          isStarted: true,
+          startedAt: Date.now(),
+          startedBy: playerName,
+          isCompleted: false,
+          completedAt: null,
+        },
+        currentState: {
+          phase: "playing",
+          questionIndex: 0,
+          timeLeft: 30,
+          waitingForHost: false,
+        },
+        participants: {
+          [playerName]: {
+            joinedAt: Date.now(),
+            score: 0,
+            isActive: true,
+            displayName: playerName,
+            avatar: `/img/${selectedAvatar}`,
+          }
+        },
+        leaderboard: {
+          [playerName]: {
+            bestScore: 0,
+            lastPlayed: Date.now(),
+            displayName: playerName,
+            avatar: `/img/${selectedAvatar}`,
+          }
+        },
+        playHistory: {}
+      };
+
+      await set(roomRef, roomData);
+
+      // Lưu localStorage
+      localStorage.setItem("userName", playerName);
+      localStorage.setItem("quizId", quizId);
+      localStorage.setItem("roomId", roomId);
+
+      navigate(`/quiz/${quizId}/room/${roomId}/play`);
+    } catch (error) {
+      console.error("Lỗi khi tạo phòng solo:", error);
+      setError("Không thể bắt đầu chơi. Vui lòng thử lại!");
+    } finally {
+      setIsCreating(false);
+      setOpenJoinDialog(false);
     }
   };
 
@@ -344,15 +502,92 @@ const JoinQuiz: React.FC = () => {
               startIcon={isCreating ? <CircularProgress size={20} color="inherit" /> : <AddIcon />}
               fullWidth
             >
-              {isCreating ? 'Đang tạo phòng...' : 'Tạo Phòng Chơi Mới'}
+              {isCreating ? 'Đang tạo phòng...' : 'Chơi với bạn bè'}
             </ActionButton>
           </Stack>
-          
+            <ActionButton
+              variant="contained"
+              color="primary"
+              onClick={handleOpenJoinDialog}   // ✅ đổi chỗ này
+              disabled={isCreating || !!error || !quizInfo}
+              startIcon={isCreating ? <CircularProgress size={20} color="inherit" /> : <AddIcon />}
+              fullWidth
+            >
+              {isCreating ? 'Đang vào...' : 'Vào Chơi Ngay'}
+            </ActionButton>
+
           <Typography variant="body2" color="text.secondary" textAlign="center" mt={3}>
             Một phòng chơi mới sẽ được tạo cho bộ đề này.
           </Typography>
         </CardContent>
       </MainCard>
+      <Dialog open={openJoinDialog} onClose={() => setOpenJoinDialog(false)}>
+        <DialogTitle>Chọn tên và Avatar</DialogTitle>
+        <DialogContent>
+          {/* Avatar + Nút đổi */}
+          <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+            <Avatar src={`/img/${selectedAvatar}`} sx={{ width: 80, height: 80, mr: 2 }} />
+            <Button variant="outlined" onClick={() => setShowAvatarList(true)}>
+              Đổi Avatar
+            </Button>
+          </Box>
+
+          {/* Hiển thị list avatar khi bấm "Đổi Avatar" */}
+          {showAvatarList && (
+            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, 60px)", gap: 2, mb: 2 }}>
+              {avatarList.map((img, i) => (
+                <Avatar
+                  key={i}
+                  src={`/img/${img}`}
+                  sx={{
+                    width: 60,
+                    height: 60,
+                    cursor: "pointer",
+                    border: selectedAvatar === img ? "2px solid #1976d2" : "2px solid transparent"
+                  }}
+                  onClick={() => {
+                    setSelectedAvatar(img);
+                    setShowAvatarList(false); // ẩn list sau khi chọn
+                  }}
+                />
+              ))}
+            </Box>
+          )}
+
+          {/* Input + random tên */}
+          <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+            <TextField
+              fullWidth
+              label="Tên hiển thị"
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+            />
+            <Button
+              variant="outlined"
+              sx={{ ml: 2, whiteSpace: "nowrap" }}
+              onClick={() => {
+                const adjectives = ["Cool", "Smart", "Fast", "Happy"];
+                const nouns = ["Player", "Hero", "Cat", "Dude"];
+                const randomName = `${adjectives[Math.floor(Math.random() * adjectives.length)]}${
+                  nouns[Math.floor(Math.random() * nouns.length)]
+                }${Math.floor(Math.random() * 100)}`;
+                setPlayerName(randomName);
+              }}
+            >
+              Đổi tên
+            </Button>
+          </Box>
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={() => setOpenJoinDialog(false)}>Hủy</Button>
+          <Button variant="contained" onClick={handleStartSoloGame}>
+            Bắt đầu chơi
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+
 
       {/* Nút "Về Trang chủ" */}
       <Button 
