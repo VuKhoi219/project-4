@@ -22,14 +22,12 @@ public class AnswerService {
     public CheckAnswerResponse compareAnswers(List<CompareAnswer> submittedAnswers, Long questionId) {
         // Lấy đáp án đúng từ DB
         List<CompareAnswer> correctAnswers = answerRepository.findCorrectAnswersByQuestionId(questionId);
-        System.out.println(submittedAnswers);
-        System.out.println(correctAnswers);
         if (submittedAnswers == null || submittedAnswers.isEmpty()) {
             String correctText = correctAnswers.stream()
                     .map(CompareAnswer::getAnswerText)
                     .collect(Collectors.joining(", "));
 
-            return new CheckAnswerResponse(false, correctText, new ArrayList<>());
+            return new CheckAnswerResponse(false, correctText, new ArrayList<>(),0L);
         }
 
         // So sánh theo ID
@@ -49,6 +47,6 @@ public class AnswerService {
                 .collect(Collectors.joining(", "));
 
         // Trả về cả text của đáp án mà user đã chọn (FE cần hiển thị)
-        return new CheckAnswerResponse(isCorrect, correctText, submittedAnswers);
+        return new CheckAnswerResponse(isCorrect, correctText, submittedAnswers,0L);
     }
 }

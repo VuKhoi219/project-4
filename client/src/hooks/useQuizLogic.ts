@@ -1,3 +1,4 @@
+import { ApiResponse } from './../types';
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ref, onValue, set, get, update, db } from "../config/firebase";
@@ -138,7 +139,8 @@ export const useQuizLogic = () => {
         answersToSend = [{ answerId: answer.id, answerText: answer.answerText }];
       }
 
-      const response = await apiService.checkAnswer(currentQ.id, answersToSend);
+      const response = await apiService.checkAnswer(currentQ.id, answersToSend, roomId);
+      console.log('Check answer response:', response.data);
 
       if (response.success) {
         isCorrect = response.data.correct;
@@ -146,6 +148,7 @@ export const useQuizLogic = () => {
         points = isCorrect 
           ? (pointsOverride ?? calculateScore(timeLeft, currentQ.timeLimit || 30)) 
           : 0;
+        const responseSavePoint = await apiService.savePoints(response.data.userAnswerId, points);
 
         setAnswerResult({
           correct: response.data.correct,

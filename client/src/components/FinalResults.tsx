@@ -5,6 +5,7 @@ import confetti from "canvas-confetti";
 import { motion, Variants,Transition } from "framer-motion";
 import apiService from "../services/api";
 import styles from '../styles/FinalResults.module.css';
+import { Navigate, useLocation } from "react-router-dom";
 
 interface Player {
   displayName: string;
@@ -20,6 +21,7 @@ const FinalResults: React.FC = () => {
   const [showTop3, setShowTop3] = useState(false);
   const [showTop2, setShowTop2] = useState(false);
   const [showTop1, setShowTop1] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const participantsRef = ref(db, `quizzes/${quizId}/rooms/${roomId}/participants`);
@@ -86,6 +88,25 @@ const FinalResults: React.FC = () => {
     }
   }, [players, quizId, saved]);
 
+  useEffect(() => {
+    const saveUserId = async () => {
+      const token = localStorage.getItem("token");
+      if (token  && roomId) {
+        try {
+          await apiService.saveUserIdUserAnswer(roomId);
+          console.log("✅ Đã lưu userId vào UserAnswer");
+          localStorage.removeItem("redirectAfterLogin");
+        } catch (err) {
+          console.error("❌ Lỗi lưu userId:", err);
+        }
+      }
+    };
+
+    saveUserId();
+  }, [roomId]);
+
+
+
   const podiumVariants: Variants = {
     hidden: { opacity: 0, y: 120 },
     visible: {
@@ -116,16 +137,30 @@ const FinalResults: React.FC = () => {
   };
 
   const bounceAnimation = {
-  animate: {
-    y: [0, -8, 0],
-    transition: {
-      repeat: Infinity,
-      repeatType: "loop" as const,
-      duration: 2,
-      ease: "easeInOut" as const, // Explicitly use a valid easing value
-    } as Transition, // Explicitly type as Transition
-  },
-};
+    animate: {
+      y: [0, -8, 0],
+      transition: {
+        repeat: Infinity,
+        repeatType: "loop" as const,
+        duration: 2,
+        ease: "easeInOut" as const, // Explicitly use a valid easing value
+      } as Transition, // Explicitly type as Transition
+    },
+  };
+  
+  const handleNextPage = () => {
+    const token = localStorage.getItem("token");
+    // Nếu chưa đăng nhập, chuyển về login
+    if (!token) {
+      const confirmLogin = window.confirm("Vui lòng đăng nhập để xem chi tiết kết quả!");
+      if (confirmLogin) {
+        localStorage.setItem("redirectAfterLogin", location.pathname);
+        navigate("/login");
+      }
+      return;
+    }
+    navigate(`/quiz/room/${roomId}/user-answer`)
+   }
 
   // Sử dụng useMemo để tối ưu hóa render top3 và otherPlayers
   const top3 = useMemo(() => players.slice(0, 3), [players]);
@@ -321,6 +356,9 @@ const FinalResults: React.FC = () => {
 
       <button className={styles.homeButton} onClick={() => navigate("/")}>
         Về trang chủ
+      </button>
+      <button className={styles.homeButton} onClick={handleNextPage}>
+        Xem chi tiết kết quả
       </button>
     </div>
   );

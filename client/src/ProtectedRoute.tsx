@@ -11,7 +11,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   if (!token) {
     // Hiện thông báo trước khi chuyển hướng
-    const confirmLogin = window.confirm("Vui lòng đăng nhập để chơi!");
+    const confirmLogin = window.confirm("Vui lòng đăng nhập !");
     if (confirmLogin) {
       localStorage.setItem("redirectAfterLogin", location.pathname);
       return <Navigate to="/login" replace />;
