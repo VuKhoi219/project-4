@@ -1,7 +1,9 @@
+import { screen } from '@testing-library/react';
 import axios from 'axios';
 import { ApiResponse, ApiResponseDetail, QuizDetailData,UserAnswerPayload } from '../types';
 import { verify } from 'crypto';
 import { Token } from '@mui/icons-material';
+import UserAnswer from '../components/UserAnswerDetail';
 
 const baseApi = process.env.REACT_APP_API_BACKEND || "http://localhost:8080"
 
@@ -43,8 +45,9 @@ const apiService = {
     const res = await privateApi.get(`/quizzes/my-quizzes?page=${page}`);
     return res.data;
   },
-  checkAnswer: async (questionId: number, answers: UserAnswerPayload[]): Promise<any> => {
-    const res = await publicApi.post(`/answer/compare/${questionId}`, answers,  { withCredentials: true });
+  checkAnswer: async (questionId: number, answers: UserAnswerPayload[], roomId: string): Promise<any> => {
+    const res = await privateApi.post(`/answer/compare/${questionId}`,     { roomId, answers},            // gộp vào 1 object
+     { withCredentials: true });
     return res.data;
   },
   fetchQuizzes: async (page: number): Promise<ApiResponse> => {
@@ -105,6 +108,19 @@ const apiService = {
     catch (error) {
       return null;
     }
+  },
+
+  savePoints: async (userAnswerId: number, points: number): Promise<any> => { 
+    const res = await publicApi.post(`/answer/save-point/${userAnswerId}`, { points });
+    return res.data;
+  },
+  getUserAnswer: async (roomId: string): Promise<any> => { 
+    const res = await privateApi.get(`/answer/history-user-answer/${roomId}`);
+    return res.data;
+  },
+  saveUserIdUserAnswer: async (roomId: string): Promise<any> => { 
+    const res = await privateApi.post(`/answer/save-userId/${roomId}`);
+    return res.data;
   }
 };
 

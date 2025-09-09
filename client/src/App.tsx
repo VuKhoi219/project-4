@@ -15,6 +15,7 @@ import GenQuiz from './components/GenQuiz';
 import Notfound from './components/NotFoundPage';
 import VerifyOtp from './components/VerifyOtp';
 import ProtectedRoute from './ProtectedRoute';
+import UserAnswerDetail from './components/UserAnswerDetail';
 
 function App() {
   return (
@@ -42,6 +43,11 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="/quiz/room/:roomId/user-answer" element={
+              <ProtectedRoute>
+                <UserAnswerDetail />
+              </ProtectedRoute>
+            } />
             <Route path="/quiz/:quizId/room/:roomId/play" element={<QuizPlay />} />
             <Route path="/quiz/:quizId/room/:roomId/leaderboard" element={<Leaderboard />} />
             <Route path='/quiz/:quizId/room/:roomId/final-results' element={<FinalResults />} />
