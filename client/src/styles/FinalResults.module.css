@@ -4,30 +4,29 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 1rem 0.25rem;
+  padding: 1rem;
   color: #1e293b;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-    sans-serif;
-  overflow-x: hidden;
+  font-family: "Segoe UI", Roboto, sans-serif;
   background: linear-gradient(
     135deg,
-    rgba(167, 243, 208, 0.7),
-    rgba(224, 242, 254, 0.7)
+    rgba(243, 246, 244, 0.85),
+    rgba(224, 242, 254, 0.85)
   );
+  background-attachment: fixed;
+  overflow-x: hidden;
   position: relative;
 }
 
+/* Trophy */
 .trophy {
-  font-size: 2.5rem;
+  font-size: 3rem;
   color: #ffd700;
-  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.7));
-  will-change: transform, opacity;
+  filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.9));
   animation: pulse 2s infinite ease-in-out;
   position: absolute;
-  top: 1rem; /* Di chuyển trophy lên trên khối .playerFirst */
+  top: 1rem;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 15;
 }
 
 @keyframes pulse {
@@ -40,197 +39,108 @@
   }
 }
 
+/* Podium */
 .podium {
-  display: grid;
-  grid-template-columns: 1fr 1.2fr 1fr;
-  gap: 0.5rem;
-  max-width: 100%;
-  width: 100%;
-  margin: 3.5rem auto 1rem;
-  padding: 0 0.1rem;
-  position: relative;
-  justify-items: center;
+  display: flex;
+  justify-content: center;
   align-items: flex-end;
-  transform: translateY(0.5rem);
+  gap: 1rem;
+  margin: 6rem 0 2rem;
+  width: 100%;
+  max-width: 800px;
 }
 
+/* Top 1 */
 .playerFirst {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(323deg, #fff9a8, #ffdb4d);
-  border-radius: 8px;
-  padding: 0.6rem;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  transition: transform 0.3s ease;
-  position: relative;
+  background: linear-gradient(145deg, #fbfdfc, #3b82f6);
+  border: none;
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+  transform: translateY(-2rem);
+  padding: 0.8rem;
+  border-radius: 16px;
   text-align: center;
-  min-height: 140px;
-  width: 100px;
-  border: 2px solid #ffd700;
-  transform: translateY(-1rem);
+  min-width: 180px;
+  transition: all 0.3s ease;
 }
 
-.playerFirst .trophy {
-  position: absolute;
-  top: -3rem; /* Đặt trophy ngay trên .playerFirst */
-  left: 50%;
-  transform: translateX(-50%);
-}
-
+/* Top 2 */
 .playerSecond {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(145deg, #ffffff, #f0f0f0);
-  border-radius: 6px;
-  padding: 0.4rem;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
-  transition: transform 0.3s ease;
-  position: relative;
+  background: linear-gradient(145deg, #c4b5fd, #93c5fd);
+  border: none;
+  box-shadow: 0 6px 16px rgba(147, 197, 253, 0.4);
+  padding: 0.7rem;
+  border-radius: 14px;
   text-align: center;
-  min-height: 120px;
-  width: 90px;
-  border: 2px solid #d4d4d8;
+  min-width: 150px;
+  transition: all 0.3s ease;
 }
 
+/* Top 3 */
 .playerThird {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(145deg, #ffedd5, #ffc107);
-  border-radius: 6px;
-  padding: 0.4rem;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
-  transition: transform 0.3s ease;
-  position: relative;
+  background: linear-gradient(145deg, #fbcfe8, #fbbf24);
+  border: none;
+  box-shadow: 0 6px 16px rgba(251, 191, 36, 0.4);
+  padding: 0.7rem;
+  border-radius: 14px;
   text-align: center;
-  min-height: 120px;
-  width: 90px;
-  border: 2px solid #b45309;
+  min-width: 150px;
+  transition: all 0.3s ease;
 }
 
 .playerFirst:hover,
 .playerSecond:hover,
 .playerThird:hover {
-  transform: translateY(-1.5rem) scale(1.02);
+  transform: translateY(-2.5rem) scale(1.05);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
 }
 
-.playerSecond::after {
-  content: "🥈";
-  position: absolute;
-  top: -1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: #1e40af;
-  text-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.15);
-}
-
-.playerThird::after {
-  content: "🥉";
-  position: absolute;
-  top: -1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: #1e40af;
-  text-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.15);
-}
-
+/* Avatar */
 .avatarWrapper {
-  margin-bottom: 0.4rem;
-  position: relative;
+  margin-bottom: 0.6rem;
 }
-
 .avatar {
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid transparent;
-  transition: transform 0.3s ease;
+  border: 3px solid #fff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
 }
-
 .playerFirst .avatar {
-  width: 50px;
-  height: 50px;
-  border-color: #ffd700;
+  width: 100px;
+  height: 100px;
 }
-
-.playerSecond .avatar {
-  width: 45px;
-  height: 45px;
-  border-color: #d4d4d8;
-}
-
+.playerSecond .avatar,
 .playerThird .avatar {
-  width: 45px;
-  height: 45px;
-  border-color: #b45309;
+  width: 80px;
+  height: 80px;
 }
 
+/* Score box */
 .scoreBox {
-  background: #ffffff;
-  padding: 0.3rem 0.5rem;
-  border-radius: 5px;
-  text-align: center;
+  margin-top: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.8);
   font-weight: 700;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
-.playerFirst .scoreBox {
-  border: 1px solid #ffd700;
-  background: linear-gradient(145deg, #fff9a8, #ffdb4d);
-}
-
-.playerSecond .scoreBox {
-  border: 1px solid #d4d4d8;
-  background: linear-gradient(145deg, #ffffff, #f0f0f0);
-}
-
-.playerThird .scoreBox {
-  border: 1px solid #b45309;
-  background: linear-gradient(145deg, #ffedd5, #ffc107);
-}
-
-.rankNumber {
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: #00d5ff;
-  margin-right: 0.2rem;
-}
-
-.playerName {
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: #1e293b;
-}
-
-.score {
-  font-size: 0.7rem;
-  color: #475569;
-}
-
+/* Leaderboard */
 .leaderboard {
   width: 90%;
-  max-width: 300px;
-  background: #ffffff;
-  border-radius: 6px;
-  padding: 0.6rem;
-  margin: 0.8rem 0;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  max-width: 450px;
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .leaderboardTitle {
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: #00bbff;
-  margin-bottom: 0.4rem;
   text-align: center;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #0ea5e9;
+  margin-bottom: 0.6rem;
 }
 
 .rankList {
@@ -238,212 +148,49 @@
   flex-direction: column;
   gap: 0.4rem;
 }
-
 .rankItem {
   display: grid;
-  grid-template-columns: 20px 25px 1fr 50px;
+  grid-template-columns: 30px 40px 1fr 70px;
   align-items: center;
-  padding: 0.3rem;
-  background: #f8fafc;
-  border-radius: 4px;
-  box-shadow: 0 0.5px 2px rgba(0, 0, 0, 0.08);
+  padding: 0.4rem;
+  border-radius: 8px;
+  background: rgba(248, 250, 252, 0.9);
+  transition: all 0.2s ease;
 }
-
 .rankItem:hover {
-  background: #e0e7ff;
-  transform: translateY(-0.5px);
+  background: #e0f2fe;
 }
 
 .rankAvatar {
-  width: 20px;
-  height: 20px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1px solid #e0e7ff;
 }
-
 .rankName {
   font-weight: 700;
   color: #1e293b;
 }
-
 .rankScore {
+  text-align: right;
   font-weight: 700;
   color: #475569;
-  text-align: right;
 }
 
-.noPlayers {
-  color: #64748b;
-  padding: 0.5rem;
-  font-size: 0.7rem;
-}
-
+/* Buttons */
 .homeButton {
-  background: #4f46e5;
-  color: #ffffff;
+  margin: 0.5rem;
+  padding: 0.7rem 1.4rem;
+  border-radius: 8px;
   border: none;
-  padding: 0.4rem 1rem;
-  border-radius: 5px;
-  font-size: 0.7rem;
+  font-size: 0.9rem;
   font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
   cursor: pointer;
+  transition: all 0.3s ease;
 }
-
 .homeButton:hover {
-  background: #4338ca;
-  transform: translateY(-0.5px);
-}
-
-.loading {
-  text-align: center;
-  font-size: 0.8rem;
-  margin-top: 0.8rem;
-  color: #64748b;
-}
-
-@media (min-width: 481px) {
-  .container {
-    padding: 2rem 1rem;
-  }
-
-  .podium {
-    gap: 1rem;
-    max-width: 600px;
-    margin: 6rem auto 2rem;
-  }
-
-  .playerFirst {
-    min-height: 220px;
-    width: 180px;
-    transform: translateY(-2rem);
-  }
-
-  .playerSecond,
-  .playerThird {
-    min-height: 200px;
-    width: 160px;
-  }
-
-  .trophy {
-    font-size: 4.5rem;
-    top: 1rem;
-  }
-
-  .playerSecond::after,
-  .playerThird::after {
-    font-size: 3rem;
-    top: -2.5rem;
-  }
-
-  .playerFirst .avatar {
-    width: 90px;
-    height: 90px;
-  }
-
-  .playerSecond .avatar {
-    width: 80px;
-    height: 80px;
-  }
-
-  .playerThird .avatar {
-    width: 80px;
-    height: 80px;
-  }
-
-  .scoreBox {
-    padding: 0.6rem 1rem;
-  }
-
-  .leaderboard {
-    max-width: 450px;
-    padding: 1rem;
-  }
-
-  .leaderboardTitle {
-    font-size: 1.2rem;
-  }
-
-  .rankItem {
-    grid-template-columns: 30px 35px 1fr 70px;
-    padding: 0.5rem;
-  }
-
-  .homeButton {
-    padding: 0.6rem 1.5rem;
-    font-size: 0.85rem;
-  }
-}
-
-@media (min-width: 769px) {
-  .container {
-    padding: 2.5rem 1.5rem;
-  }
-
-  .podium {
-    gap: 1.2rem;
-    max-width: 800px;
-    margin: 8rem auto 3rem;
-  }
-
-  .playerFirst {
-    min-height: 260px;
-    width: 220px;
-    transform: translateY(-3rem);
-  }
-
-  .playerSecond,
-  .playerThird {
-    min-height: 220px;
-    width: 200px;
-  }
-
-  .trophy {
-    font-size: 5rem;
-    top: 1rem;
-  }
-
-  .playerSecond::after,
-  .playerThird::after {
-    font-size: 4rem;
-    top: -3.5rem;
-  }
-
-  .playerFirst .avatar {
-    width: 110px;
-    height: 110px;
-  }
-
-  .playerSecond .avatar {
-    width: 90px;
-    height: 90px;
-  }
-
-  .playerThird .avatar {
-    width: 90px;
-    height: 90px;
-  }
-
-  .scoreBox {
-    padding: 0.8rem 1.2rem;
-  }
-
-  .leaderboard {
-    max-width: 500px;
-    padding: 1.2rem;
-  }
-
-  .leaderboardTitle {
-    font-size: 1.5rem;
-  }
-
-  .rankItem {
-    grid-template-columns: 35px 40px 1fr 80px;
-    padding: 0.6rem;
-  }
-
-  .homeButton {
-    padding: 0.75rem 2rem;
-    font-size: 0.9rem;
-  }
+  background: linear-gradient(135deg, #1d4ed8, #6d28d9);
+  transform: translateY(-2px);
 }
