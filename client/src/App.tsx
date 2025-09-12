@@ -13,6 +13,9 @@ import Register from "./components/Register";
 import CreateQuiz from "./components/CreateQuiz";
 import GenQuiz from './components/GenQuiz';
 import Notfound from './components/NotFoundPage';
+import VerifyOtp from './components/VerifyOtp';
+import ProtectedRoute from './ProtectedRoute';
+import UserAnswerDetail from './components/UserAnswerDetail';
 
 function App() {
   return (
@@ -32,11 +35,23 @@ function App() {
               Tất cả các trang liên quan đến một game đang diễn ra đều cần cả quizId và roomId.
             */}
             <Route path="/quiz/:quizId/room/:roomId" element={<QuizController />} />
-            <Route path="/quiz/:quizId/room/:roomId/waiting" element={<WaitingRoom />} />
+            <Route
+              path="/quiz/:quizId/room/:roomId/waiting"
+              element={
+                <ProtectedRoute>
+                  <WaitingRoom />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/quiz/room/:roomId/user-answer" element={
+              <ProtectedRoute>
+                <UserAnswerDetail />
+              </ProtectedRoute>
+            } />
             <Route path="/quiz/:quizId/room/:roomId/play" element={<QuizPlay />} />
             <Route path="/quiz/:quizId/room/:roomId/leaderboard" element={<Leaderboard />} />
             <Route path='/quiz/:quizId/room/:roomId/final-results' element={<FinalResults />} />
-
+            <Route path='/verify-otp' element={ <VerifyOtp />} />
             {/* Trang 404 */}
             <Route path='/404' element={<Notfound/> } />
             {/* Fallback route */}

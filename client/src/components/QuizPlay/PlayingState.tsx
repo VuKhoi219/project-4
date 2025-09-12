@@ -19,8 +19,12 @@ import {
   CountdownText,
   OptionButton,
 } from '../../styles/QuizPlay.styles';
-import { ExtendedQuestion, QuestionType } from '../../types';
+import { ExtendedQuestion, QuestionType, AnswerOption } from '../../types';
 import { CountdownCircleTimer } from "react-countdown-circle-timer";
+interface SelectedAnswerItem {
+  id: number;
+  answerText: string;
+}
 
 interface PlayingStateProps {
   currentQ: ExtendedQuestion;
@@ -30,10 +34,10 @@ interface PlayingStateProps {
   timeLeft: number;
   animatedScore: number;
   hasAnswered: boolean;
-  selectedAnswer: string[];
+  selectedAnswer: AnswerOption[]; // ✅ dùng AnswerOption
   shortAnswer: string;
-  onAnswer: (answer: string | string[], pointsOverride?: number) => void;
-  onMultipleSelect: (option: string) => void;
+  onAnswer: (answer: AnswerOption[] | string, pointsOverride?: number) => void; // ✅
+  onMultipleSelect: (selectedAnswerItem: AnswerOption) => void; // ✅
   onShortAnswerChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmitShortAnswer: () => void;
 }
@@ -46,10 +50,10 @@ export const PlayingState: React.FC<PlayingStateProps> = ({
   timeLeft,
   animatedScore,
   hasAnswered,
-  selectedAnswer,
+  selectedAnswer, // Giờ là SelectedAnswerItem[]
   shortAnswer,
   onAnswer,
-  onMultipleSelect,
+  onMultipleSelect, // Giờ chấp nhận SelectedAnswerItem
   onShortAnswerChange,
   onSubmitShortAnswer,
 }) => {
@@ -65,20 +69,29 @@ export const PlayingState: React.FC<PlayingStateProps> = ({
   
   // Hàm tính điểm chung để đảm bảo tính nhất quán
   const calculateScore = () => {
-    if (!startTimeRef.current) return 0;
-    const elapsed = performance.now() - startTimeRef.current;
-    const totalMs = (currentQ.timeLimit || 30) * 1000;
-    const remainingMs = Math.max(0, totalMs - elapsed);
-    return Math.max(0, Math.floor((remainingMs / totalMs) * 1000));
+    if (!startTimeRef.current) return 0;   // nếu chưa có thời gian bắt đầu thì trả về 0
+
+    const elapsed = performance.now() - startTimeRef.current;  
+    // elapsed = số mili giây đã trôi qua kể từ khi câu hỏi bắt đầu
+
+    const totalMs = (currentQ.timeLimit || 30) * 1000;  
+    // totalMs = tổng thời gian giới hạn cho câu hỏi (nếu có `timeLimit` thì dùng, 
+    // còn không thì mặc định là 30 giây)
+
+    const remainingMs = Math.max(0, totalMs - elapsed);  
+    // remainingMs = thời gian còn lại (nếu elapsed lớn hơn totalMs thì lấy 0)
+
+    return Math.max(0, Math.floor((remainingMs / totalMs) * 1000));  
+    // tính điểm: (thời gian còn lại / tổng thời gian) * 1000 
+    // => điểm càng cao nếu trả lời càng nhanh (tối đa 1000, tối thiểu 0)
   };
+
   
   // Wrap các hàm xử lý để capture điểm tại thời điểm trả lời với millisecond
-  const handleAnswerWithScore = (answer: string | string[]) => {
+  const handleAnswerWithScore = (answer: AnswerOption[] | string) => {
     if (!hasAnswered) {
       const currentScore = calculateScore();
       setFrozenScore(currentScore);
-
-      // Truyền thêm điểm này vào onAnswer
       onAnswer(answer, currentScore);
     } else {
       onAnswer(answer);
@@ -94,7 +107,7 @@ export const PlayingState: React.FC<PlayingStateProps> = ({
   };
 
   // Hàm lấy màu sắc cho option button
-  const getOptionButtonStyle = (option: string, index: number, isCorrect: boolean, isSelected: boolean) => {
+  const getOptionButtonStyle = (optionText: string, index: number, isCorrect: boolean, isSelected: boolean) => {
     const baseStyle = {
       minHeight: '70px',
       borderRadius: '16px',
@@ -304,30 +317,34 @@ export const PlayingState: React.FC<PlayingStateProps> = ({
         {/* Multiple Choice */}
         {currentQ.type === QuestionType.MULTIPLE_CHOICE && (
           <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3}>
-            {currentQ.options.map((option, index) => {
-              const isCorrect = option === currentQ.correctAnswer;
-              const isSelected = selectedAnswer.includes(option);
+            {/* Sử dụng currentQ.answers thay vì currentQ.options để lấy cả id và answerText */}
+              {currentQ.options?.map((answerItem, index) => { // answerItem giờ là { id: number, answerText: string }
+              const isCorrect = !!currentQ.correctAnswers?.some(
+                (correct: AnswerOption) => correct.answerText === answerItem.answerText
+              );
+              const isSelected = selectedAnswer.some(item => item.id === answerItem.id);
               const isDisabled = hasAnswered && !isCorrect && !isSelected;
-              
+
               return (
-                <Fade in={true} timeout={600 + index * 100} key={index}>
+                <Fade in={true} timeout={600 + index * 100} key={answerItem.id}>
                   <OptionButton
                     disabled={isDisabled}
-                    onClick={() => handleAnswerWithScore(option)}
-                    sx={getOptionButtonStyle(option, index, isCorrect, isSelected)}
+                    // Truyền cả id và answerText vào handleAnswerWithScore
+                    onClick={() => handleAnswerWithScore([{ id: answerItem.id, answerText: answerItem.answerText }])}
+                    sx={getOptionButtonStyle(answerItem.answerText, index, isCorrect, isSelected)}
                   >
-                    <Chip 
-                      label={String.fromCharCode(65 + index)} 
-                      sx={{ 
-                        mr: 2, 
+                    <Chip
+                      label={String.fromCharCode(65 + index)}
+                      sx={{
+                        mr: 2,
                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                         color: 'white',
                         fontWeight: 'bold',
                         border: 'none'
-                      }} 
+                      }}
                     />
                     <Typography variant="body1" fontWeight="inherit">
-                      {option}
+                      {answerItem.answerText}
                     </Typography>
                   </OptionButton>
                 </Fade>
@@ -335,18 +352,22 @@ export const PlayingState: React.FC<PlayingStateProps> = ({
             })}
           </Box>
         )}
+
         
         {/* Multiple Select */}
         {currentQ.type === QuestionType.MULTIPLE_SELECT && (
           <Box>
             <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3}>
-              {currentQ.options.map((option, index) => {
+              {currentQ.options?.map((answerItem, index) => { // answerItem giờ là { id: number, answerText: string }
                 const isDisabled = hasAnswered;
-                const isCorrect = currentQ.correctAnswers?.includes(option);
-                const isSelected = selectedAnswer.includes(option);
-                let bgColor = 'linear-gradient(135deg, rgba(250, 175, 175, 0.95) 0%, rgba(255,255,255,0.85) 100%)';
+                // currentQ.correctAnswers giờ là mảng các `answerText`
+                const isCorrect = currentQ.correctAnswers?.some(
+                  correct => correct.answerText === answerItem.answerText
+                );                // Kiểm tra xem answerItem.id có trong selectedAnswer không
+                const isSelected = selectedAnswer.some(item => item.id === answerItem.id);
+                let bgColor = 'linear-gradient(135deg, rgba(143, 245, 138, 0.95) 0%, rgba(47, 251, 88, 0.85) 100%)'; // Đổi màu mặc định cho Multi-select
                 let textColor = '#1f2937';
-                
+
                 if (isDisabled) {
                   if (isCorrect) {
                     bgColor = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
@@ -354,16 +375,20 @@ export const PlayingState: React.FC<PlayingStateProps> = ({
                   } else if (isSelected) {
                     bgColor = 'linear-gradient(135deg, #71e3ff 0%, #14a9e8 100%)';
                     textColor = 'white';
+                  } else {
+                    bgColor = 'rgba(148, 163, 184, 0.3)';
+                    textColor = 'rgba(255, 255, 255, 0.6)';
                   }
                 }
-                
+
                 return (
-                  <Fade in={true} timeout={600 + index * 100} key={index}>
+                  <Fade in={true} timeout={600 + index * 100} key={answerItem.id}>
                     <FormControlLabel
                       control={
                         <Checkbox
                           checked={isSelected}
-                          onChange={() => onMultipleSelect(option)}
+                          // Truyền cả id và answerText vào onMultipleSelect
+                          onChange={() => onMultipleSelect({ id: answerItem.id, answerText: answerItem.answerText })}
                           disabled={isDisabled}
                           sx={{
                             color: isCorrect ? '#10b981' : isSelected && isDisabled ? '#44ef69' : '#6366f1',
@@ -375,17 +400,17 @@ export const PlayingState: React.FC<PlayingStateProps> = ({
                       }
                       label={
                         <Stack direction="row" alignItems="center" spacing={2}>
-                          <Chip 
-                            label={String.fromCharCode(65 + index)} 
-                            sx={{ 
+                          <Chip
+                            label={String.fromCharCode(65 + index)}
+                            sx={{
                               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                               color: 'white',
                               fontWeight: 'bold',
                               border: 'none'
-                            }} 
+                            }}
                           />
                           <Typography variant="body1" fontWeight="600" color={textColor}>
-                            {option}
+                            {answerItem.answerText}
                           </Typography>
                         </Stack>
                       }
@@ -395,9 +420,9 @@ export const PlayingState: React.FC<PlayingStateProps> = ({
                         borderRadius: '16px',
                         border: '2px solid',
                         borderColor: isCorrect ? '#10b981' : isSelected && isDisabled ? '#44bcef' : 'rgba(99, 102, 241, 0.2)',
-                        boxShadow: isCorrect ? '0 8px 25px rgba(16, 185, 129, 0.3)' : 
-                                   isSelected && isDisabled ? '0 8px 25px rgba(68, 148, 239, 0.3)' :
-                                   '0 8px 25px rgba(0, 0, 0, 0.08)',
+                        boxShadow: isCorrect ? '0 8px 25px rgba(16, 185, 129, 0.3)' :
+                          isSelected && isDisabled ? '0 8px 25px rgba(68, 148, 239, 0.3)' :
+                            '0 8px 25px rgba(0, 0, 0, 0.08)',
                         transition: 'all 0.3s ease',
                         '&:hover': !isDisabled ? {
                           transform: 'translateY(-2px)',
@@ -409,15 +434,16 @@ export const PlayingState: React.FC<PlayingStateProps> = ({
                 );
               })}
             </Box>
-            
+
             <Fade in={true} timeout={1000}>
               <Button
                 variant="contained"
+                // Gửi selectedAnswer (mảng các SelectedAnswerItem) trực tiếp
                 onClick={() => handleAnswerWithScore(selectedAnswer)}
                 disabled={hasAnswered || selectedAnswer.length === 0}
-                sx={{ 
-                  mt: 4, 
-                  borderRadius: '16px', 
+                sx={{
+                  mt: 4,
+                  borderRadius: '16px',
                   px: 6,
                   py: 2,
                   fontSize: '1.1rem',
@@ -440,27 +466,28 @@ export const PlayingState: React.FC<PlayingStateProps> = ({
             </Fade>
           </Box>
         )}
-        
         {/* True/False */}
         {currentQ.type === QuestionType.TRUE_FALSE && (
           <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3}>
-            {['Đúng', 'Sai'].map((option, index) => {
-              const isCorrect = option === currentQ.correctAnswer;
-              const isSelected = selectedAnswer.includes(option);
+            {/* Sử dụng currentQ.answers để lấy cả id và answerText cho Đúng/Sai */}
+            {currentQ.options?.map((answerItem, index) => {
+              const isCorrect = answerItem.answerText === currentQ.correctAnswer;
+              const isSelected = selectedAnswer.some(item => item.id === answerItem.id);
               const isDisabled = hasAnswered && !isCorrect && !isSelected;
-              
+
               return (
-                <Fade in={true} timeout={600 + index * 200} key={index}>
+                <Fade in={true} timeout={600 + index * 200} key={answerItem.id}>
                   <OptionButton
                     disabled={isDisabled}
-                    onClick={() => handleAnswerWithScore(option)}
-                    sx={getOptionButtonStyle(option, index, isCorrect, isSelected)}
+                    // Truyền cả id và answerText vào handleAnswerWithScore
+                    onClick={() => handleAnswerWithScore([{ id: answerItem.id, answerText: answerItem.answerText }])}
+                    sx={getOptionButtonStyle(answerItem.answerText, index, isCorrect, isSelected)}
                   >
-                    <Chip 
-                      label={option === 'Đúng' ? '✓' : '✗'} 
-                      sx={{ 
-                        mr: 2, 
-                        background: option === 'Đúng' ? 
+                    <Chip
+                      label={answerItem.answerText === 'Đúng' ? '✓' : '✗'}
+                      sx={{
+                        mr: 2,
+                        background: answerItem.answerText === 'Đúng' ?
                           'linear-gradient(135deg, #10b981 0%, #059669 100%)' :
                           'linear-gradient(135deg, #abb2f6 0%, #263bdc 100%)',
                         color: 'white',
@@ -468,10 +495,10 @@ export const PlayingState: React.FC<PlayingStateProps> = ({
                         fontSize: '1.2rem',
                         width: 40,
                         height: 40
-                      }} 
+                      }}
                     />
                     <Typography variant="h6" fontWeight="inherit">
-                      {option}
+                      {answerItem.answerText}
                     </Typography>
                   </OptionButton>
                 </Fade>
@@ -479,10 +506,11 @@ export const PlayingState: React.FC<PlayingStateProps> = ({
             })}
           </Box>
         )}
-        
+
         {/* Short Answer */}
         {currentQ.type === QuestionType.SHORT_ANSWER && (
           <Box>
+            {/* ... (TextField và Button giữ nguyên) */}
             <Fade in={true} timeout={600}>
               <TextField
                 fullWidth
@@ -492,7 +520,7 @@ export const PlayingState: React.FC<PlayingStateProps> = ({
                 disabled={hasAnswered}
                 sx={{
                   mb: 3,
-                  '& .MuiInputBase-root': { 
+                  '& .MuiInputBase-root': {
                     borderRadius: '16px',
                     background: 'rgba(138, 244, 108, 0.95)',
                     backdropFilter: 'blur(20px)',
@@ -506,7 +534,7 @@ export const PlayingState: React.FC<PlayingStateProps> = ({
                       boxShadow: '0 0 0 3px rgba(99, 102, 241, 0.1)'
                     }
                   },
-                  '& .MuiInputBase-input': { 
+                  '& .MuiInputBase-input': {
                     p: 3,
                     fontWeight: 600
                   },
@@ -517,14 +545,14 @@ export const PlayingState: React.FC<PlayingStateProps> = ({
                 variant="outlined"
               />
             </Fade>
-            
+
             <Fade in={true} timeout={800}>
               <Button
                 variant="contained"
                 onClick={handleSubmitShortAnswerWithScore}
                 disabled={hasAnswered || !shortAnswer.trim()}
-                sx={{ 
-                  borderRadius: '16px', 
+                sx={{
+                  borderRadius: '16px',
                   px: 6,
                   py: 2,
                   fontSize: '1.1rem',
