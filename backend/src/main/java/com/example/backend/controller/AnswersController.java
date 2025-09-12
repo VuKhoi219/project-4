@@ -7,11 +7,15 @@ import com.example.backend.dto.request.PointsRequest;
 import com.example.backend.dto.response.ApiResponse;
 import com.example.backend.dto.response.CheckAnswerResponse;
 import com.example.backend.dto.response.HistoryUserAnswerResponse;
+import com.example.backend.dto.response.QuestionResponse;
+import com.example.backend.entity.Question;
 import com.example.backend.entity.User;
 import com.example.backend.entity.UserAnswer;
 import com.example.backend.entity.UserAnswerDetail;
+import com.example.backend.repository.QuestionRepository;
 import com.example.backend.service.AnswerService;
 import com.example.backend.service.UserAnswerService;
+import com.example.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +34,7 @@ import java.util.Optional;
 public class AnswersController {
     private final AnswerService answerService;
     private final UserAnswerService userAnswerService;
-
+    private final QuestionRepository questionRepository;
     @PostMapping("/compare/{questionId}")
     public ResponseEntity<ApiResponse<CheckAnswerResponse>> compareAnswers(
             @PathVariable("questionId") Long questionId,
@@ -47,11 +51,11 @@ public class AnswersController {
             }
             // nếu chưa login => user = null
             Long userId = (user != null) ? user.getId() : null;
-
+            Question q = questionRepository.findById(questionId).orElse(null);
             UserAnswer ua = new UserAnswer();
             ua.setRoom(req.getRoomId());
             ua.setUserId(userId);
-            ua.setQuestionId(questionId);
+            ua.setQuestion(q);
             ua.setScore(0);
 
             UserAnswer saved = userAnswerService.save(ua);
