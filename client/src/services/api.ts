@@ -1,7 +1,11 @@
+import { screen } from '@testing-library/react';
 import axios from 'axios';
-import { ApiResponse, ApiResponseDetail, QuizDetailData } from '../types';
+import { ApiResponse, ApiResponseDetail, QuizDetailData,UserAnswerPayload } from '../types';
+import { verify } from 'crypto';
+import { Token } from '@mui/icons-material';
+import UserAnswer from '../components/UserAnswerDetail';
 
-const baseApi = process.env.REACT_APP_API_BACKEND || "http://api.quizai.edu.vn"
+const baseApi = process.env.REACT_APP_API_BACKEND || "http://localhost:8080"
 
 // 🔹 Public instance (không cần token)
 const publicApi = axios.create({
@@ -33,15 +37,17 @@ const apiService = {
   // Lấy câu hỏi của quiz (KHÔNG cần token)
   fetchQuestions: async (quizId: string, page: number): Promise<ApiResponse> => {
     const res = await publicApi.get(`/quizzes/${quizId}/questions`);
+    console.log("API fetchQuestions response:", res.data);
+
     return res.data;
   },
   fetchMyQuizzes: async (page: number): Promise<ApiResponse> => {
     const res = await privateApi.get(`/quizzes/my-quizzes?page=${page}`);
     return res.data;
   },
-
-  checkAnswer: async (questionId: number, answers: { answerText: string }[]): Promise<any> => {
-    const res = await publicApi.post(`/answer/compare/${questionId}`, answers,  { withCredentials: true });
+  checkAnswer: async (questionId: number, answers: UserAnswerPayload[], roomId: string): Promise<any> => {
+    const res = await privateApi.post(`/answer/compare/${questionId}`,     { roomId, answers},            // gộp vào 1 object
+     { withCredentials: true });
     return res.data;
   },
   fetchQuizzes: async (page: number): Promise<ApiResponse> => {
@@ -77,6 +83,43 @@ const apiService = {
   },
   findDetailQuiz: async (quizId: number): Promise<ApiResponseDetail<QuizDetailData>> => {
     const res = await publicApi.get(`/quizzes/detail-quiz/${quizId}`);
+    return res.data;
+  },
+  verifyOtp: async (otp: string): Promise<any> => {
+    try {
+      const email = localStorage.getItem('registerEmail');
+      const res = await publicApi.post(
+        '/auth/verify-otp',
+        null, // body rỗng
+        { params: { email, otp } } // 👈 truyền query param đúng cách
+      );
+      return res.data;
+    } catch (error) {
+      return null;
+    }
+  },
+
+  resresendOtp :async (): Promise<any> => {
+    try {
+      const email = localStorage.getItem('registerEmail'); // key trùng với lúc bạn set
+      const res = await publicApi.post(`/auth/resend-otp?email=${email}`,);
+      return res.data;  
+    }
+    catch (error) {
+      return null;
+    }
+  },
+
+  savePoints: async (userAnswerId: number, points: number): Promise<any> => { 
+    const res = await publicApi.post(`/answer/save-point/${userAnswerId}`, { points });
+    return res.data;
+  },
+  getUserAnswer: async (roomId: string): Promise<any> => { 
+    const res = await privateApi.get(`/answer/history-user-answer/${roomId}`);
+    return res.data;
+  },
+  saveUserIdUserAnswer: async (roomId: string): Promise<any> => { 
+    const res = await privateApi.post(`/answer/save-userId/${roomId}`);
     return res.data;
   }
 };

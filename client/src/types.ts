@@ -67,15 +67,22 @@ export enum QuestionType {
 export interface Question {
   id: number;
   text: string;
-  options: string[];
+  options: AnswerOption[]; // Thay đổi từ string[] sang AnswerOption[]
   correctAnswer: string;
   timeLimit: number;
 }
 
+// Định nghĩa một kiểu mới cho mỗi lựa chọn đáp án, bao gồm cả ID và TEXT
+export interface AnswerOption {
+  id: number;
+  answerText: string;
+}
+
 export interface ExtendedQuestion extends Question {
   type: QuestionType;
-  correctAnswers?: string[];
-  acceptedAnswers?: string[];
+  // Cập nhật các thuộc tính này để dùng AnswerOption[] nếu chúng cũng trả về ID
+  correctAnswers?: AnswerOption[]; // Có thể giữ string[] nếu bạn chỉ cần text để so sánh
+  acceptedAnswers?: string[]; // Thường là text cho Short Answer
 }
 
 export interface Participant {
@@ -137,14 +144,27 @@ export interface ApiQuestion {
   correctAnswers?: ApiAnswer[];
   acceptedAnswers?: string[];
 }
-
+export interface UserAnswerPayload {
+  answerId: number;
+  answerText: string;
+}
 export interface ApiResponse {
   success: boolean;
   message: string;
   data: {
     length: number;
-    map(arg0: (q: ApiQuestion) => { id: number; text: string; options: string[]; correctAnswer: string; correctAnswers: string[]; acceptedAnswers: string[]; timeLimit: number; type: QuestionType; }): ExtendedQuestion[];
-    content: ApiQuestion[];
+    // Cập nhật phần map này để ánh xạ đúng sang AnswerOption[]
+    map(arg0: (q: ApiQuestion) => { 
+      id: number; 
+      text: string; 
+      options: AnswerOption[]; // Thay đổi ở đây
+      correctAnswer: string; 
+      correctAnswers: AnswerOption[]; // Thay đổi ở đây
+      acceptedAnswers: string[]; 
+      timeLimit: number; 
+      type: QuestionType; 
+    }): ExtendedQuestion[];
+    data: ApiQuestion[];
     pageable: any;
     last: boolean;
     totalPages: number;
