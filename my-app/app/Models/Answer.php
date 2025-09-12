@@ -9,13 +9,17 @@ class Answer extends Model
 {
     use HasFactory;
 
-    public $timestamps = false; // nếu muốn created_at/updated_at tự động
+    public $timestamps = false;
 
     protected $fillable = [
         'question_id',
         'answer_text',
         'is_correct',
         'order_index',
+    ];
+
+    protected $casts = [
+        'is_correct' => 'boolean', // Thêm cast
     ];
 
     // Quan hệ với Question
