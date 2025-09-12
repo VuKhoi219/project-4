@@ -29,8 +29,10 @@ public class UserAnswer {
     @Column(name = "user_id", nullable = true)
     private Long userId;
 
-    @Column(name = "question_id", nullable = false)
-    private Long questionId;
+    // Quan hệ N-1 với Question
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "question_id", nullable = false)
+    private Question question;
 
     @Column(name = "score", nullable = true)
     private Integer score;

@@ -39,16 +39,27 @@
 .answerList {
   list-style: none;
   padding: 0;
+  margin: 0;
+}
+
+.answerHeader {
+  display: grid;
+  grid-template-columns: 1fr 150px 120px;
+  font-weight: bold;
+  margin-bottom: 8px;
 }
 
 .answerItem {
-  padding: 10px;
-  border-radius: 8px;
-  margin-bottom: 6px;
-  background: #dadbdc;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 150px 120px;
   align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.choiceCol,
+.correctCol {
+  text-align: center;
 }
 
 .answerItem.correct {

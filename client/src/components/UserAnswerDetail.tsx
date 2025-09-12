@@ -69,7 +69,7 @@ const UserAnswerDetail: React.FC = () => {
             </h3>
             <p className={styles.score}>Điểm: {q.score}</p>
 
-            <ul className={styles.answerList}>
+            {/* <ul className={styles.answerList}>
               {q.answers.map((ans) => {
                 const isUserChoice = ans.userChoice === 1;
                 const isCorrect = ans.isCorrect === 1;
@@ -93,7 +93,35 @@ const UserAnswerDetail: React.FC = () => {
                   </li>
                 );
               })}
+            </ul> */}
+            <ul className={styles.answerList}>
+              <li className={styles.answerHeader}>
+                <span>Đáp án</span>
+                <span>Lựa chọn của bạn</span>
+                <span>Đáp án đúng</span>
+              </li>
+              {q.answers.map((ans) => {
+                const isUserChoice = ans.userChoice === 1;
+                const isCorrect = ans.isCorrect === 1;
+
+                return (
+                  <li key={ans.answerId} className={styles.answerItem}>
+                    <span>{ans.answerText}</span>
+
+                    {/* Cột lựa chọn của bạn */}
+                    <span className={styles.choiceCol}>
+                      {isUserChoice ? "✅" : "❌"}
+                    </span>
+
+                    {/* Cột đáp án đúng */}
+                    <span className={styles.correctCol}>
+                      {isCorrect ? "✔" : ""}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
+
           </div>
         ))}
       </div>
